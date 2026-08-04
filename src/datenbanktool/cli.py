@@ -6,6 +6,7 @@ import sys
 from typing import Sequence
 
 from datenbanktool import __version__
+from datenbanktool.cli_acceptance import register_acceptance_parser
 from datenbanktool.cli_common import parser
 from datenbanktool.cli_contract import dispatch
 from datenbanktool.cli_folder_compare import register_folder_compare_parser
@@ -56,6 +57,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     register_explain_parser(subparsers)
     register_scan_parser(subparsers)
+    register_acceptance_parser(subparsers)
 
     index = subparsers.add_parser(
         "index",
