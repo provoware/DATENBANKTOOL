@@ -48,50 +48,19 @@ Stammordner.
 
 ### `FolderTimelineOptions`
 
-Enthält:
-
-- `folder`: relativer Ordnerpfad,
-- `from_session_id`: optional älteste Sitzung,
-- `to_session_id`: optional neueste Sitzung,
-- `limit`: höchstens anzuzeigende neueste Zeitpunkte.
-
-Validierung:
-
-- Sitzungs-IDs mindestens 1,
-- Limit zwischen 2 und 500,
-- sicherer relativer Ordnerpfad.
+Enthält relativen Ordnerpfad, optionale Ausgangs- und Zielsitzung sowie das Limit.
+Sitzungs-IDs müssen mindestens 1 und das Limit zwischen 2 und 500 liegen.
 
 ### `FolderTimelinePoint`
 
-Ein Zeitpunkt enthält:
-
-- `session_id`,
-- `recorded_utc`,
-- `scan_mode`,
-- `file_count`,
-- `size_bytes`,
-- `file_delta`,
-- `size_delta_bytes`,
-- `size_delta_percent`,
-- technischen und sichtbaren Status,
-- Ampelstufe, Status und Begründung.
-
-Der erste sichtbare Zeitpunkt besitzt keine Differenz und wird als `baseline`
-klassifiziert.
+Ein Zeitpunkt enthält Scan-ID, UTC-Zeit, Scan-Modus, Dateizahl, Größe, Differenzen,
+Prozentwert, Status sowie Ampelmetadaten. Der erste sichtbare Punkt ist `baseline` und
+besitzt keine Differenz.
 
 ### `FolderTimeline`
 
-Die gesamte Zeitreihe enthält:
-
-- normalisierten Datenbankpfad,
-- Stammordner,
-- relativen Zielordner,
-- Zahl aller verfügbaren Sitzungen,
-- Kürzungsstatus,
-- erste und letzte Scan-ID,
-- Nettoänderung von Dateien und Größe,
-- minimale und maximale Größe,
-- unveränderliche Punktfolge.
+Die gesamte Zeitreihe enthält Datenbank, Stammordner, relativen Ordner, verfügbare und
+sichtbare Sitzungen, Kürzungsstatus, Nettoänderungen, Minimum, Maximum und Punkte.
 
 ## Sichere Pfadnormalisierung
 
@@ -102,9 +71,7 @@ Die gesamte Zeitreihe enthält:
 3. behandelt leer, `.`, `./` als Stammordner,
 4. lehnt absolute Pfade ab,
 5. lehnt jedes Segment `..` ab,
-6. speichert einen kanonischen relativen POSIX-Pfad.
-
-Dadurch kann eine Nutzereingabe nicht aus dem gespeicherten Stammordner herauszeigen.
+6. liefert einen kanonischen relativen POSIX-Pfad.
 
 ## Rein lesender SQLite-Vertrag
 
@@ -112,58 +79,31 @@ Dadurch kann eine Nutzereingabe nicht aus dem gespeicherten Stammordner herausze
 
 1. normalisiert den Datenbankpfad,
 2. verlangt eine vorhandene Datei,
-3. öffnet SQLite als URI mit `mode=ro`,
+3. öffnet SQLite mit `mode=ro`,
 4. aktiviert `PRAGMA query_only=ON`,
-5. lehnt neuere unbekannte Schemata ab,
-6. verlangt Schema 3 für Scan-Beziehungen und Scan-Modus.
+5. lehnt unbekannte neuere Schemata ab,
+6. verlangt Schema 3.
 
-Die Zeitreihe führt keine schreibenden SQL-Anweisungen aus und startet keinen neuen
-Dateisystemscan.
+Die Zeitreihe führt keine schreibende SQL-Anweisung und keinen neuen Dateisystemscan
+aus.
 
 ## Sitzungsauswahl
 
-### Zielsitzung
-
-- Mit `--to-session-id` wird genau diese abgeschlossene Sitzung verwendet.
-- Ohne Angabe wird die neueste abgeschlossene Sitzung gewählt.
-
-### Ausgangssitzung
-
-- Mit `--from-session-id` wird eine untere inklusive Grenze gesetzt.
-- Sie darf nicht neuer als die Zielsitzung sein.
-- Ihr normalisierter Stammordner muss mit der Zielsitzung übereinstimmen.
-
-### Auswahlmenge
-
-Alle abgeschlossenen Sitzungen mit gleichem Stammordner und passender ID-Spanne werden
-chronologisch ausgewählt. Liegen mehr als `limit` Sitzungen vor, werden die neuesten
-Zeitpunkte verwendet und `truncated=True` gesetzt.
-
-Weniger als zwei ausgewählte Sitzungen führen zu einem kontrollierten Fehler.
+- `--to-session-id` wählt eine konkrete abgeschlossene Zielsitzung.
+- Ohne Ziel wird die neueste abgeschlossene Sitzung gewählt.
+- `--from-session-id` setzt eine inklusive untere Grenze.
+- Ausgang und Ziel müssen denselben normalisierten Stammordner besitzen.
+- Alle passenden Sitzungen werden chronologisch sortiert.
+- Bei mehr Punkten als `limit` werden die neuesten verwendet und die Kürzung gemeldet.
+- Weniger als zwei Punkte führen zu einem kontrollierten Fehler.
 
 ## Rekursive Ordneraggregation
 
-Für den Stammordner `.` wird pro Sitzung berechnet:
-
-```sql
-COUNT(*)
-SUM(size_bytes)
-```
-
-Für einen Unterordner wie `Musik/Live` wird ein Präfix mit abschließendem `/` verwendet:
-
-```text
-Musik/Live/
-```
-
-Die SQL-Bedingung vergleicht genau diesen Präfix. Dadurch zählt `Musik/Live2` nicht
-versehentlich mit.
-
-Die Auswertung verwendet ausschließlich bereits gespeicherte `files`-Zeilen.
+Für `.` werden alle Dateizeilen einer Sitzung gezählt und summiert. Für Unterordner
+wird ein Präfix mit abschließendem `/` verwendet. Dadurch zählt `Musik/` die Dateien
+in `Musik/Live/`, aber nicht versehentlich `Musik-Alt/`.
 
 ## Zustandslogik
-
-Für jeden Punkt nach dem Ausgangswert gilt folgende Reihenfolge:
 
 1. vorher 0 Dateien, jetzt mehr als 0 → `new`,
 2. vorher Dateien, jetzt 0 → `removed`,
@@ -172,124 +112,53 @@ Für jeden Punkt nach dem Ausgangswert gilt folgende Reihenfolge:
 5. Größe gleich, Dateizahl anders → `changed`,
 6. sonst → `unchanged`.
 
-Prozentwert:
-
-```text
-(size_delta / previous_size) * 100
-```
-
-Bei einem Ausgangswert von 0 bleibt der Prozentwert `None`; es wird kein künstlicher
-unendlicher Wert erzeugt.
-
-## Darstellung
-
-`cli_folder_timeline.py` zeigt:
-
-- Stammordner und relativen Ordner,
-- Scan-Spanne und Punktzahl,
-- transparente Kürzungsinformation,
-- Nettoänderung,
-- Minimum und Maximum,
-- jeden Punkt mit Ampel, Zeit, Modus, Dateien, Größe und Differenzen.
-
-Farben sind nur Zusatzinformation. Klartext und Begründung bleiben immer sichtbar.
+Bei vorheriger Größe 0 bleibt der Prozentwert `None`.
 
 ## Zeitreihenexporte
 
 ### JSON
 
-- UTF-8,
-- eingerückt,
-- vollständige Metadaten und Punkte,
-- keine ANSI-Farben oder Bedienhinweise.
+UTF-8, eingerückt, vollständige Metadaten und keine ANSI-Ausgaben.
 
 ### CSV
 
-- UTF-8 mit BOM,
-- Semikolon,
-- numerische Rohwerte in Byte,
-- getrennte Status- und Begründungsspalten,
-- Ordner und Stammordner pro Zeile für eigenständige Weiterverarbeitung.
+UTF-8-BOM, Semikolon, numerische Rohwerte, getrennte Status- und Begründungsspalten.
 
 ### HTML
 
-- vollständig offline,
-- dynamische Texte HTML-maskiert,
-- sichtbare Tabelle,
-- Tooltip und `aria-label`,
-- Kürzungsinformation und Sicherheitshinweis,
-- keine externen Skripte, Fonts oder Stylesheets.
+Vollständig offline, HTML-maskiert, sichtbare Tabelle, Tooltip und `aria-label`.
 
-### Atomarer Schreibvorgang
+### Atomarer Schreibvertrag
 
-Alle Formate werden zuerst in eine Prozess-spezifische temporäre Datei geschrieben und
-anschließend per `replace()` freigegeben. Bei Fehlern wird die temporäre Datei entfernt.
-Vorhandene Ziele benötigen `overwrite=True`.
+Alle Formate werden in eine Prozess-spezifische temporäre Datei geschrieben und per
+`replace()` freigegeben. Vorhandene Ziele benötigen `overwrite=True`.
 
 ## Vollständiger Ordnervergleichsexport
 
-### Core-Erweiterung
-
-`compare_folders()` besitzt jetzt:
-
-```python
-all_rows: bool = False
-```
+`compare_folders()` besitzt jetzt `all_rows: bool = False`.
 
 - `False`: bisherige paginierte Seite,
 - `True`: vollständige gefilterte und sortierte Ergebnismenge.
 
-Die vollständige Seite verwendet:
+`paginate_folder_comparison()` erzeugt aus der vollständigen Menge die sichtbare
+Terminalseite. Die Aggregation beider Snapshots erfolgt nur einmal.
 
-```text
-page = 1
-page_size = max(1, total_rows)
-total_pages = 1
-rows = tuple(output)
-```
-
-### Terminalpagination
-
-`paginate_folder_comparison()` verlangt eine vollständige Seite und erzeugt daraus die
-sichtbare Terminalseite. Dadurch wird die aufwendige Aggregation beider Snapshots nur
-einmal ausgeführt.
-
-### CLI-Steuerung
-
-`--all-pages`:
-
-- ist nur mit mindestens einem Exportziel zulässig,
-- hält das Terminal paginiert,
-- übergibt die vollständige Seite an JSON, CSV und HTML,
-- verändert das Verhalten ohne Schalter nicht.
+`--all-pages` ist nur mit JSON, CSV oder HTML zulässig. Ohne Schalter bleibt das
+bisherige Seitenverhalten kompatibel.
 
 ## CommandPolicy
 
-Zeitreihe:
-
 ```python
 CommandPolicy("index.folder-timeline", writes_reports=True)
-```
-
-Vergleich:
-
-```python
 CommandPolicy("index.folder-compare", writes_reports=True)
 ```
 
-Für beide bleiben falsch:
-
-```text
-writes_original_files
-writes_index
-writes_backups
-writes_configuration
-writes_test_data
-```
+Originaldatei-, Index-, Backup-, Konfigurations- und Testdatenschreibzugriffe bleiben
+für beide Befehle falsch.
 
 ## Automatische Tests
 
-`tests/test_folder_timeline_and_compare_exports.py` prüft:
+Die neue Testdatei prüft:
 
 1. drei chronologische Scans,
 2. rekursive Dateien und Größen,
@@ -305,20 +174,20 @@ writes_test_data
 12. identische Zeilenzahl in JSON, CSV und HTML,
 13. kontrollierten Fehler bei `--all-pages` ohne Exportziel.
 
-`tests/test_cli_architecture.py` prüft zusätzlich:
+Der Architekturtest prüft Handler, `CommandPolicy`, Modulzuständigkeit, Zeilengrenzen,
+Importgrenzen und Shell-Verbote.
 
-- registrierten Handler,
-- vorhandene und gültige `CommandPolicy`,
-- Zuständigkeit von `cli_folder_timeline.py`,
-- CLI-Zeilengrenzen,
-- Importgrenzen und Shell-Verbote.
+## Finale Validierung
 
-Gesamtstand:
+Referenzcommit `900efee174464413e3b8216924081248294787c6`:
 
-- 71 Tests unter Python 3.10,
-- 71 Tests unter Python 3.12,
+- Paket `datenbanktool-0.11.0a1` gebaut,
+- 71/71 Tests unter Python 3.10,
+- 71/71 Tests unter Python 3.12,
 - Warnungen als Fehler,
-- vollständige Kompilierung von `src` und `tests`.
+- Quick: 600 Dateien, 11/11, 1,131 s, 1.327.056 Byte Python-Peak,
+- Standard: 10.000 Dateien, 11/11, 18,072 s, 13.396.733 Byte Python-Peak,
+- getrennte Artefakte mit SHA-256-Prüfsummen.
 
 ## Bekannte Grenzen
 
