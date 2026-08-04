@@ -238,24 +238,19 @@ Hardware.
 
 ## Aktuelle Grenzen
 
-- Die reale Laienabnahme ist noch nicht durchgeführt.
-- Das `large`-Profil wurde noch nicht auf Zielhardware ausgeführt.
-- Die Startseite kann Vorlagen speichern und auswählen; geführtes Anzeigen, Ersetzen und
-  Löschen ist noch nicht als eigenes Untermenü vorhanden.
-- Vorlagen speichern bewusst nur den Ordner, nicht Warnschwellen oder Berichtspfade.
-- Prozentwerte sind bei vorherigem Wert null nicht berechenbar.
-- Warnschwellen betrachten Übergänge, keine langfristige statistische Anomalie.
-- Je Zeitreihe wird weiterhin ein relativer Ordner dargestellt.
-- Diagramme positionieren Punkte nach Scan-Reihenfolge, nicht proportional zum
-  tatsächlichen Zeitabstand.
+- reale Laienabnahme,
+- `large`-Profil auf Zielhardware,
+- geführte Vorlagenverwaltung,
+- Mehrordner-Zeitreihe.
+
+Weitere technische Grenzen: Vorlagen speichern bewusst nur den Ordner, Prozentwerte sind bei vorherigem Wert null nicht berechenbar, Warnschwellen betrachten Übergänge und Diagramme positionieren Punkte nach Scan-Reihenfolge.
 
 ## Mögliche weitere Upgrades
 
-- Geführtes Vorlagen-Untermenü für Anzeigen, Ersetzen und Löschen.
-- Mehrere ausgewählte Ordner gemeinsam als getrennte Trends darstellen.
-- Diagrammpunkte optional nach realem Scan-Zeitabstand positionieren.
-- Reale Laienabnahme und 100.000-Dateien-Zieltest durchführen.
-- Später eine grafische Oberfläche mit Pfadauswahldialogen ergänzen.
+- reale Laienabnahme,
+- `large`-Profil auf Zielhardware,
+- geführte Vorlagenverwaltung,
+- Mehrordner-Zeitreihe.
 
 ## Direkt folgender technischer Entwicklungsschritt
 

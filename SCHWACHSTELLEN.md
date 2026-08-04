@@ -1,6 +1,6 @@
 # Schwachstellen
 
-## Aktuell begrenzt
+Stand: Version 0.13.0-alpha.1
 
 - Versionen haben zwei zulässige Schreibweisen; automatisierte Drift-Prüfung verhindert Abweichungen zwischen Registry, CLI und Dokumentation.
 - Nur lokale SQLite-Dateien werden unterstützt; Serverdatenbanken fehlen bewusst.
@@ -9,14 +9,17 @@
 - Status- und Upgrade-Angaben müssen bei künftigen Änderungen weiterhin zwischen
   README, TODO, Upgrade-Pool und Projektregistry synchron gehalten werden.
 
-## Bereits abgesichert
+1. reale Laienabnahme,
+2. `large`-Profil auf Zielhardware,
+3. geführte Vorlagenverwaltung,
+4. Mehrordner-Zeitreihe.
 
-- Die Datenbank wird im schreibgeschützten Modus geöffnet.
-- Leere, fehlende, nicht reguläre und offensichtlich ungültige Dateien werden abgewiesen.
-- Tabellenbezeichner werden als Parameter an SQLite übergeben und nicht in SQL-Text eingesetzt.
+## Historischer MVP-Status
 
-Sicherheitsrelevante Fehler sollen ohne sensible Dateiinhalte, Zugangsdaten oder Stapelspuren ausgegeben werden.
-# Schwachstellen und aktuelle Grenzen
+Die frühe reine SQLite-Strukturprüfung ist abgeschlossen und nicht mehr der aktuelle
+Schwachstellenstand. Aktuelle Grenzen stehen im folgenden Abschnitt.
+
+## Aktuelle Grenzen
 
 ## Zeitreihen-Vorlagen
 

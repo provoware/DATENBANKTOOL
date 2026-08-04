@@ -1,5 +1,15 @@
 # TODO
 
+Stand: Version 0.13.0-alpha.1
+
+## Offen
+
+1. [ ] reale Laienabnahme,
+2. [ ] `large`-Profil auf Zielhardware,
+3. [ ] geführte Vorlagenverwaltung,
+4. [ ] Mehrordner-Zeitreihe.
+
+## Historisch erledigter MVP-Status
 ## Offene Hauptpunkte
 
 - [ ] Reale Laienabnahme auf einem Zielsystem durchführen und die erzeugte
@@ -11,7 +21,8 @@
   SQLite-Index, Re-Scan, Suche, Berichte, Ordnervergleich, Zeitreihe, Vorlagen,
   Trendgrenzen, Hilfesystem und Abnahmeprofile.
 
-## Erinnerungsliste für spätere Maßnahmen
+Der frühe SQLite-MVP ist abgeschlossen. Seine Punkte werden nicht mehr als aktuelle
+Offenliste geführt, damit der Status nicht doppelt erscheint.
 
 1. Geführte Vorlagenverwaltung weiter ausbauen.
 2. Mehrere Ordner in einem gemeinsamen, klar getrennten Zeitreihenbericht anzeigen.
@@ -58,6 +69,10 @@
 
 ## Noch offen
 
+1. [ ] reale Laienabnahme,
+2. [ ] `large`-Profil auf Zielhardware,
+3. [ ] geführte Vorlagenverwaltung,
+4. [ ] Mehrordner-Zeitreihe.
 1. [ ] Reale Laienabnahme auf einem Zielsystem durchführen und die erzeugte
    `NOVICE_ACCEPTANCE_CHECKLIST.md` durch eine unerfahrene Testperson ausfüllen lassen.
 
