@@ -39,7 +39,7 @@ jobs:
         env:
           PYTHONWARNINGS: error
         run: datenbanktool acceptance --profile quick --workspace acceptance-quick
-      - name: Abnahmeberichte archivieren
+      - name: Quick-Abnahmeberichte archivieren
         if: always() && matrix.python-version == '3.12'
         uses: actions/upload-artifact@v4
         with:
@@ -49,5 +49,22 @@ jobs:
             acceptance-quick/acceptance-report.md
             acceptance-quick/NOVICE_ACCEPTANCE_CHECKLIST.md
             acceptance-quick/ordneruebersicht.csv
+          retention-days: 14
+          if-no-files-found: error
+      - name: Standard-Abnahme mit 10000 Dateien
+        if: matrix.python-version == '3.12'
+        env:
+          PYTHONWARNINGS: error
+        run: datenbanktool acceptance --profile standard --workspace acceptance-standard
+      - name: Standard-Abnahmeberichte archivieren
+        if: always() && matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: datenbanktool-acceptance-standard
+          path: |
+            acceptance-standard/acceptance-result.json
+            acceptance-standard/acceptance-report.md
+            acceptance-standard/NOVICE_ACCEPTANCE_CHECKLIST.md
+            acceptance-standard/ordneruebersicht.csv
           retention-days: 14
           if-no-files-found: error
