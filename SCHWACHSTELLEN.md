@@ -1,5 +1,12 @@
 # Schwachstellen
 
+## Aktualisierte Bewertung 0.14.0-alpha.1
+
+- Die Startseite kann Zeitreihen-Vorlagen jetzt anzeigen, speichern, bewusst ersetzen und nach exakter Namensprüfung bestätigt löschen.
+- Das Löschen bleibt eine Konfigurationsänderung ohne Undo-Journal; deshalb bleiben Namensprüfung und Bestätigung Pflicht.
+- Vorlagen enthalten weiterhin keine Datenbankpfade und nur validierte relative Ordner.
+
+## Aktuell begrenzt
 Stand: Version 0.13.0-alpha.1
 
 - Versionen haben zwei zulässige Schreibweisen; automatisierte Drift-Prüfung verhindert Abweichungen zwischen Registry, CLI und Dokumentation.

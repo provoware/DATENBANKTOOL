@@ -1,5 +1,12 @@
 # DATENBANKTOOL
 
+**Erledigt:** schreibgeschützte SQLite-Analyse, Tabellenübersicht, Zeitreihen-Vorlagenverwaltung auf der Startseite, validierte Text-/JSON-Ausgabe und automatische Tests.
+
+**Offen:** reale Laienabnahme, weiterer Großbestandstest, weitere Datenbanktreiber und eine grafische Oberfläche.
+
+**Entwicklungsfortschritt:** **99 %** (stabiler lokaler Dateiindex mit geführter Vorlagenverwaltung).
+
+**Mögliche Upgrades:** Mehrordner-Zeitreihe, reale Laienabnahme und optionale PostgreSQL-Anbindung; Details stehen im [Upgrade-Pool](UPGRADE_POOL.md).
 > Sicheres Linux-Werkzeug zum Finden, Prüfen und übersichtlichen Strukturieren großer Dateisammlungen.
 
 ## Projektstatus
@@ -59,6 +66,14 @@ Die technische Paketversion wird als PEP 440 in `registry.json` gepflegt (`0.13.
 
 | Bereich | Stand |
 |---|---|
+| Version | `0.14.0-alpha.1` |
+| SQLite-Schema | `3` |
+| Entwicklungsfortschritt | **99 %** |
+| Erledigte Hauptpunkte | **54** |
+| Offene Hauptpunkte | **1** |
+| Automatische Originaldateiänderungen | **Gesperrt** |
+| Externe Laufzeitabhängigkeiten | **0** |
+| Automatisierte Tests | **gezielt erweitert** |
 | Projektversion | `0.13.0-alpha.1` |
 | Paketversion | `0.13.0a1` |
 | SQLite-Schema | `3` |
@@ -109,19 +124,20 @@ datenbanktool start
 
 ```text
 11. Ordner-Zeitreihe
-12. Zeitreihen-Vorlage speichern
+12. Zeitreihen-Vorlagen verwalten
 ```
 
 Punkt 11 zeigt vorhandene Vorlagen nummeriert mit Name, Ordner und Beschreibung. Eine
 Vorlage kann per Nummer oder exaktem Namen gewählt werden. Der Ordner bleibt vor dem
-Start sichtbar und kann bewusst angepasst werden. Punkt 12 schreibt erst nach sichtbarer
-Befehlsprüfung und ausdrücklicher Bestätigung eine neue Vorlage.
+Start sichtbar und kann bewusst angepasst werden. Punkt 12 verwaltet Vorlagen über ein
+Untermenü: anzeigen, speichern, bewusst ersetzen oder nach exakter Namensprüfung und
+Bestätigung löschen.
 
 Hilfen:
 
 ```text
 ?11 / g11   Zeitreihe erklären oder Schritt für Schritt führen
-?12 / g12   Vorlagenspeicherung erklären oder Schritt für Schritt führen
+?12 / g12   Vorlagenverwaltung erklären oder Schritt für Schritt führen
 ?           aktuelles Eingabefeld erklären
 ```
 

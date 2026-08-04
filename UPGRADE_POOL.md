@@ -1,5 +1,10 @@
 # Upgrade-Pool
 
+## Bereits in 0.14.0-alpha.1 umgesetzt
+
+- Geführtes Startseiten-Untermenü für Zeitreihen-Vorlagen.
+- Anzeigen, Speichern, bewusstes Ersetzen und nach Namensprüfung bestätigtes Löschen.
+
 | Priorität | Upgrade | Nutzen | Voraussetzung |
 | --- | --- | --- | --- |
 | Hoch | Geführte Vorlagenverwaltung | Vorlagen ohne direkte CLI verwalten | Anzeigen, Ersetzen und Löschen laienfreundlich spezifizieren |

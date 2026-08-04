@@ -1,5 +1,14 @@
 # Analyse-Punkte
 
+Stand: Version 0.14.0-alpha.1
+
+| Bereich | Befund | Maßnahme / Status |
+| --- | --- | --- |
+| Nutzerfreundlichkeit | Zeitreihen-Vorlagen waren auf der Startseite nur speicher- und auswählbar | Punkt 12 ist jetzt ein Untermenü für Anzeigen, Speichern, Ersetzen und Löschen |
+| Robustheit | Löschen über eine geführte Oberfläche kann bei ähnlichen Namen riskant sein | Exakte Namenswiederholung und Ja/Nein-Bestätigung sind vorgeschaltet |
+| Hilfesystem | Ersetzen und Löschen benötigten eigene Feldhilfe | Feld- und Fehlertexte erklären Namen, Ersetzen und Löschwirkung |
+
+Stand: Version 0.1.0
 Stand: Version 0.13.0-alpha.2
 
 | Bereich | Befund | Maßnahme / Status |

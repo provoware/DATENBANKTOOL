@@ -47,6 +47,110 @@ class HomeSession:
     last_timeline_folder: str = "."
 
 
+_ACTIONS = (
+    MenuAction("1", "search", "search"),
+    MenuAction("2", "folders", "folders"),
+    MenuAction("3", "changes", "changes"),
+    MenuAction("4", "status", "status"),
+    MenuAction("5", "build", "build", True),
+    MenuAction("6", "rescan", "rescan", True),
+    MenuAction("7", "backup", "backup", True),
+    MenuAction("8", "presets", "presets"),
+    MenuAction("9", "explain", "explain"),
+    MenuAction("10", "folder-compare", "folder_compare"),
+    MenuAction("11", "folder-timeline", "folder_timeline"),
+    MenuAction("12", "timeline-presets", "timeline_presets_manage", True),
+)
+
+_FIELD_HELP = {
+    "database": (
+        "SQLite-Indexdatei, zum Beispiel /home/name/Dokumente/index.sqlite3. "
+        "Hier ist kein Ordnerpfad gemeint."
+    ),
+    "root": (
+        "Ordner mit den Originaldateien, zum Beispiel /home/name/Bilder. "
+        "Der Ordner wird nur gelesen."
+    ),
+    "search_text": (
+        "Ein oder mehrere Wörter. Leer zeigt alle Treffer einer optionalen Vorlage."
+    ),
+    "preset": (
+        "Exakter Name einer gespeicherten Suchvorlage. Leer überspringt die Vorlage."
+    ),
+    "hash_duplicates": (
+        "Ja vergleicht Inhalte über Prüfsummen. Das ist sicher, bei großen Beständen "
+        "aber langsamer."
+    ),
+    "backup_output": (
+        "Optionaler neuer Sicherungspfad. Leer erzeugt automatisch einen sicheren Namen."
+    ),
+    "timeline_preset_choice": (
+        "Nummer oder exakten Namen einer angezeigten Zeitreihen-Vorlage eingeben. "
+        "Leer bedeutet, den Ordner manuell einzugeben."
+    ),
+    "timeline_preset_name": (
+        "Verständlicher eindeutiger Name mit 1 bis 64 Zeichen. Vorhandene Namen "
+        "werden über die Startseite nicht überschrieben."
+    ),
+    "timeline_preset_existing_name": (
+        "Exakter Name einer vorhandenen Zeitreihen-Vorlage. Groß- und "
+        "Kleinschreibung ist egal, der Name muss aber eindeutig vorhanden sein."
+    ),
+    "timeline_preset_manage": (
+        "Anzeigen ist rein lesend. Ersetzen schreibt eine vorhandene Vorlage bewusst "
+        "neu. Löschen entfernt eine Vorlage erst nach Namensprüfung und Bestätigung."
+    ),
+    "timeline_preset_delete_name": (
+        "Zur Sicherheit den angezeigten Vorlagennamen noch einmal exakt eingeben. "
+        "So wird kein ähnlich benannter Eintrag versehentlich gelöscht."
+    ),
+    "timeline_preset_description": (
+        "Optionaler kurzer Zweck der Vorlage, höchstens 240 Zeichen."
+    ),
+    "timeline_folder": (
+        "Relativer Pfad innerhalb des gescannten Stammordners, zum Beispiel Musik "
+        "oder Bilder/2026. Ein Punkt bedeutet den gesamten Stammordner. Absolute "
+        "Pfade und '..' sind nicht erlaubt."
+    ),
+    "timeline_from_session": (
+        "Optional die älteste abgeschlossene Scan-ID. Leer verwendet die ältesten "
+        "noch innerhalb der gewählten Höchstzahl liegenden Scans."
+    ),
+    "timeline_to_session": (
+        "Optional die neueste abgeschlossene Scan-ID. Leer verwendet automatisch "
+        "den neuesten abgeschlossenen Scan."
+    ),
+    "timeline_limit": (
+        "Höchstens so viele neueste Zeitpunkte laden. Zulässig sind 2 bis 500; "
+        "100 ist ein übersichtlicher Standard."
+    ),
+    "timeline_size_threshold": (
+        "Optionaler Prozentwert ab 0. Leer deaktiviert die Größenwarnung. "
+        "Geprüft wird nur positives Wachstum zum vorherigen sichtbaren Scan."
+    ),
+    "timeline_file_threshold": (
+        "Optionaler Prozentwert ab 0. Leer deaktiviert die Dateizahlwarnung. "
+        "Die Warnung bleibt rein lesend und ist keine Schadensbewertung."
+    ),
+    "timeline_report": (
+        "Kein Bericht zeigt nur das Terminal. JSON ist maschinenlesbar, CSV passt "
+        "zu LibreOffice Calc und HTML enthält Tabelle sowie lokale Trendgrafiken."
+    ),
+    "timeline_report_path": (
+        "Neuer lokaler Dateipfad mit passender Endung, zum Beispiel "
+        "/home/name/Berichte/musik-verlauf.html. Vorhandene Dateien werden nicht "
+        "still überschrieben."
+    ),
+    "confirmation": (
+        "Ja startet den angezeigten Befehl. Nein verwirft ihn vollständig."
+    ),
+    "delete_confirmation": (
+        "Ja löscht nur die lokale Vorlage. Datenbank, Stammordner, Originaldateien "
+        "und Scan-Ergebnisse bleiben unverändert."
+    ),
+}
+
+
 def _get_topic(name: str):
     extension = timeline_topic(name)
     return extension if extension is not None else get_base_topic(name)
@@ -436,6 +540,128 @@ class TerminalHome:
             command.extend(("--preset-file", str(self.timeline_preset_path)))
         return command
 
+    def _timeline_preset_menu_choice(self) -> str:
+        aliases = {
+            "": "list",
+            "a": "list",
+            "anzeigen": "list",
+            "liste": "list",
+            "list": "list",
+            "s": "save",
+            "speichern": "save",
+            "save": "save",
+            "e": "replace",
+            "ersetzen": "replace",
+            "replace": "replace",
+            "l": "delete",
+            "löschen": "delete",
+            "loeschen": "delete",
+            "delete": "delete",
+        }
+        while True:
+            value = self._read(
+                "Aktion [anzeigen/speichern/ersetzen/löschen, Standard anzeigen, ? Hilfe]: ",
+                help_text=_FIELD_HELP["timeline_preset_manage"],
+            ).casefold()
+            if value in aliases:
+                return aliases[value]
+            self._write(
+                "Bitte anzeigen, speichern, ersetzen, löschen oder ? für Hilfe eingeben.",
+                error=True,
+            )
+
+    def _show_timeline_presets(self) -> None:
+        try:
+            presets = list_timeline_presets(self.timeline_preset_path)
+        except (OSError, ValueError) as error:
+            self._write(f"Zeitreihen-Vorlagen konnten nicht gelesen werden: {error}", error=True)
+            return
+        if not presets:
+            self._write("Zeitreihen-Vorlagen: noch keine gespeichert.")
+            return
+        self._write("Gespeicherte Zeitreihen-Vorlagen:")
+        for number, preset in enumerate(presets, 1):
+            description = f" – {preset.description}" if preset.description else ""
+            self._write(f"  {number}. {preset.name}: {preset.folder}{description}")
+
+    def _build_timeline_preset_replace(self) -> list[str]:
+        name = self._required(
+            "Name der zu ersetzenden Zeitreihen-Vorlage",
+            help_text=_FIELD_HELP["timeline_preset_existing_name"],
+        )
+        try:
+            existing = get_timeline_preset(name, self.timeline_preset_path)
+        except KeyError as error:
+            self._write(f"Vorlage wurde nicht gefunden: {error}", error=True)
+            raise UserCancelled from error
+        self._write(f"Ersetzt wird: {existing.name} → {existing.folder}")
+        folder = self._required(
+            "Neuer relativer Ordner für die Vorlage",
+            existing.folder,
+            help_text=_FIELD_HELP["timeline_folder"],
+        )
+        description = self._optional(
+            "Neue kurze Beschreibung",
+            help_text=_FIELD_HELP["timeline_preset_description"],
+        )
+        command = [
+            "index",
+            "timeline-presets",
+            "save",
+            existing.name,
+            folder,
+            "--replace",
+        ]
+        if description:
+            command.extend(("--description", description))
+        if self.timeline_preset_path is not None:
+            command.extend(("--preset-file", str(self.timeline_preset_path)))
+        return command
+
+    def _build_timeline_preset_delete(self) -> list[str]:
+        name = self._required(
+            "Name der zu löschenden Zeitreihen-Vorlage",
+            help_text=_FIELD_HELP["timeline_preset_existing_name"],
+        )
+        try:
+            existing = get_timeline_preset(name, self.timeline_preset_path)
+        except KeyError as error:
+            self._write(f"Vorlage wurde nicht gefunden: {error}", error=True)
+            raise UserCancelled from error
+        self._write(f"Zum Löschen vorgemerkt: {existing.name} → {existing.folder}")
+        checked_name = self._required(
+            f"Bitte Vorlagennamen exakt wiederholen ({existing.name})",
+            help_text=_FIELD_HELP["timeline_preset_delete_name"],
+        )
+        if checked_name != existing.name:
+            self._write("Name stimmt nicht überein. Löschung abgebrochen.", error=True)
+            raise UserCancelled
+        if not self._yes_no(
+            "Diese Vorlage wirklich löschen?",
+            help_text=_FIELD_HELP["delete_confirmation"],
+        ):
+            raise UserCancelled
+        command = ["index", "timeline-presets", "delete", existing.name, "--yes"]
+        if self.timeline_preset_path is not None:
+            command.extend(("--preset-file", str(self.timeline_preset_path)))
+        return command
+
+    def _build_timeline_presets_manage(self) -> list[str]:
+        action = self._timeline_preset_menu_choice()
+        if action == "list":
+            self._show_timeline_presets()
+            command = ["index", "timeline-presets", "list"]
+            if self.timeline_preset_path is not None:
+                command.extend(("--preset-file", str(self.timeline_preset_path)))
+            return command
+        if action == "save":
+            return self._build_timeline_preset_save()
+        if action == "replace":
+            return self._build_timeline_preset_replace()
+        if action == "delete":
+            return self._build_timeline_preset_delete()
+        raise RuntimeError(f"Unbekannte Zeitreihen-Vorlagenaktion: {action}")
+
     def _build_command(self, action: MenuAction) -> list[str]:
         builders: dict[str, Callable[[], list[str]]] = {
             "search": self._build_search,
@@ -450,6 +676,7 @@ class TerminalHome:
             "folder_compare": self._build_folder_compare,
             "folder_timeline": self._build_folder_timeline,
             "timeline_preset_save": self._build_timeline_preset_save,
+            "timeline_presets_manage": self._build_timeline_presets_manage,
         }
         try:
             return list(builders[action.builder_name]())

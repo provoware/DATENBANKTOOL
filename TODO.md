@@ -1,5 +1,12 @@
 # TODO
 
+## In dieser Iteration erledigt
+
+1. [x] Startseitenpunkt 12 zu einem Zeitreihen-Vorlagen-Untermenü erweitert.
+2. [x] Vorlagenanzeige, bewusstes Ersetzen und bestätigtes Löschen geführt ergänzt.
+3. [x] Feld- und Fehlerhilfe für Ersetzen und Löschen ergänzt.
+
+## Offene Punkte
 Stand: Version 0.13.0-alpha.1
 
 ## Offen
