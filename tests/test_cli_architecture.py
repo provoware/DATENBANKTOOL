@@ -85,6 +85,7 @@ class CliArchitectureTests(unittest.TestCase):
             ["index", "search", "/tmp/index.sqlite3"],
             ["index", "folders", "/tmp/index.sqlite3"],
             ["index", "folder-compare", "/tmp/index.sqlite3"],
+            ["index", "folder-timeline", "/tmp/index.sqlite3", "musik"],
             ["index", "changes", "/tmp/index.sqlite3"],
             ["index", "presets", "list"],
             ["index", "presets", "show", "beispiel"],
@@ -132,6 +133,12 @@ class CliArchitectureTests(unittest.TestCase):
                 "folder-compare",
                 "/tmp/index.sqlite3",
             ): "datenbanktool.cli_folder_compare",
+            (
+                "index",
+                "folder-timeline",
+                "/tmp/index.sqlite3",
+                "musik",
+            ): "datenbanktool.cli_folder_timeline",
             (
                 "index",
                 "build",
