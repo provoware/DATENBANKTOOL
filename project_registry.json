@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "project": "DATENBANKTOOL",
-  "version": "0.13.0-alpha.1",
-  "phase": "version-registry-drift-guard",
+  "version": "0.14.0-alpha.1",
+  "phase": "documentation-registry-cleanup",
   "development_progress_percent": 99,
-  "completed_main_items": 52,
+  "completed_main_items": 54,
   "open_main_items": 1,
   "runtime": {
     "python": ">=3.10",
@@ -194,5 +194,5 @@
     },
     "version_drift_test": true
   },
-  "package_version": "0.13.0a1"
+  "package_version": "0.14.0a1"
 }

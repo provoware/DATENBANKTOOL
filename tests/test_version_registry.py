@@ -20,8 +20,8 @@ class VersionRegistryTests(unittest.TestCase):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         developer_docs = (ROOT / "ENTWICKLERDOKU.md").read_text(encoding="utf-8")
 
-        package_version = "0.13.0a1"
-        display_version = "0.13.0-alpha.1"
+        package_version = "0.14.0a1"
+        display_version = "0.14.0-alpha.1"
 
         self.assertEqual(registry["version"], package_version)
         self.assertEqual(registry["display_version"], display_version)

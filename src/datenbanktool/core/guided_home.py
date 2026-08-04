@@ -519,8 +519,8 @@ class TerminalHome:
             command.extend((f"--{report_format}", report_path))
         return command
 
-    def _build_timeline_preset_save(self) -> list[str]:
-        name = self._required(
+    def _build_timeline_preset_save(self, initial_name: str = "") -> list[str]:
+        name = initial_name or self._required(
             "Name der neuen Zeitreihen-Vorlage",
             help_text=FIELD_HELP["timeline_preset_name"],
         )
@@ -559,12 +559,15 @@ class TerminalHome:
             "delete": "delete",
         }
         while True:
-            value = self._read(
+            raw_value = self._read(
                 "Aktion [anzeigen/speichern/ersetzen/löschen, Standard anzeigen, ? Hilfe]: ",
                 help_text=_FIELD_HELP["timeline_preset_manage"],
-            ).casefold()
+            )
+            value = raw_value.casefold()
             if value in aliases:
                 return aliases[value]
+            if raw_value:
+                return f"save:{raw_value}"
             self._write(
                 "Bitte anzeigen, speichern, ersetzen, löschen oder ? für Hilfe eingeben.",
                 error=True,
@@ -656,6 +659,8 @@ class TerminalHome:
             return command
         if action == "save":
             return self._build_timeline_preset_save()
+        if action.startswith("save:"):
+            return self._build_timeline_preset_save(action.removeprefix("save:"))
         if action == "replace":
             return self._build_timeline_preset_replace()
         if action == "delete":

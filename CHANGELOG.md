@@ -2,6 +2,12 @@
 
 ## 0.14.0-alpha.1 – 2026-08-04
 
+### Wartung und Konsistenz
+
+- Ungültige `registry.json` repariert und den doppelten Versionsschlüssel entfernt.
+- Paketversion, Anzeigeversion, Projektregistry, Paketmetadaten, Drift-Test und Dokumentation auf `0.14.0-alpha.1` / `0.14.0a1` synchronisiert.
+- Doppelte und widersprüchliche Statusblöcke in README, TODO, Upgrade-Pool, Schwachstellenliste, Analysepunkten und Entwicklerdokumentation konsolidiert.
+
 ### Geführte Vorlagenverwaltung
 
 - Startseitenpunkt 12 ist jetzt ein klares Untermenü für Zeitreihen-Vorlagen.
