@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "project": "DATENBANKTOOL",
-  "version": "0.7.0-alpha.1",
-  "phase": "layered-novice-help",
-  "development_progress_percent": 91,
-  "completed_main_items": 40,
-  "open_main_items": 4,
+  "version": "0.8.0-alpha.1",
+  "phase": "modular-cli-and-global-maintenance-rules",
+  "development_progress_percent": 93,
+  "completed_main_items": 42,
+  "open_main_items": 3,
   "runtime": {
     "python": ">=3.10",
     "external_runtime_dependencies": []
@@ -37,6 +37,8 @@
     "guided_commands_use_shell": false,
     "field_help_changes_data": false,
     "help_command_changes_data": false,
+    "cli_original_file_writes_blocked": true,
+    "all_commands_declare_side_effects": true,
     "noninteractive_empty_start_blocks": false,
     "destructive_actions_available": false
   },
@@ -72,14 +74,28 @@
     "guided_help_command": "alpha",
     "everyday_help_search": "alpha",
     "contextual_error_help": "alpha",
-    "cli_command_modularization": "in-progress",
+    "modular_cli_entry": "alpha",
+    "modular_cli_scan": "alpha",
+    "modular_cli_search": "alpha",
+    "modular_cli_reports": "alpha",
+    "modular_cli_index": "alpha",
+    "command_policy_contract": "alpha",
+    "global_maintenance_rules": "enforced",
+    "architecture_guardrails": "enforced",
     "graphical_interface": "planned",
     "file_operations": "blocked-until-safety-contract"
   },
+  "architecture_limits": {
+    "cli_entry_max_lines": 150,
+    "cli_module_max_lines": 500,
+    "shell_execution_allowed": false,
+    "cyclic_cli_imports_allowed": false
+  },
   "validation": {
-    "python_3_10_tests": 48,
-    "python_3_12_tests": 48,
+    "python_3_10_tests": 54,
+    "python_3_12_tests": 54,
     "warnings_as_errors": true,
-    "compileall": true
+    "compileall": true,
+    "architecture_tests": 6
   }
 }
