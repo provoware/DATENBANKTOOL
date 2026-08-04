@@ -1,52 +1,65 @@
 # Schwachstellen und aktuelle Grenzen
 
-## Ordnervergleich
+## Ordner-CSV
 
-1. Der Vergleich wertet genau zwei gespeicherte Scan-Sitzungen aus. Eine längere
-   Zeitreihe oder Trendgrafik ist noch nicht vorhanden.
-2. Beide Sitzungen müssen abgeschlossen sein und denselben gespeicherten Stammordner
-   besitzen. Unterschiedliche Ordnerbestände werden bewusst nicht vermischt.
-3. Der Vergleich liest nicht automatisch den heutigen Dateisystemstand. Änderungen
-   nach dem neueren Scan erscheinen erst nach einem weiteren Re-Scan.
-4. Leere Ordner ohne Dateien können nicht dargestellt werden, weil der Index
-   Dateieinträge und keine eigenständige Verzeichnisliste speichert.
-5. Elternordner enthalten die Summen aller Unterordner. Vergleichszeilen dürfen daher
+1. Ohne `--all-pages` enthält ein Bericht weiterhin nur die gewählte Seite. Das ist
+   rückwärtskompatibel, muss aber bewusst beachtet werden.
+2. Elternordner enthalten die Summen ihrer Unterordner. Tabellenzeilen dürfen daher
    nicht addiert werden, sonst werden Dateien mehrfach gezählt.
-6. Unveränderte Ordner sind standardmäßig ausgeblendet und müssen mit
-   `--type unchanged` ausdrücklich angefordert werden.
-7. Ein Ordner mit unveränderter Gesamtgröße, aber geänderter Dateizahl erhält den
-   Zustand „Dateizahl geändert“. Welche Einzeldateien betroffen sind, zeigt weiterhin
-   der getrennte Dateiänderungsbericht.
-8. Prozentwerte sind bei neu entstandenen Ordnern nicht mathematisch sinnvoll; dort
-   wird „kein Ausgangswert“ angezeigt.
-9. Die rote Wachstumsampel basiert auf einer konfigurierbaren absoluten Schwelle.
-   Sie ist keine Aussage über Schaden, Gefahr oder unnötige Dateien.
-10. JSON-, CSV- und HTML-Exporte enthalten die aktuell ausgewählte, gefilterte Seite
-    und noch nicht automatisch sämtliche Treffer.
+3. Leere Ordner ohne Dateien können nicht erscheinen, weil das aktuelle Schema
+   Dateieinträge und keine eigenständige Verzeichnisliste speichert.
+4. Die Anzahl der Platzfresser-Spalten richtet sich nach `--top-files`. Unterschiedlich
+   konfigurierte Exporte können deshalb unterschiedlich viele Spalten besitzen.
+5. Rohgrößen werden in Byte ausgegeben. Für MiB oder GiB muss LibreOffice eine Formel
+   oder Zellformatierung verwenden.
+6. CSV speichert keine Farben. Ampelstufe, Status und Begründung stehen deshalb als
+   getrennte Textspalten bereit.
 
-## Terminalbedienung und Hilfe
+## Automatische Großbestandsabnahme
 
-11. Die Oberfläche besitzt noch keine grafischen Dateiauswahlfenster.
-12. Pfade werden weiterhin eingegeben oder eingefügt.
-13. Die automatische Sitzungswahl wird im Ausgabekopf transparent angezeigt, aber
-    noch nicht als interaktiver Auswahldialog angeboten.
-14. Hilfetexte sind derzeit deutschsprachig.
-15. Die Stichwortsuche der Hilfe ist deterministisch und nicht semantisch.
+7. Die erzeugten Dateien sind synthetisch. Sie decken viele Namen, Endungen und Größen
+   ab, aber nicht sämtliche Eigenschaften realer Datenbestände.
+8. Sparse-Dateien sparen physischen Speicher und testen Metadaten- und Indexleistung.
+   Sie simulieren nicht vollständig die Leselast real gefüllter Mediendateien.
+9. `tracemalloc` misst Python-Speicher, nicht jede native SQLite- oder Betriebssystem-
+   Allokation. Deshalb wird zusätzlich Prozess-Maximal-RSS protokolliert, aber nur der
+   Python-Wert besitzt derzeit eine harte Profilgrenze.
+10. Laufzeitwerte hängen von Dateisystem, CPU, Datenträger, Cache und CI-Auslastung ab.
+    Die Referenzwerte sind keine Garantie für andere Systeme.
+11. Das `large`-Profil mit 100.000 Dateien ist implementiert, aber noch nicht auf der
+    vorgesehenen Zielhardware ausgeführt.
+12. Die Abnahme erzeugt viele Dateisystemeinträge. Vor `standard` oder `large` müssen
+    ausreichend freie Inodes und Speicher vorhanden sein.
+13. Ein fehlgeschlagener Lauf löscht seinen Arbeitsordner nicht automatisch. Das ist
+    absichtlich sicher, erfordert aber eine spätere manuelle Prüfung und Bereinigung.
+14. Die Abnahme nutzt einen neuen Arbeitsordner und lehnt Wiederverwendung vollständig
+    ab. Ein Fortsetzen abgebrochener Abnahmen ist noch nicht vorgesehen.
+15. Die CI archiviert Berichte 14 Tage; danach können die Artefakte ablaufen.
 
-## Fachliche und technische Grenzen
+## Reale Laienabnahme
 
-16. Die normale Ordnerübersicht besitzt JSON und HTML, aber noch keinen CSV-Export.
-17. FTS5 durchsucht Metadaten, nicht automatisch den Inhalt aller Dateien.
-18. Schreibende Originaldateioperationen bleiben gesperrt.
-19. Vor einem stabilen Release fehlen Last-, Speicher- und Bedienabnahmen mit sehr
-    großen realen Beständen und Linux-Laien.
-20. Die SQLite-Auswertung aggregiert die Dateizeilen beider Sitzungen im Arbeitsspeicher.
-    Für extrem große Bestände müssen Laufzeit und Speicherverbrauch noch praktisch
-    vermessen werden.
+16. Eine echte Laienabnahme wurde noch nicht durchgeführt.
+17. Die generierte Checkliste standardisiert Aufgaben und Kriterien, ersetzt aber weder
+    Beobachtung noch Rückfragen einer realen Testperson.
+18. Die Checkliste ist deutschsprachig und bislang nicht als interaktiver Assistent
+    umgesetzt.
+19. Nutzerzeiten und Bewertungen werden manuell eingetragen und noch nicht automatisch
+    in ein Ergebnis-JSON übernommen.
+
+## Ordnervergleich und Bedienung
+
+20. Der Ordnervergleich wertet genau zwei Sitzungen aus; eine Zeitreihe fehlt.
+21. Vergleichsexporte enthalten die aktuelle Seite und besitzen noch keinen eigenen
+    `--all-pages`-Schalter.
+22. Die Oberfläche bleibt terminalbasiert und nutzt noch keine grafischen Pfaddialoge.
+23. Hilfetexte sind deutschsprachig; die Stichwortsuche ist deterministisch und nicht
+    semantisch.
+24. Schreibende Originaldateioperationen bleiben gesperrt.
 
 ## Sicherheitsfazit
 
-Der Ordnervergleich öffnet SQLite rein lesend, verlangt gleiche Stammordner und führt
-keine automatische Dateisystemaktion aus. Berichte werden atomar geschrieben und nur
-nach ausdrücklicher Freigabe überschrieben. Keine bekannte Grenze rechtfertigt das
-Freischalten automatischer Lösch-, Verschiebe- oder Umbenennungsfunktionen.
+CSV-Export und Abnahme verändern keine gescannten Originaldateien. Testdaten entstehen
+nur in einem neuen Arbeitsordner; ein vorhandener Pfad wird abgelehnt. Ein
+Vorher-/Nachher-Manifest prüft die erzeugten Quelldaten. Berichte werden atomar und
+überschreibgeschützt geschrieben. Keine bekannte Grenze rechtfertigt das Freischalten
+automatischer Lösch-, Verschiebe- oder Umbenennungsfunktionen.
