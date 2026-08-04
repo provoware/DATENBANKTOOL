@@ -13,6 +13,13 @@ Alle wichtigen Änderungen werden hier dokumentiert. Das Projekt verwendet seman
 
 ## 0.13.0-alpha.1 – 2026-08-04
 
+### Versionierungsvertrag
+
+- PEP-440-Paketversion `0.13.0a1` als technische Schreibweise festgelegt.
+- Menschenlesbare Projektversion `0.13.0-alpha.1` in Registry, Projektregistry und Dokumentation beibehalten.
+- Harte zweite `__version__`-Zuweisung entfernt; die Paketversion kommt aus `registry.json` oder der dokumentierten Alpha-Umrechnung.
+- Drift-Test für CLI-Version, Registry, Projektregistry, Paketmetadaten und Dokumentation ergänzt.
+
 ### Zeitreihen-Vorlagen
 
 - Neuer Befehl `index timeline-presets` mit `list`, `show`, `save` und `delete`.
@@ -73,6 +80,8 @@ Alle wichtigen Änderungen werden hier dokumentiert. Das Projekt verwendet seman
   SHA-256 `c3678cdd50d235b9819475d6f1f6660e0367833c3a80f7faa5dff7ce990b0c1b`.
 - Standard-Artefakt: ID 8899791444,
   SHA-256 `846ebbd02d213bc336800d330a8a2612e2a069e17e13362f0a27f5aa4ed7571d`.
+- Pflichtdokumente, README-Kopfstand und Paketregistry auf `0.13.0-alpha.1` synchronisiert.
+- Historische MVP-Angaben vom aktuellen Status getrennt.
 
 ## 0.12.0-alpha.1 – 2026-08-04
 
@@ -127,3 +136,14 @@ Alle wichtigen Änderungen werden hier dokumentiert. Das Projekt verwendet seman
 ## 0.1.0-alpha.1 – 2026-08-04
 
 - Rein lesender Scanner, Klassifizierung, Namensprüfung und Duplikaterkennung.
+
+## Historisch: 0.1.0 - 2026-08-04
+
+Der frühe SQLite-MVP ist abgeschlossen und nicht mehr der aktuelle Projektstatus.
+
+### Hinzugefügt
+
+- Schreibgeschützte SQLite-Strukturprüfung mit den damaligen Basisbefehlen.
+- Validierung von Pfaden, Dateitypen und SQLite-Signaturen.
+- Menschenlesbare und JSON-Ausgabe mit definierten Exitcodes.
+- Versionsregistry, Paketkonfiguration und automatische Tests.

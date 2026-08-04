@@ -1,12 +1,18 @@
 # Schwachstellen
 
-## Aktuell begrenzt
+Stand: Version 0.13.0-alpha.1
 
-- Nur lokale Dateibestände und lokale SQLite-Indexdatenbanken werden unterstützt; Serverdatenbanken fehlen bewusst.
-- Die reale Laienabnahme auf Zielhardware ist noch offen.
-- Das `large`-Profil mit 100.000 Dateien braucht noch Zielhardware-Messwerte.
+- Versionen haben zwei zulässige Schreibweisen; automatisierte Drift-Prüfung verhindert Abweichungen zwischen Registry, CLI und Dokumentation.
+- Nur lokale SQLite-Dateien werden unterstützt; Serverdatenbanken fehlen bewusst.
+- Die Dateisignaturprüfung erkennt SQLite-Dateien, aber keine logischen Schäden jeder Datenbankseite.
+- Die Struktur wird vollständig eingelesen; extrem viele Tabellen sind noch nicht mit Messwerten abgesichert.
+- Status- und Upgrade-Angaben müssen bei künftigen Änderungen weiterhin zwischen
+  README, TODO, Upgrade-Pool und Projektregistry synchron gehalten werden.
 
-## Bereits abgesichert
+1. reale Laienabnahme,
+2. `large`-Profil auf Zielhardware,
+3. geführte Vorlagenverwaltung,
+4. Mehrordner-Zeitreihe.
 
 - Originaldateien werden durch Index-, Berichts- und Startseitenfunktionen nicht automatisch verändert.
 - Eingaben für Zeitreihenordner, Vorlagen, Ganzzahlen, Prozentwerte und Berichtsformate werden validiert.
@@ -15,6 +21,12 @@
 Sicherheitsrelevante Fehler sollen ohne sensible Dateiinhalte, Zugangsdaten oder Stapelspuren ausgegeben werden.
 
 ## Fachliche Grenzen
+## Historischer MVP-Status
+
+Die frühe reine SQLite-Strukturprüfung ist abgeschlossen und nicht mehr der aktuelle
+Schwachstellenstand. Aktuelle Grenzen stehen im folgenden Abschnitt.
+
+## Aktuelle Grenzen
 
 ## Zeitreihen-Vorlagen
 
@@ -79,7 +91,7 @@ Sicherheitsrelevante Fehler sollen ohne sensible Dateiinhalte, Zugangsdaten oder
 
 ## 0.13-Funktionsreferenz
 
-- 86/86 Tests unter Python 3.10 und Python 3.12.
+- 87/87 Tests unter Python 3.10 und Python 3.12.
 - Quick: 600 Dateien, 11/11 Kriterien, 1,129 Sekunden.
 - Standard: 10.000 Dateien, 11/11 Kriterien, 18,150 Sekunden.
 - Diese CI-Werte sind Referenzen und keine Zusage für andere Hardware.

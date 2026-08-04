@@ -1,14 +1,31 @@
 # DATENBANKTOOL
 
-**Erledigt:** versionierter SQLite-Dateiindex, geführte Startseite, Ordnerberichte, Ordnervergleich, Ordner-Zeitreihe, lokale Zeitreihen-Vorlagen, Trendgrenzen, ausgelagerte Startseiten-Kataloge und Eingabeparser sowie korrigierter CLI-Import.
-
-**Offen:** reale Laienabnahme auf Zielsystem, 100.000-Dateien-Zieltest und spätere geführte Vorlagenverwaltung für Anzeigen, Ersetzen und Löschen.
-
-**Entwicklungsfortschritt:** **99 %** (0.13.0-alpha.2; technische Zielprüfungen weitgehend abgeschlossen, reale Laienabnahme noch offen).
-
-**Mögliche Upgrades aus dem Upgrade-Pool:** geführte Vorlagenverwaltung, Mehrordner-Zeitreihe, reale Laienabnahme und 100.000-Dateien-Zieltest. Details stehen im [Upgrade-Pool](UPGRADE_POOL.md).
-
 > Sicheres Linux-Werkzeug zum Finden, Prüfen und übersichtlichen Strukturieren großer Dateisammlungen.
+
+## Projektstatus
+
+| Bereich | Stand |
+|---|---|
+| Aktuelle Version | `0.13.0-alpha.1` |
+| Entwicklungsfortschritt | **99 %** |
+| Erledigte Hauptpunkte | **51** – Scanner, SQLite-Index, Re-Scan, Suche, Berichte, Ordnervergleich, Zeitreihe, Vorlagen, Trendgrenzen, Hilfe und Abnahmeprofile |
+| Offene Hauptpunkte | **1** – reale Laienabnahme auf einem Zielsystem durchführen |
+| Nächste Upgrades aus `UPGRADE_POOL.md` | Geführte Vorlagenverwaltung, Mehrordner-Zeitreihe, reale Laienabnahme, 100.000-Dateien-Zieltest |
+| SQLite-Schema | `3` |
+| Automatische Originaldateiänderungen | **Gesperrt** |
+| Externe Laufzeitabhängigkeiten | **0** |
+| Automatisierte Tests | **86/86** unter Python 3.10 und 3.12 |
+| Quick-Abnahme | **600 Dateien · 11/11 bestanden** |
+| Standard-Abnahme | **10.000 Dateien · 11/11 bestanden** |
+**Erledigt:** schreibgeschützte SQLite-Analyse, Zeitreihen-/Vorlagenfunktionen, verbindlicher Registry-Versionsvertrag und Drift-Test.
+
+**Offen:** reale Laienabnahme, 100.000-Dateien-Zieltest, geführte Vorlagenverwaltung und grafische Oberfläche.
+
+**Entwicklungsfortschritt:** **99 %** (Alpha-Funktionsstand mit abgesicherter Versionierung).
+
+**Mögliche Upgrades:** geführte Vorlagenverwaltung und Mehrordner-Zeitreihe; Details stehen im [Upgrade-Pool](UPGRADE_POOL.md).
+
+Das DATENBANKTOOL arbeitet standardmäßig rein lesend. Es erstellt einen lokalen, versionierten SQLite-Index und zeigt Dateibestände, Änderungen, Suchen, Ordnerberichte, Zeitreihen und sichere Exportberichte, ohne Originaldateien zu verändern. Es benötigt Python 3.10 oder neuer und keine zusätzlichen Laufzeitpakete.
 
 ## Installation
 
@@ -18,27 +35,41 @@ python -m pip install -e .
 
 ## Verwendung
 
+Aktuelle Einstiegspunkte:
+
 ```bash
 datenbanktool start
-datenbanktool index build /pfad/zum/ordner --database index.sqlite3
-datenbanktool index folders index.sqlite3
-datenbanktool index folder-timeline index.sqlite3 Musik --html bericht.html
+datenbanktool help
+datenbanktool index build ~/Daten --database index.sqlite3
+datenbanktool index status index.sqlite3
 ```
 
-Die Version wird in `registry.json` gepflegt und vom Paket gelesen. Architektur und Qualitätsregeln beschreibt die [Entwicklerdokumentation](ENTWICKLERDOKU.md).
+`start` öffnet die geführte Terminal-Bedienung. `help` erklärt Themen in einfacher Sprache. `index build` erstellt einen lokalen Index für einen Ordner. `index status` zeigt den Zustand eines vorhandenen Index. Weitere aktuelle Indexbefehle sind unter anderem `search`, `folders`, `changes`, `folder-compare`, `folder-timeline`, `presets` und `timeline-presets`. Eingabefehler enden mit Statuscode `2`.
+
+## Entwicklung
+
+```bash
+PYTHONPATH=src python -m unittest discover -s tests -v
+```
+
+Die technische Paketversion wird als PEP 440 in `registry.json` gepflegt (`0.13.0a1`). Die menschenlesbare Projektversion lautet `0.13.0-alpha.1`. Architektur und Qualitätsregeln beschreibt die [Entwicklerdokumentation](ENTWICKLERDOKU.md).
+> Sicheres Linux-Werkzeug zum Finden, Prüfen und übersichtlichen Strukturieren großer Dateisammlungen.
 
 ## Projektstatus
 
 | Bereich | Stand |
 |---|---|
-| Version | `0.13.0-alpha.2` |
+| Projektversion | `0.13.0-alpha.1` |
+| Paketversion | `0.13.0a1` |
 | SQLite-Schema | `3` |
 | Entwicklungsfortschritt | **99 %** |
-| Erledigte Hauptpunkte | **53** |
+| Erledigte Hauptpunkte | **52** |
 | Offene Hauptpunkte | **1** |
 | Automatische Originaldateiänderungen | **Gesperrt** |
 | Externe Laufzeitabhängigkeiten | **0** |
-| Gezielte Startseiten-Tests | **15/15 bestanden** |
+| Automatisierte Tests | **87/87** unter Python 3.10 und 3.12 |
+| Quick-Abnahme | **600 Dateien · 11/11 bestanden** |
+| Standard-Abnahme | **10.000 Dateien · 11/11 bestanden** |
 | Reale Laienabnahme | **Noch offen** |
 
 ## Neu: lokale Zeitreihen-Vorlagen
@@ -207,24 +238,19 @@ Hardware.
 
 ## Aktuelle Grenzen
 
-- Die reale Laienabnahme ist noch nicht durchgeführt.
-- Das `large`-Profil wurde noch nicht auf Zielhardware ausgeführt.
-- Die Startseite kann Vorlagen speichern und auswählen; geführtes Anzeigen, Ersetzen und
-  Löschen ist noch nicht als eigenes Untermenü vorhanden.
-- Vorlagen speichern bewusst nur den Ordner, nicht Warnschwellen oder Berichtspfade.
-- Prozentwerte sind bei vorherigem Wert null nicht berechenbar.
-- Warnschwellen betrachten Übergänge, keine langfristige statistische Anomalie.
-- Je Zeitreihe wird weiterhin ein relativer Ordner dargestellt.
-- Diagramme positionieren Punkte nach Scan-Reihenfolge, nicht proportional zum
-  tatsächlichen Zeitabstand.
+- reale Laienabnahme,
+- `large`-Profil auf Zielhardware,
+- geführte Vorlagenverwaltung,
+- Mehrordner-Zeitreihe.
+
+Weitere technische Grenzen: Vorlagen speichern bewusst nur den Ordner, Prozentwerte sind bei vorherigem Wert null nicht berechenbar, Warnschwellen betrachten Übergänge und Diagramme positionieren Punkte nach Scan-Reihenfolge.
 
 ## Mögliche weitere Upgrades
 
-- Geführtes Vorlagen-Untermenü für Anzeigen, Ersetzen und Löschen.
-- Mehrere ausgewählte Ordner gemeinsam als getrennte Trends darstellen.
-- Diagrammpunkte optional nach realem Scan-Zeitabstand positionieren.
-- Reale Laienabnahme und 100.000-Dateien-Zieltest durchführen.
-- Später eine grafische Oberfläche mit Pfadauswahldialogen ergänzen.
+- reale Laienabnahme,
+- `large`-Profil auf Zielhardware,
+- geführte Vorlagenverwaltung,
+- Mehrordner-Zeitreihe.
 
 ## Direkt folgender technischer Entwicklungsschritt
 
