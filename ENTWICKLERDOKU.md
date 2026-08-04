@@ -1,322 +1,264 @@
 # Entwicklerdokumentation
 
-## Architekturstand 0.12.0-alpha.1
+## Architekturstand 0.13.0-alpha.1
 
-Diese Iteration ergänzt:
+Diese Iteration ergänzt zwei getrennte Fachverträge:
 
-1. eine vollständig geführte Bedienung der Ordner-Zeitreihe,
-2. mehrschichtige Detail-, Schritt-, Feld- und Fehlerhilfe,
-3. zwei lokale barrierefreie SVG-Trendgrafiken im Offline-HTML.
+1. lokale, validierte und überschreibgeschützte Zeitreihen-Vorlagen,
+2. optionale, rein lesende Trendgrenzen für Größen- und Dateizahlwachstum.
 
 Neue Fachmodule:
 
-- `core/folder_timeline_help.py` – vollständiger Hilfetext- und Fehlerhilfevertrag,
-- `core/folder_timeline_charts.py` – skriptfreie SVG-Erzeugung für Größe und Dateizahl.
+- `core/timeline_presets.py` – Schema, Normalisierung, atomare Speicherung und Rechte,
+- `cli_timeline_presets.py` – Parser, Ausgabe und `CommandPolicy` für list/show/save/delete.
 
 Gezielt erweiterte Module:
 
-- `core/guided_home.py` – Menüpunkt 11, validierte Eingaben und sicherer Dispatch,
-- `help_command.py` – Hilfeliste, Stichwortsuche und alle Hilfestufen,
-- `core/folder_timeline_exports.py` – SVG-Einbettung und vollständige HTML-Tabelle.
+- `core/folder_timeline.py` – Datei- und Größenprozente sowie Schwellenklassifikation,
+- `cli_folder_timeline.py` – `--preset` und Warnschwellenoptionen,
+- `core/guided_home.py` – Vorlagenauswahl, Punkt 12 und Schwellenfelder,
+- `core/folder_timeline_exports.py` – Warnfelder in JSON, CSV und HTML,
+- `core/folder_timeline_charts.py` – sichtbare und zugängliche SVG-Warnmarken,
+- `core/folder_timeline_help.py` – gemeinsame Vorlagen- und Schwellenhilfe.
 
-## Geführter Startseitenpunkt
+## Vorlagenschema
 
-```text
-11. Ordner-Zeitreihe
+```json
+{
+  "schema_version": 1,
+  "presets": [
+    {
+      "name": "Musik",
+      "folder": "Musik/Archiv",
+      "description": "Wöchentliche Prüfung",
+      "created_utc": "...",
+      "updated_utc": "..."
+    }
+  ]
+}
 ```
 
-`MenuAction`:
+Nicht gespeichert werden:
+
+- SQLite-Datenbankpfad,
+- Stammordner des Scans,
+- Sitzungsnummern,
+- Warnschwellen,
+- Berichtspfade,
+- Dateilisten oder Messwerte.
+
+Damit bleibt eine Vorlage unabhängig von einem konkreten Index und enthält nur den
+wiederverwendbaren relativen Ordner.
+
+## Validierung und Schreibvertrag
+
+`save_timeline_preset()`:
+
+1. normalisiert den Namen auf einzelne Leerzeichen,
+2. erlaubt 1 bis 64 Zeichen,
+3. begrenzt die Beschreibung auf 240 Zeichen,
+4. validiert den Ordner über `normalise_folder()`,
+5. liest vorhandene Einträge erneut validierend,
+6. verweigert gleiche Namen ohne `replace=True`,
+7. schreibt formatiertes UTF-8-JSON in eine prozessbezogene temporäre Datei,
+8. setzt Modus `0600`,
+9. gibt die Datei atomar per `replace()` frei,
+10. entfernt die temporäre Datei bei Fehlern.
+
+Namen werden für Vergleich und Auflösung mit `casefold()` behandelt. Die gespeicherte
+Schreibweise bleibt erhalten.
+
+## Öffentliche Vorlagenbefehle
+
+```text
+index timeline-presets list
+index timeline-presets show NAME
+index timeline-presets save NAME ORDNER [--description TEXT] [--replace]
+index timeline-presets delete NAME --yes
+```
+
+`list` und `show` sind rein lesend. `save` und `delete` deklarieren
+`writes_configuration=True`. Originaldatei-, Index-, Backup-, Bericht- und
+Testdatenschreibzugriffe bleiben falsch.
+
+## Zeitreihenauflösung
+
+```text
+index folder-timeline DATENBANK [ORDNER]
+  [--preset NAME]
+  [--preset-file PFAD]
+```
+
+`_timeline_folder()` erzwingt:
+
+- entweder positionaler Ordner,
+- oder gespeicherte Vorlage,
+- niemals beides gleichzeitig,
+- ohne beide Angaben den Standard `.`.
+
+## Geführte Startseite
+
+Punkt 11:
+
+1. lädt und validiert die lokale Vorlagendatei,
+2. zeigt Name, Ordner und Beschreibung nummeriert,
+3. akzeptiert Nummer oder exakten Namen,
+4. erlaubt leere Auswahl für manuelle Eingabe,
+5. zeigt den gewählten Ordner erneut,
+6. übergibt bei unverändertem Ordner `--preset`,
+7. wechselt bei bewusster Änderung auf den direkten Ordnerpfad.
+
+Eine fehlerhafte Vorlagendatei wird gemeldet, blockiert aber nicht die manuelle
+Zeitreihe.
+
+Punkt 12 erzeugt einen `timeline-presets save`-Befehl und besitzt
+`confirmation_required=True`. Die Startseite bietet absichtlich kein stilles Ersetzen.
+
+## Trendgrenzenmodell
+
+`FolderTimelineOptions` enthält:
 
 ```python
-MenuAction("11", "folder-timeline", "folder_timeline")
+warn_size_growth_percent: float | None
+warn_file_growth_percent: float | None
 ```
 
-Die Aktion benötigt keine Bestätigung, weil sie nur SQLite liest und optional einen
-neuen Bericht schreibt. Vorhandene Berichtszielen werden weiterhin nicht still ersetzt.
+Validiert werden endliche Werte von 0 bis 1.000.000. Ein leerer Wert deaktiviert die
+jeweilige Grenze.
 
-## Dialogzustand
+`FolderTimelinePoint` enthält zusätzlich:
 
-`HomeSession` speichert zusätzlich:
+```python
+file_delta_percent
+treshold_triggered  # fachlich: threshold_triggered
+threshold_reasons
+```
+
+Der tatsächlich verwendete Feldname lautet `threshold_triggered`; die obige
+Aufstellung verdeutlicht den Vertrag und ist keine zweite API.
+
+`FolderTimeline` enthält die konfigurierten Grenzen und `threshold_trigger_count`.
+
+## Prozentberechnung
 
 ```text
-last_timeline_folder
+(current - previous) / previous × 100
 ```
 
-Standardwert ist `.`. Dadurch kann ein Nutzer mehrere Zeitreihenläufe durchführen,
-ohne denselben relativen Ordner jedes Mal erneut einzutragen.
+- Ergebnis auf zwei Dezimalstellen gerundet.
+- Vorheriger Wert `<= 0` liefert `None`.
+- Der erste sichtbare Punkt ist immer Ausgangswert.
+- Vergleichsbasis ist der unmittelbar vorherige sichtbare Scan.
 
-## Geführte Eingaben
+## Auslösungslogik
 
-`_build_folder_timeline()` erzeugt folgende Argumentstruktur:
+Eine Grenze löst nur aus, wenn:
+
+1. die Grenze konfiguriert ist,
+2. der absolute Unterschied positiv ist,
+3. ein Prozentwert berechenbar ist,
+4. der Prozentwert größer oder gleich der Grenze ist.
+
+Bei Auslösung:
 
 ```text
-index folder-timeline DATENBANK ORDNER
-[--from-session-id ID]
-[--to-session-id ID]
-[--limit 2..500]
-[--json|--csv|--html ZIEL]
+traffic_level = red
+traffic_label = Trendgrenze erreicht
 ```
 
-Abgefragt werden:
+`status` und `status_label` bleiben unverändert und beschreiben weiterhin den
+fachlichen Verlauf. Dadurch bleibt `grown` von der optionalen Warnwirkung getrennt.
 
-1. Indexdatenbank,
-2. relativer Ordner,
-3. optionale Ausgangssitzung,
-4. optionale Zielsitzung,
-5. Limit mit Standard 100,
-6. optionales Exportformat,
-7. neuer Berichtspfad.
+## Ausgaben
 
-## Vorvalidierung
+### Terminal
 
-### `_optional_integer()`
+Zeigt aktive Grenzen, Trefferzahl, Datei- und Größenprozente sowie die vollständige
+Ampelbegründung. Der Hinweis „keine Schadensbewertung“ ist Bestandteil jedes Treffers.
 
-- akzeptiert leere Eingabe für optionale Werte,
-- wandelt ausschließlich ganze Zahlen um,
-- prüft Mindestwert,
-- prüft optionalen Höchstwert,
-- wiederholt das Feld bei Fehlern,
-- zeigt Feldhilfe über `?`.
+### JSON
 
-Sitzungs-IDs benötigen mindestens 1. Das Zeitreihenlimit benötigt 2 bis 500.
+`FolderTimeline.to_dict()` enthält Konfiguration, Trefferzahl und sämtliche neuen
+Punktfelder ohne ANSI-Ausgaben.
 
-### `_report_format()`
+### CSV
 
-Akzeptierte Werte:
+Enthält getrennte Spalten für Verlaufsstatus, Warnstatus, Begründung, Trefferflag,
+Dateiprozent, Größenprozent und konfigurierte Warnschwellen. UTF-8-BOM und Semikolon
+bleiben erhalten.
 
-```text
-kein
-json
-csv
-html
-```
+### HTML und SVG
 
-Zusätzliche verständliche Aliase wie leer, ohne oder none werden intern auf kein
-normalisiert. Andere Werte werden vor dem Dispatch abgelehnt.
-
-### Doppelte Validierungsgrenze
-
-Die geführte Oberfläche verbessert die unmittelbare Fehlermeldung. Der öffentliche
-CLI-Parser und `FolderTimelineOptions.validate()` bleiben die maßgebliche zweite
-Sicherheitsgrenze. Ein direkter CLI-Aufruf ist somit genauso streng wie der Dialog.
-
-## Sicherer Dispatch
-
-Der Dialog baut eine `list[str]`. Der sichtbare Befehl wird nur über `shlex.join()`
-formatiert. Der Runner erhält die ursprüngliche Argumentliste; es gibt keine
-Shell-Auswertung und keine Interpretation von Sonderzeichen in Pfaden.
-
-## Hilfearchitektur
-
-### `FOLDER_TIMELINE_TOPIC`
-
-Das Hilfethema enthält:
-
-- Kurzerklärung,
-- Zweck,
-- Schreibwirkung,
-- Risiko,
-- sinnvolle Einsatzfälle,
-- Vorbedingungen,
-- sieben geführte Schritte,
-- Erfolgskriterien,
-- sechs typische Probleme mit Lösungen,
-- CLI-Beispiel,
-- Suchbegriffe.
-
-### Gemeinsame Quelle
-
-`guided_home.py` und `help_command.py` verwenden dieselbe Instanz. Dadurch stimmen
-`?11`, `g11`, eigenständige Hilfe, JSON-Hilfe, Suchergebnisse und Fehlerhilfe fachlich
-überein.
-
-### Feldhilfe
-
-Eigene Hilfetexte existieren für:
-
-- relativen Ordner,
-- Ausgangssitzung,
-- Zielsitzung,
-- Zeitreihenlimit,
-- Berichtstyp,
-- Berichtspfad.
-
-### Fehlerhilfe
-
-`timeline_error_help()` erklärt kontrolliert:
-
-- weniger als zwei Scans,
-- unpassende Scan-Sitzungen,
-- absolute Pfade oder `..`,
-- Ordner ohne gespeicherte Dateien,
-- vorhandene Berichtszielen.
-
-Sie bestätigt zusätzlich, dass Startseite, Index und Originaldateien nicht automatisch
-verändert wurden.
-
-## SVG-Diagrammmodul
-
-`render_timeline_charts(timeline)` erzeugt genau zwei Diagramme:
-
-1. `Größenverlauf`,
-2. `Dateizahlverlauf`.
-
-### Koordinatensystem
-
-Feste logische ViewBox:
-
-```text
-960 × 360
-```
-
-Die tatsächliche Anzeige skaliert responsiv über CSS. Die Plotfläche reserviert feste
-Innenränder für y-Achse, x-Achse und Beschriftungen.
-
-### X-Achse
-
-Zeitpunkte werden nach ihrer chronologischen Scan-Reihenfolge gleichmäßig verteilt.
-Bei einem einzelnen Punkt wäre keine Zeitreihe zulässig; das Kernmodell verlangt
-mindestens zwei Punkte.
-
-### Y-Achse
-
-`_bounds()` verwendet Minimum und Maximum des sichtbaren Messwerts. Bei identischen
-Werten wird ein sicherer positiver Bereich ergänzt, damit keine Division durch null
-entsteht. Vier Intervalle erzeugen fünf beschriftete horizontale Rasterlinien.
-
-### Sichtbare Beschriftung
-
-- bis zwölf Punkte: jeder Punkt erhält sichtbare Scan- und Wertbeschriftung,
-- darüber: sechs repräsentative Indexpositionen werden sichtbar beschriftet.
-
-Die Datenmenge wird nicht reduziert. Sämtliche Kreise, ARIA-Texte und Tabellenzeilen
-bleiben vorhanden.
-
-### Barrierefreiheit
-
-Jedes Diagramm besitzt:
+HTML zeigt eine Warnzusammenfassung und die vollständige Begründung in der Tabelle.
+SVG-Punkte verwenden bei einem passenden metrischen Treffer:
 
 ```html
-<figure>
-<figcaption>…</figcaption>
-<svg role="img" aria-labelledby="…">
-<title>…</title>
-<desc>…</desc>
+<circle class="data-point warning-point" ...>
+<text class="warning-label">Warnung</text>
 ```
 
-Jeder Punkt besitzt:
+Titel, ARIA-Beschreibung und sichtbarer Text enthalten dieselbe fachliche Begründung.
+JavaScript und externe Ressourcen bleiben ausgeschlossen.
 
-```html
-<circle tabindex="0" role="img" aria-label="Scan …">
-<title>…</title>
-```
+## Sicherheitsinvarianten
 
-Zusätzlich stehen Minimum, Maximum und Nettoänderung als normaler Absatz sowie alle
-Rohwerte in einer Tabelle mit `caption` und `scope="col"` zur Verfügung.
+- Vorlagen lesen oder schreiben keine Originaldateien.
+- Zeitreihe und Trendgrenzen öffnen SQLite nur lesend.
+- Warnungen lösen keine Folgeaktion aus.
+- Konfigurations- und Berichtsdateien werden atomar freigegeben.
+- Vorhandene Inhalte werden nicht still überschrieben.
+- Geführte Befehle bleiben Argumentlisten ohne Shell-Auswertung.
+- Automatische Originaldateioperationen bleiben gesperrt.
 
-### Skript- und Netzwerkfreiheit
+## Automatische Tests
 
-Der erzeugte Bericht enthält:
+Geprüft werden unter anderem:
 
-- kein `<script>`,
-- keine HTTP- oder HTTPS-Adresse,
-- keine externen Stylesheets,
-- keine externen Schriftdateien,
-- keine externen Bilder,
-- keine Laufzeitbibliothek.
+- Vorlagen-Roundtrip, Modus 0600 und Überschreibschutz,
+- bewusstes Ersetzen und bestätigtes Löschen,
+- unsichere Ordnerpfade und beschädigte Strukturen,
+- CLI-Parser, Handler, Policies und Modulzuständigkeit,
+- Startseiten-Auswahl per Nummer und bestätigtes Speichern,
+- Komma- und Punktdezimalwerte,
+- Größen- und Dateizahlgrenze einzeln und gemeinsam,
+- Null-, NaN-, Unendlich- und Bereichsfälle,
+- getrennte Verlauf- und Warnfelder,
+- Terminal-, JSON-, CSV-, HTML- und SVG-Begründungen,
+- Skript- und Netzwerkfreiheit.
 
-Das SVG-Markup ist vollständig im HTML-Dokument enthalten.
+## 0.13-Funktionsreferenz
 
-## HTML-Struktur
+Run `30927676213`, Commit `8ded929533f806c739a7139b47d16379a788cfb0`:
 
-```text
-main
-├── Überschrift und Scan-Metadaten
-├── Sicherheits- und Vollständigkeitshinweis
-├── section.charts
-│   ├── figure Größenverlauf
-│   └── figure Dateizahlverlauf
-└── vollständige Zeitreihentabelle
-```
-
-Die Tabelle bleibt die verbindliche vollständige Datendarstellung. Die Diagramme sind
-eine zusätzliche visuelle Form, ersetzen aber keine Werte.
-
-## Tests
-
-### Geführte Bedienung
-
-Geprüft werden:
-
-- eindeutiger Menüpunkt 11,
-- richtiges Hilfethema und Builder,
-- rein lesende Einstufung ohne Bestätigungsdialog,
-- vollständige Argumentliste,
-- Scan-Grenzen,
-- Limit,
-- HTML-Ziel,
-- Feldhilfe,
-- Korrektur eines ungültigen Limits.
-
-### Hilfesystem
-
-Geprüft werden:
-
-- `?11`,
-- `g11`,
-- eigenständige geführte Hilfe,
-- Stichwortsuche nach Speicherentwicklung,
-- spezifische Fehlerhilfe,
-- kein unbeabsichtigter Aktionsstart bei reiner Hilfe.
-
-### SVG und Offline-Vertrag
-
-Geprüft werden:
-
-- genau zwei SVGs,
-- beide Diagrammtitel,
-- `role="img"`,
-- `aria-labelledby`,
-- SVG-`desc`,
-- fokussierbare Datenpunkte,
-- vollständige Wertetabelle,
-- kein Script,
-- keine HTTP-/HTTPS-Ressource.
-
-## Automatische Referenzprüfung
-
-Commit `b27e678259474ae459f08751ba0b386cccb653a3`:
-
-- 77/77 Tests unter Python 3.10,
-- 77/77 Tests unter Python 3.12,
+- 86/86 Tests unter Python 3.10,
+- 86/86 Tests unter Python 3.12,
 - `PYTHONWARNINGS=error`,
-- Quick: 600 Dateien, 11/11, 1,015 s, 1.325.982 Byte Python-Peak,
-- Standard: 10.000 Dateien, 11/11, 16,116 s, 13.398.883 Byte Python-Peak.
+- Quick: 600 Dateien, 11/11, 1,129 s, 1.324.226 Byte Python-Peak,
+- Standard: 10.000 Dateien, 11/11, 18,150 s, 13.398.233 Byte Python-Peak.
 
 Artefakte:
 
 | Profil | ID | SHA-256 |
 |---|---:|---|
-| Quick | 8898514789 | `72e26044b5d02b06c771f74c505b3719cc0cbf5219e8965d6dfb80e0e3b7955e` |
-| Standard | 8898524811 | `930f15a0d6e0c942a9dffe0f48e45715dd412db5d815b174b94cd37225ab2bab` |
+| Quick | 8899780387 | `c3678cdd50d235b9819475d6f1f6660e0367833c3a80f7faa5dff7ce990b0c1b` |
+| Standard | 8899791444 | `846ebbd02d213bc336800d330a8a2612e2a069e17e13362f0a27f5aa4ed7571d` |
 
 ## Bekannte Grenzen
 
-- Diagramme verwenden Scan-Reihenfolge statt proportionalem Zeitabstand.
-- 500 Punkte erzeugen 500 fokussierbare Elemente je Diagramm.
-- Sichtbare Wertelabels werden bei langen Reihen reduziert.
-- Je Lauf wird ein relativer Ordner dargestellt.
-- Geführter Dialog besitzt noch keine gespeicherten Zeitreihen-Vorlagen.
+- Geführtes Ersetzen und Löschen von Vorlagen fehlt noch.
+- Vorlagen enthalten bewusst keine Warnschwellen oder Exportziele.
+- Trendgrenzen sind Übergangsregeln, keine statistische Anomalieerkennung.
+- Je Bericht wird ein relativer Ordner dargestellt.
 - Reale Laienabnahme und Zielhardwaretest bleiben offen.
 
 ## Direkt folgender Entwicklungsblock
 
-Validierte lokale Zeitreihen-Vorlagen entwickeln und in Startseite sowie Hilfe
-integrieren.
+Geführtes Vorlagen-Untermenü für Anzeigen, bewusstes Ersetzen und bestätigtes Löschen.
 
 ## Sichere Alternative
 
-Rein lesende Trendgrenzen für auffälliges Größen- oder Dateiwachstum ergänzen.
+Mehrere relative Ordner in einem rein lesenden Bericht mit getrennten Linien und
+klarer Nicht-Addierbarkeitswarnung darstellen.
 
 ## Unverändert
 
