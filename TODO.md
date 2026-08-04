@@ -2,32 +2,31 @@
 
 ## In dieser Iteration erledigt
 
-1. [x] Normale Ordnerübersicht als CSV exportieren.
-2. [x] UTF-8-BOM und Semikolon für LibreOffice Calc verwenden.
-3. [x] Ampelstufe, Status und Begründung getrennt ausgeben.
-4. [x] Direkte und rekursive Dateizahlen ausgeben.
-5. [x] Direkte und rekursive Bytegrößen ausgeben.
-6. [x] Namenshinweise und Duplikatzahlen ausgeben.
-7. [x] Platzfresser als stabile Pfad-/Byte-Spalten ausgeben.
-8. [x] CSV atomar schreiben.
-9. [x] Vorhandene CSV ohne Freigabe schützen.
-10. [x] Vollständigen Export mit `--all-pages` ergänzen.
-11. [x] Terminalanzeige trotz vollständigem Export paginiert halten.
-12. [x] Vollständigkeitsprüfung über mehr als 25 Ordner testen.
-13. [x] Reproduzierbare Abnahmeprofile quick, standard und large anlegen.
-14. [x] Synthetische Testdaten strikt in neuem Arbeitsordner erzeugen.
-15. [x] Vorhandene Arbeitsordner sicher ablehnen.
-16. [x] Laufzeit- und Phasenmessung ergänzen.
-17. [x] Python-Spitzenspeicher und Prozess-RSS erfassen.
-18. [x] Quelldaten-Manifest vor und nach dem Lauf vergleichen.
-19. [x] Elf automatische Abnahmekriterien definieren.
-20. [x] JSON- und Markdown-Abnahmebericht erzeugen.
-21. [x] Reale Laien-Checkliste mit Aufgaben und Kriterien erzeugen.
-22. [x] Laienstatus ehrlich als `pending-real-person` kennzeichnen.
-23. [x] Quick-Profil mit 600 Dateien in GitHub Actions ausführen.
-24. [x] Standard-Profil mit 10.000 Dateien in GitHub Actions ausführen.
-25. [x] Quick- und Standardberichte als Artefakte archivieren.
-26. [x] 66 Tests unter Python 3.10 und 3.12 erfolgreich ausführen.
+1. [x] Ordner-Zeitreihe über mehrere abgeschlossene Scans entwickeln.
+2. [x] Relativen Ordner einschließlich Unterordnern auswerten.
+3. [x] Dateizahl und Gesamtgröße je Scan darstellen.
+4. [x] Datei- und Größendifferenz zum vorherigen Scan berechnen.
+5. [x] Prozentuale Größenänderung mit Null-Ausgangswert sicher behandeln.
+6. [x] Wachstum, Rückgang, Neu, Entfernt, Dateizahländerung und Unverändert erkennen.
+7. [x] Scan-ID, UTC-Zeitpunkt und Scan-Modus ausgeben.
+8. [x] Zeitraum über Ausgangs- und Zielsitzung begrenzen.
+9. [x] Maximal 2 bis 500 Zeitpunkte über `--limit` zulassen.
+10. [x] Unterschiedliche Stammordner kontrolliert ablehnen.
+11. [x] Absolute Pfade und `..` im relativen Ordnerpfad ablehnen.
+12. [x] Mindestens zwei abgeschlossene Scans verlangen.
+13. [x] SQLite ausschließlich mit `mode=ro` und `query_only` öffnen.
+14. [x] JSON-Bericht der Zeitreihe atomar erzeugen.
+15. [x] Calc-kompatible CSV mit UTF-8-BOM und Semikolon erzeugen.
+16. [x] Eigenständigen Offline-HTML-Bericht mit Tooltips und ARIA erzeugen.
+17. [x] Vorhandene Berichte vor stillem Überschreiben schützen.
+18. [x] Ordnervergleich um `--all-pages` erweitern.
+19. [x] Alle gefilterten JSON-, CSV- und HTML-Zeilen vollständig exportieren.
+20. [x] Terminalanzeige trotz vollständigem Vergleichsexport paginiert halten.
+21. [x] Vergleichsergebnis nur einmal aggregieren und anschließend paginieren.
+22. [x] `--all-pages` ohne Exportziel kontrolliert ablehnen.
+23. [x] Handler, `CommandPolicy` und Modulzuständigkeit automatisch prüfen.
+24. [x] Zeitreihen-, Sicherheits- und Vollständigkeitstests ergänzen.
+25. [x] 71 Tests unter Python 3.10 und 3.12 ausführen.
 
 ## Noch offen
 
@@ -41,10 +40,10 @@
 
 ## Direkt folgender technischer Entwicklungsschritt
 
-Eine rein lesende Ordner-Zeitreihe entwickeln, die Größe und Dateizahl eines Ordners
-über mehrere abgeschlossene Scans verständlich darstellt.
+Den Zeitreihenbefehl als eigenen Punkt in die geführte Startseite aufnehmen und mit
+Detail-, Schritt-für-Schritt-, Feld- und Fehlerhilfe verbinden.
 
 ## Alternative Verbesserung mit hohem Nutzen und geringem Risiko
 
-Den Ordnervergleich um `--all-pages` erweitern, damit JSON, CSV und HTML auf Wunsch
-sämtliche gefilterten Vergleichszeilen enthalten.
+Den Offline-HTML-Bericht der Zeitreihe um zwei barrierefreie, lokal erzeugte
+SVG-Liniengrafiken für Größe und Dateizahl ergänzen.
