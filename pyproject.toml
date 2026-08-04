@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "datenbanktool"
-version = "0.5.0a1"
+version = "0.6.0a1"
 description = "Sicheres Linux-Werkzeug zum Prüfen und Strukturieren großer chaotischer Datensammlungen"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -12,7 +12,7 @@ authors = [{ name = "provoware" }]
 dependencies = []
 
 [project.scripts]
-datenbanktool = "datenbanktool.cli:main"
+datenbanktool = "datenbanktool.entrypoint:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
