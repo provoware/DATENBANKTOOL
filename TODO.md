@@ -2,36 +2,33 @@
 
 ## In dieser Iteration erledigt
 
-1. [x] Ordnerübersicht mit Dateizahl und Gesamtgröße.
-2. [x] Unterordner in Gesamtwerten berücksichtigen.
-3. [x] Größte Platzfresser je Ordner anzeigen.
-4. [x] Ampeln mit Klartext und Begründung ergänzen.
-5. [x] Farben automatisch, immer oder nie schaltbar machen.
-6. [x] `NO_COLOR` unterstützen.
-7. [x] Suchvorlagen lokal und atomar speichern.
-8. [x] Vorlagen auflisten, anzeigen, ersetzen und bestätigt löschen.
-9. [x] Gespeicherte Vorlage direkt in der Suche starten.
-10. [x] HTML-Hoverhilfen und ARIA-Beschriftungen ergänzen.
-11. [x] Ausführliche Zweck- und Wirkungsbeschreibungen über `explain` ergänzen.
-12. [x] JSON-Ausgaben ohne Farbcodes absichern.
-13. [x] 31 automatisierte Tests unter Python 3.10 und 3.12 erfolgreich ausführen.
+1. [x] Geführte Startseite als nummeriertes Terminalmenü entwickeln.
+2. [x] Such-, Ordner-, Änderungs- und Statusfunktionen direkt aus dem Menü starten.
+3. [x] Indexaufbau, Re-Scan und Sicherung geführt vorbereiten.
+4. [x] Wirkung jeder Auswahl mit Ampel und Klartext erklären.
+5. [x] Schreibende Menüaktionen durch zusätzliche Bestätigung schützen.
+6. [x] Geplanten vollständigen Befehl vor der Ausführung anzeigen.
+7. [x] Pfade und Suchtexte ohne Shell-Auswertung als sichere Argumentliste übergeben.
+8. [x] `datenbanktool start` als neuen Programmeinstieg ergänzen.
+9. [x] Interaktiven Leerstart ermöglichen und nicht-interaktive Aufrufe vor Blockierung schützen.
+10. [x] Startlogik aus der großen `cli.py` in eigene Module auslagern.
+11. [x] Ein-/Ausgabe und Befehlsausführung für automatisierte Tests austauschbar machen.
+12. [x] Acht neue Tests für Auswahl, Abbruch, Bestätigung und sicheren Start ergänzen.
+13. [x] 39 automatisierte Tests unter Python 3.10 und 3.12 erfolgreich ausführen.
 
 ## Noch offen
 
-1. [ ] Einfache Startseite als nummeriertes Terminalmenü.
+1. [ ] Die große `cli.py` schrittweise in kleinere Befehlsmodule aufteilen.
 2. [ ] Ordnerübersicht zusätzlich als CSV exportieren.
 3. [ ] Speicherentwicklung eines Ordners zwischen zwei Scans vergleichen.
-4. [ ] Gespeicherte Vorlagen exportieren und importieren.
+4. [ ] Gespeicherte Suchvorlagen exportieren und importieren.
 5. [ ] Alte Scan-Sitzungen nach Vorschau sicher archivieren.
 6. [ ] Barrierearme grafische Oberfläche mit Schaltflächen entwickeln.
-7. [ ] Medienvorschau für Bilder, Audio und Video ergänzen.
-8. [ ] Sichere Änderungspläne für Umbenennen und Sortieren entwickeln.
-9. [ ] Journal, Rückgängig-Funktion und Quarantäne für Dateiänderungen entwickeln.
-10. [ ] Abnahme mit sehr großen realistischen Testbeständen durchführen.
+7. [ ] Sichere Dateiänderungspläne mit Journal, Rückgängig-Funktion und Quarantäne entwickeln.
 
 ## Direkt folgender einfacher Schritt
 
-Eine Startseite im Terminal bauen, die die wichtigsten Funktionen als nummerierte Auswahl erklärt und startet.
+Den großen Befehlsblock in kleinere Bausteine teilen, damit einzelne Funktionen leichter geprüft und geändert werden können.
 
 ## Sichere Zusatzverbesserung
 
