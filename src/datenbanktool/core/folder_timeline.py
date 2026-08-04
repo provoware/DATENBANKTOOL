@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import os
 import sqlite3
 from contextlib import closing
@@ -15,6 +16,7 @@ from datenbanktool.core.index_types import (
 from datenbanktool.core.presentation import TrafficLight
 
 _MAX_POINTS = 500
+_MAX_THRESHOLD_PERCENT = 1_000_000.0
 _STATUS_LABELS = {
     "baseline": "Ausgangswert",
     "grown": "Gewachsen",
@@ -32,6 +34,8 @@ class FolderTimelineOptions:
     from_session_id: int | None = None
     to_session_id: int | None = None
     limit: int = 100
+    warn_size_growth_percent: float | None = None
+    warn_file_growth_percent: float | None = None
 
     def validate(self) -> None:
         normalise_folder(self.folder)
@@ -41,6 +45,8 @@ class FolderTimelineOptions:
             raise ValueError("Zielsitzung muss mindestens 1 sein")
         if not 2 <= self.limit <= _MAX_POINTS:
             raise ValueError(f"Anzahl Zeitpunkte muss zwischen 2 und {_MAX_POINTS} liegen")
+        _validate_threshold("Größenwachstum", self.warn_size_growth_percent)
+        _validate_threshold("Dateizahlwachstum", self.warn_file_growth_percent)
 
 
 @dataclass(frozen=True, slots=True)
@@ -51,10 +57,13 @@ class FolderTimelinePoint:
     file_count: int
     size_bytes: int
     file_delta: int | None
+    file_delta_percent: float | None
     size_delta_bytes: int | None
     size_delta_percent: float | None
     status: str
     status_label: str
+    threshold_triggered: bool
+    threshold_reasons: tuple[str, ...]
     traffic_level: str
     traffic_label: str
     traffic_reason: str
@@ -80,6 +89,9 @@ class FolderTimeline:
     net_size_delta_bytes: int
     minimum_size_bytes: int
     maximum_size_bytes: int
+    warn_size_growth_percent: float | None
+    warn_file_growth_percent: float | None
+    threshold_trigger_count: int
     points: tuple[FolderTimelinePoint, ...]
 
     def to_dict(self) -> dict[str, object]:
@@ -97,6 +109,16 @@ def normalise_folder(value: str) -> str:
         raise ValueError("Ordnerpfad muss relativ sein und darf kein '..' enthalten")
     normalised = path.as_posix().strip("/")
     return "." if normalised in {"", "."} else normalised
+
+
+def _validate_threshold(label: str, value: float | None) -> None:
+    if value is None:
+        return
+    if not math.isfinite(value) or not 0 <= value <= _MAX_THRESHOLD_PERCENT:
+        raise ValueError(
+            f"Warnschwelle {label} muss zwischen 0 und "
+            f"{_MAX_THRESHOLD_PERCENT:g} Prozent liegen"
+        )
 
 
 def _readonly_connection(path: Path) -> sqlite3.Connection:
@@ -233,28 +255,79 @@ def _status(
     return "unchanged"
 
 
-def _traffic(status: str, file_delta: int | None) -> TrafficLight:
+def _change_percent(previous: int, current: int) -> float | None:
+    if previous <= 0:
+        return None
+    return round((current - previous) / previous * 100.0, 2)
+
+
+def _percent_text(value: float) -> str:
+    return f"{value:.2f}".replace(".", ",")
+
+
+def _traffic(
+    status: str,
+    *,
+    file_delta: int | None,
+    size_delta: int | None,
+    file_percent: float | None,
+    size_percent: float | None,
+    warn_file_percent: float | None,
+    warn_size_percent: float | None,
+) -> tuple[TrafficLight, tuple[str, ...]]:
+    threshold_reasons: list[str] = []
+    if (
+        size_delta is not None
+        and size_delta > 0
+        and size_percent is not None
+        and warn_size_percent is not None
+        and size_percent >= warn_size_percent
+    ):
+        threshold_reasons.append(
+            f"Größe +{_percent_text(size_percent)} % erreicht Warnschwelle "
+            f"{_percent_text(warn_size_percent)} %"
+        )
+    if (
+        file_delta is not None
+        and file_delta > 0
+        and file_percent is not None
+        and warn_file_percent is not None
+        and file_percent >= warn_file_percent
+    ):
+        threshold_reasons.append(
+            f"Dateizahl +{_percent_text(file_percent)} % erreicht Warnschwelle "
+            f"{_percent_text(warn_file_percent)} %"
+        )
+    if threshold_reasons:
+        reason = "; ".join(threshold_reasons) + ". Rein lesender Hinweis, keine Schadensbewertung."
+        return TrafficLight("red", "Trendgrenze erreicht", reason), tuple(threshold_reasons)
     if status == "baseline":
-        return TrafficLight("green", "Ausgangswert", "erster angezeigter Scan")
+        return TrafficLight("green", "Ausgangswert", "erster angezeigter Scan"), ()
     if status == "grown":
-        return TrafficLight("yellow", "Gewachsen", "Speicherbedarf ist gestiegen")
+        return TrafficLight("yellow", "Gewachsen", "Speicherbedarf ist gestiegen"), ()
     if status == "new":
-        return TrafficLight("yellow", "Neu", "Ordner enthält erstmals Dateien")
+        return TrafficLight("yellow", "Neu", "Ordner enthält erstmals Dateien"), ()
     if status == "changed":
-        return TrafficLight(
-            "yellow",
-            "Dateizahl geändert",
-            f"Größe gleich, Dateidifferenz {file_delta or 0:+d}",
+        return (
+            TrafficLight(
+                "yellow",
+                "Dateizahl geändert",
+                f"Größe gleich, Dateidifferenz {file_delta or 0:+d}",
+            ),
+            (),
         )
     if status == "shrunk":
-        return TrafficLight("green", "Kleiner geworden", "Speicherbedarf ist gesunken")
+        return TrafficLight("green", "Kleiner geworden", "Speicherbedarf ist gesunken"), ()
     if status == "removed":
-        return TrafficLight(
-            "green",
-            "Nicht mehr vorhanden",
-            "Ordner enthält in diesem Scan keine Dateien",
+        return (
+            TrafficLight(
+                "green",
+                "Nicht mehr vorhanden",
+                "Ordner enthält in diesem Scan keine Dateien",
+            ),
+            (),
         )
-    return TrafficLight("green", "Unverändert", "Größe und Dateizahl sind gleich")
+    return TrafficLight("green", "Unverändert", "Größe und Dateizahl sind gleich"), ()
 
 
 def build_folder_timeline(
@@ -284,23 +357,29 @@ def build_folder_timeline(
             if previous_files is None or previous_size is None:
                 status = "baseline"
                 file_delta = None
+                file_percent = None
                 size_delta = None
-                percent = None
+                size_percent = None
             else:
                 file_delta = file_count - previous_files
+                file_percent = _change_percent(previous_files, file_count)
                 size_delta = size_bytes - previous_size
+                size_percent = _change_percent(previous_size, size_bytes)
                 status = _status(
                     previous_files,
                     previous_size,
                     file_count,
                     size_bytes,
                 )
-                percent = (
-                    round(size_delta / previous_size * 100.0, 2)
-                    if previous_size > 0
-                    else None
-                )
-            light = _traffic(status, file_delta)
+            light, threshold_reasons = _traffic(
+                status,
+                file_delta=file_delta,
+                size_delta=size_delta,
+                file_percent=file_percent,
+                size_percent=size_percent,
+                warn_file_percent=options.warn_file_growth_percent,
+                warn_size_percent=options.warn_size_growth_percent,
+            )
             recorded = str(
                 session["finished_utc"]
                 or session["updated_utc"]
@@ -314,10 +393,13 @@ def build_folder_timeline(
                     file_count=file_count,
                     size_bytes=size_bytes,
                     file_delta=file_delta,
+                    file_delta_percent=file_percent,
                     size_delta_bytes=size_delta,
-                    size_delta_percent=percent,
+                    size_delta_percent=size_percent,
                     status=status,
                     status_label=_STATUS_LABELS[status],
+                    threshold_triggered=bool(threshold_reasons),
+                    threshold_reasons=threshold_reasons,
                     traffic_level=light.level,
                     traffic_label=light.label,
                     traffic_reason=light.reason,
@@ -341,5 +423,8 @@ def build_folder_timeline(
         net_size_delta_bytes=last.size_bytes - first.size_bytes,
         minimum_size_bytes=min(sizes),
         maximum_size_bytes=max(sizes),
+        warn_size_growth_percent=options.warn_size_growth_percent,
+        warn_file_growth_percent=options.warn_file_growth_percent,
+        threshold_trigger_count=sum(point.threshold_triggered for point in points),
         points=tuple(points),
     )
