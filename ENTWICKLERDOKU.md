@@ -272,7 +272,9 @@ Run `30927676213`, Commit `8ded929533f806c739a7139b47d16379a788cfb0`:
 - 87/87 Tests unter Python 3.12,
 - `PYTHONWARNINGS=error`,
 - Quick: 600 Dateien, 11/11, 1,129 s, 1.324.226 Byte Python-Peak,
-- Standard: 10.000 Dateien, 11/11, 18,150 s, 13.398.233 Byte Python-Peak.
+- Standard: 10.000 Dateien, 11/11, 18,150 s, 13.398.233 Byte Python-Peak,
+- Large: 100.000 Dateien, 11/11, 218,722 s, 107.011.474 Byte Python-Peak,
+- Large-Umgebung: Python 3.12.13, ext4 auf `/dev/vda`, KVM x86_64, 3 vCPU, Intel Xeon Platinum 8370C.
 
 Artefakte:
 
@@ -287,7 +289,7 @@ Artefakte:
 - Vorlagen enthalten bewusst keine Warnschwellen oder Exportziele.
 - Trendgrenzen sind Übergangsregeln, keine statistische Anomalieerkennung.
 - Je Bericht wird ein relativer Ordner dargestellt.
-- Reale Laienabnahme und Zielhardwaretest bleiben offen.
+- Reale Laienabnahme bleibt offen. Der Zielhardwaretest ist bestanden, sollte aber bei Hardwarewechsel erneut gemessen werden.
 
 ## Direkt folgender Entwicklungsblock
 

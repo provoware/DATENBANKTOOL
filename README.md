@@ -1,5 +1,12 @@
 # DATENBANKTOOL
 
+**Erledigt:** 100.000-Dateien-Large-Abnahme bestanden, CLI-Startblock bereinigt, schreibgeschützte SQLite-Analyse, Tabellenübersicht, validierte Text-/JSON-Ausgabe und automatische Tests.
+
+**Offen:** reale Laienabnahme, geführte Vorlagenverwaltung, weitere Datenbanktreiber und eine grafische Oberfläche.
+
+**Entwicklungsfortschritt:** **99 %** (Large-Abnahme bestanden; reale Laienabnahme offen).
+
+**Mögliche Upgrades:** geführte Vorlagenverwaltung, Mehrordner-Zeitreihe und Abnahmehistorie; Details stehen im [Upgrade-Pool](UPGRADE_POOL.md).
 **Erledigt:** schreibgeschützte SQLite-Analyse, Tabellenübersicht, Zeitreihen-Vorlagenverwaltung auf der Startseite, validierte Text-/JSON-Ausgabe und automatische Tests.
 
 **Offen:** reale Laienabnahme, weiterer Großbestandstest, weitere Datenbanktreiber und eine grafische Oberfläche.
@@ -85,6 +92,7 @@ Die technische Paketversion wird als PEP 440 in `registry.json` gepflegt (`0.13.
 | Automatisierte Tests | **87/87** unter Python 3.10 und 3.12 |
 | Quick-Abnahme | **600 Dateien · 11/11 bestanden** |
 | Standard-Abnahme | **10.000 Dateien · 11/11 bestanden** |
+| Large-Abnahme | **100.000 Dateien · 11/11 bestanden · 218,722 s · 107.011.474 Byte Python-Peak** |
 | Reale Laienabnahme | **Noch offen** |
 
 ## Neu: lokale Zeitreihen-Vorlagen
@@ -226,10 +234,11 @@ GitHub Actions Run `30927676213` auf Ubuntu 24.04, Funktionscommit
 |---|---:|---:|---:|---:|
 | Quick | 600 | 11/11 | 1,129 s | 1.324.226 Byte |
 | Standard | 10.000 | 11/11 | 18,150 s | 13.398.233 Byte |
+| Large | 100.000 | 11/11 | 218,722 s | 107.011.474 Byte |
 
 Zusätzlich bestanden 86/86 Tests unter Python 3.10 und Python 3.12 mit
 `PYTHONWARNINGS=error`. Die Messwerte sind CI-Referenzen und keine Garantie für andere
-Hardware.
+Hardware. Large wurde lokal im Container auf KVM x86_64 mit 3 vCPU, Python 3.12.13 und ext4 auf `/dev/vda` gemessen.
 
 ## Sicherheit
 
@@ -254,6 +263,16 @@ Hardware.
 
 ## Aktuelle Grenzen
 
+- Die reale Laienabnahme ist noch nicht durchgeführt.
+- Das `large`-Profil bestand auf Zielhardware mit 100.000 Dateien in 218,722 s und 107.011.474 Byte Python-Spitzenspeicher.
+- Die Startseite kann Vorlagen speichern und auswählen; geführtes Anzeigen, Ersetzen und
+  Löschen ist noch nicht als eigenes Untermenü vorhanden.
+- Vorlagen speichern bewusst nur den Ordner, nicht Warnschwellen oder Berichtspfade.
+- Prozentwerte sind bei vorherigem Wert null nicht berechenbar.
+- Warnschwellen betrachten Übergänge, keine langfristige statistische Anomalie.
+- Je Zeitreihe wird weiterhin ein relativer Ordner dargestellt.
+- Diagramme positionieren Punkte nach Scan-Reihenfolge, nicht proportional zum
+  tatsächlichen Zeitabstand.
 - reale Laienabnahme,
 - `large`-Profil auf Zielhardware,
 - geführte Vorlagenverwaltung,

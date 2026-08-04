@@ -166,8 +166,27 @@
       "artifact_sha256": "846ebbd02d213bc336800d330a8a2612e2a069e17e13362f0a27f5aa4ed7571d"
     },
     "large_acceptance": {
+      "reference_commit": "c6312a29176f420db052f2e48b85e3b613e13946",
+      "executed_at": "2026-08-04",
+      "environment": "local container target hardware",
+      "profile": "large",
+      "seed": 20260804,
       "file_count": 100000,
-      "status": "available-not-run-on-target-hardware"
+      "folder_count": 1000,
+      "checks_passed": 11,
+      "checks_total": 11,
+      "duration_seconds": 218.722,
+      "external_wall_seconds": 219.898,
+      "peak_python_memory_bytes": 107011474,
+      "process_max_rss_bytes": 309166080,
+      "python_version": "3.12.13",
+      "filesystem": "ext4 on /dev/vda for repository and /tmp",
+      "hardware_summary": "KVM x86_64, 3 vCPU, Intel Xeon Platinum 8370C CPU @ 2.80GHz, 48 MiB L3 cache",
+      "limits": {
+        "max_seconds": 3600.0,
+        "max_python_memory_mib": 4096
+      },
+      "status": "passed-on-target-hardware"
     },
     "manual_novice_acceptance": {
       "status": "pending-real-person",

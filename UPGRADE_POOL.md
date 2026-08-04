@@ -32,8 +32,8 @@ Upgrades werden erst umgesetzt, wenn Eingaben, Ausgaben, Fehlerfälle und der pa
    klar getrennt als rein lesende Trends darstellen.
 3. **Reale Laienabnahme** – die vorhandene Checkliste mit einer unerfahrenen
    Kubuntu-Testperson durchführen und konkrete Verständlichkeitsprobleme beheben.
-4. **100.000-Dateien-Zieltest** – das vorhandene `large`-Profil auf Zielhardware
-   ausführen und Referenzwerte dokumentieren.
+4. **Abnahmehistorie** – mehrere JSON-Abnahmeberichte rein lesend vergleichen und
+   Abweichungen zwischen Zielsystemen verständlich erklären.
 
 ## Später mögliche Erweiterungen
 
@@ -65,5 +65,6 @@ Upgrades werden erst umgesetzt, wenn Eingaben, Ausgaben, Fehlerfälle und der pa
 - Trennung von Verlaufsklassifikation und Warnstatus.
 - Reproduzierbare Abnahmeprofile mit 600, 10.000 und 100.000 Dateien.
 - 0.13-Funktionsprüfung mit 86 Tests je Python-Version sowie Quick und Standard 11/11.
+- Large-Abnahme auf Zielhardware: 100.000 Dateien, 11/11, 218,722 s, 107.011.474 Byte Python-Peak.
 - Startseiten-Kataloge und Eingabeparser in kleine Wartungsmodule getrennt.
 - CLI-Importkopf bereinigt und Parser-Fehlerfälle gezielt getestet.

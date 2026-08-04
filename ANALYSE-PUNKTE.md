@@ -134,7 +134,8 @@ Gesamtstand:
 - 87 Tests unter Python 3.12,
 - Warnungen als Fehler,
 - Quick-Abnahme 11/11,
-- Standard-Abnahme 11/11.
+- Standard-Abnahme 11/11,
+- Large-Abnahme 11/11 auf Zielhardware.
 
 ## 0.13-Funktionsreferenz
 
@@ -145,6 +146,7 @@ Run `30927676213`, Funktionscommit
 |---|---:|---:|---:|---:|
 | Quick | 600 | 11/11 | 1,129 s | 1.324.226 Byte |
 | Standard | 10.000 | 11/11 | 18,150 s | 13.398.233 Byte |
+| Large | 100.000 | 11/11 | 218,722 s | 107.011.474 Byte |
 
 ## Erkannte nächste Analysepunkte
 
@@ -152,12 +154,13 @@ Run `30927676213`, Funktionscommit
 2. Mehrere Ordner in einem klar getrennten Trendbericht darstellen.
 3. Reale Zeitabstände optional auf der x-Achse abbilden.
 4. Reale Laienabnahme auf Kubuntu durchführen.
-5. `large`-Profil auf Zielhardware vermessen.
+5. Abnahmehistorie für mehrere Large-Läufe rein lesend vergleichbar machen.
 6. Später grafische Pfadauswahldialoge ergänzen.
 7. Bei der nächsten Release-Erhöhung zuerst `registry.json`, `project_registry.json` und `pyproject.toml` gemeinsam aktualisieren.
 
 ## Fazit
 
+Die Large-Abnahme ist vermessen und blieb deutlich unter den Grenzen von 3.600 Sekunden und 4.096 MiB Python-Speicher. Beide Aufträge sind vollständig umgesetzt und automatisch abgesichert. Vorlagen
 Die Versionierung ist jetzt zusätzlich gegen Drift abgesichert. Beide vorherigen Fachaufträge bleiben vollständig umgesetzt und automatisch abgesichert. Vorlagen
 reduzieren wiederholte Eingaben, ohne sensible oder unnötige Pfade zu speichern.
 Trendgrenzen erhöhen die Sichtbarkeit auffälligen Wachstums, bleiben aber strikt
