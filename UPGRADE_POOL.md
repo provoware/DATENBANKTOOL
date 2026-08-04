@@ -2,52 +2,36 @@
 
 ## Hoher Nutzen, geringes Risiko
 
-1. Inkrementellen Re-Scan auf Basis von Pfad, Größe und Änderungszeit ergänzen.
-2. `index sessions` zur Anzeige aller Sitzungen ergänzen.
-3. `index backup` und `index restore` als getrennte Kommandos ergänzen.
-4. gespeicherte Berichtsfilter als JSON-Profile einführen.
-5. CSV-Trennzeichen und Excel-kompatible Profile auswählbar machen.
-6. HTML-Berichte nach Größe automatisch in mehrere Seiten teilen.
-7. Statistikbericht nach Kategorie, Größenklasse und Warncode ergänzen.
-8. Suchkommando für den SQLite-Index ergänzen.
-9. Fortschrittsausgabe als JSON Lines für spätere GUI-Anbindung ergänzen.
-10. Logdatei mit rotierender Größenbegrenzung ergänzen.
+1. `index changes --session-id` als lesende Änderungsübersicht ergänzen.
+2. Änderungsberichte als JSON, CSV und HTML exportieren.
+3. Sitzungsnamen und freie Notizen ergänzen.
+4. Sicherungen mit SHA-256-Manifest und Größenprüfung versehen.
+5. `index backup --list` für automatisch erzeugte Sicherungen ergänzen.
+6. Fortschrittsereignisse als NDJSON-Datei exportieren.
+7. Kategorie- und Größenstatistik je Sitzung anzeigen.
+8. Lesende SQL-Abfrageprofile für häufige Suchvorgänge ergänzen.
+9. Standardisierte Exitcodes dokumentieren.
+10. Menschliche Größen- und Zeitdarstellung vereinheitlichen.
 
-## Mittlerer Aufwand
+## Nächste Architektur-Upgrades
 
-11. FTS5 für Dateinamen und Pfade.
-12. Freigegebene Textinhalte mit Datenschutzprofil indizieren.
-13. Dateiidentität über Gerät und Inode speichern.
-14. externe Datenträger über stabile Kennung wiedererkennen.
-15. Änderungsabgleich zwischen zwei Sitzungen darstellen.
-16. verwaiste und entfernte Dateien markieren.
-17. Hashcache sitzungsübergreifend wiederverwenden.
-18. BLAKE3 optional für schnelle Vorprüfung evaluieren; SHA-256 bleibt Beweiswert.
-19. PySide6-Such- und Filteroberfläche.
-20. Auftragspause und Fortsetzung über UI.
+11. FTS5-Suchindex für Namen, Pfade und ausgewählte Textinhalte.
+12. Inkrementelle Ordneraggregate.
+13. Sichere Snapshot-Aufbewahrung mit Referenzprüfung.
+14. Dateiänderungsjournal mit Generationen und Tombstones.
+15. Dateisystem-Watcher nur als Beschleuniger, nie als alleinige Wahrheit.
+16. Persistente Auftragswarteschlange mit Pause und Fortsetzung.
+17. Such-API mit Pagination und stabilen Sortierschlüsseln.
+18. Ressourcensteuerung für CPU, I/O und Hashing.
 
-## Medienfokus
+## Spätere Produktfunktionen
 
-21. ffprobe-Metadaten.
-22. Audio-Wellenform und Vorhörfunktion.
-23. Video-Vorschaubild und technische Prüfung.
-24. Bildabmessungen und EXIF-Metadaten.
-25. PDF- und Textvorschau in abgesichertem Modus.
-26. Audio-Fingerprints.
-27. perceptual Hash für Bilder.
-28. beschädigte Container erkennen.
-29. falsche Dateiendungen erkennen.
-30. Begleitdateien, Untertitel und Playlists gruppieren.
-
-## Später, erst nach Sicherheitskern
-
-31. unveränderliche Umbenennungspläne.
-32. Vorher-Nachher-Vorschau.
-33. Kollisionsprüfung.
-34. transaktionales Dateioperationsjournal.
-35. Undo-Manifest.
-36. Quarantäne statt Direktlöschung.
-37. Wiederaufnahme halbfertiger Dateioperationen.
-38. Wiederherstellungstest vor Freigabe.
-39. Geräteübergreifende Kopierprüfung.
-40. Stable-Release-Gate für schreibende Funktionen.
+19. Touchfähige PySide6-Oberfläche.
+20. Bildkacheln und große Vorschau.
+21. Audio-Vorhören und Wellenform.
+22. Video-Metadaten und Vorschaubilder.
+23. Archiv-Inventarisierung ohne automatisches Entpacken.
+24. Codeprojekt-Erkennung und Buildrest-Analyse.
+25. Ähnliche Bilder, Audios und Texte.
+26. Sichere Umbenennungs- und Sortierpläne.
+27. Undo, Quarantäne und Recovery-Assistent.

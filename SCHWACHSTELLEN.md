@@ -1,36 +1,35 @@
-# Schwachstellen
+# Schwachstellen und aktuelle Grenzen
 
-## Aktuelle technische Grenzen
+## Aktuell bekannte Grenzen
 
-1. **Checkpointdatei entfernt:** Wiederaufnahme bricht kontrolliert ab, wenn der gespeicherte Pfad nicht mehr auffindbar ist.
-2. **Kein inkrementeller Re-Scan:** Abgeschlossene Sitzungen werden noch nicht differenziell aktualisiert.
-3. **Kein Prozesslock:** Zwei parallele Indexprozesse können konkurrieren; SQLite schützt Transaktionen, aber nicht die fachliche Sitzungsauswahl.
-4. **Keine Hash-Pause:** Hashing kann nach Prozessabbruch fortgesetzt werden, besitzt aber noch keinen Nutzerknopf für Pause.
-5. **Fehlgeschlagener Hash wird nicht automatisch erneut versucht:** Der Fehler bleibt sichtbar; ein neuer Scan oder gezielte Reparaturstrategie ist nötig.
-6. **WAL-Nebenwirkungen:** Lesen über den normalen Datenbankzugang kann SQLite-WAL-Dateien erzeugen.
-7. **Reparaturgrenze:** Physisch stark beschädigte SQLite-Dateien können nicht garantiert geheilt werden.
-8. **HTML-Skalierung:** Millionen Tabellenzeilen sind für eine einzelne Browserdatei ungeeignet.
-9. **Keine Volltextsuche:** Der Index enthält derzeit Metadaten, keine Textinhalte.
-10. **Keine Medienvalidierung:** Endungen werden klassifiziert; Codec, Container und tatsächlicher Inhalt werden noch nicht geprüft.
-11. **Keine Dateisystemidentität:** Mountwechsel, Gerät und Inode werden noch nicht gespeichert.
-12. **Keine automatische Sitzungslöschung:** Alte Sitzungen können die Datenbank langfristig vergrößern.
-13. **Kein verschlüsselter Index:** Dateipfade liegen lokal im Klartext in der SQLite-Datenbank.
-14. **Ruff/MyPy nicht ausgeführt:** Beide Werkzeuge waren in der lokalen Prüfungsumgebung nicht installiert.
-15. **Noch keine reale Langzeitlastprüfung:** Tests verwenden kleine künstliche Bestände.
+1. Der Re-Scan muss den Verzeichnisbaum weiterhin vollständig durchlaufen; er spart hauptsächlich Datenbank- und Hasharbeit.
+2. Verschiebungen werden nur eindeutig klassifiziert. Mehrdeutige Hardlinks oder identische Mehrfachkopien bleiben getrennte Neu-/Entfernt-Fälle.
+3. Hash-basierte Verschiebungserkennung funktioniert nur, wenn die Baseline bereits einen SHA-256-Wert besitzt.
+4. Ein Inhalt kann theoretisch bei gleicher Größe, identischer Zeit und identischer Inode unbemerkt bleiben, wenn ein externes Werkzeug Metadaten gezielt zurücksetzt.
+5. Der `fcntl.flock`-Lock ist Linux-spezifisch und schützt nur Prozesse, die denselben Lockvertrag respektieren.
+6. Externe SQLite-Werkzeuge können die Datenbank weiterhin außerhalb des Tool-Locks verändern.
+7. Restore ersetzt die aktive Datenbank atomar für neue Öffnungen; bereits fremd geöffnete Leser können kurzfristig den alten Dateiknoten sehen.
+8. Sitzungen werden noch nicht automatisch archiviert oder bereinigt.
+9. Fortschrittsereignisse haben beim Verzeichnisscan keine verlässliche Gesamtsumme.
+10. FTS5-Suche, Ordneraggregate und GUI fehlen noch.
+11. Schreibende Originaldateioperationen bleiben vollständig gesperrt.
+12. Ruff, MyPy, Bandit, pip-audit und Coverage sind noch kein verpflichtendes Gate.
 
-## Behobene Schwachstellen
+## Sicherheitsbewertung
 
-1. Flüchtige Scanergebnisse ohne Persistenz.
-2. Fehlende Schema-Versionierung.
-3. Fehlende Migration.
-4. Import ohne Batchgrenzen.
-5. Kein Wiederaufnahmezustand.
-6. Keine Datenbankreparatur.
-7. Keine Sicherheitskopie vor Reparatur.
-8. Keine CSV-/HTML-Berichte.
-9. Keine Filter nach Typ, Größe, Namensproblemen und Duplikaten.
-10. Potenziell halbfertige Mehrfachausgabe ohne Vorprüfung.
+- Originaldateien werden weiterhin nur gelesen.
+- Keine Datei wird automatisch gelöscht, verschoben oder umbenannt.
+- Backup und Restore prüfen SQLite vor der Übernahme.
+- Vor Restore wird standardmäßig eine Sicherheitskopie des Zielindexes erstellt.
+- Vorhandene Sicherungen und Berichte werden nicht still überschrieben.
+- Re-Scan-Sitzungen verändern frühere Snapshots nicht.
 
-## Sicherheitsfazit
+## Kritisch vor schreibenden Dateioperationen
 
-Der Index- und Berichtskern ist für Alpha-Nutzung belastbar und nicht destruktiv. Eine Freigabe für schreibende Dateioperationen wäre weiterhin verfrüht und bleibt blockiert.
+1. Transaktionsjournal.
+2. Vorher-Nachher-Planmanifest.
+3. Kollisions- und Rechteprüfung.
+4. Speicherplatzprüfung.
+5. Quarantäne statt Direktlöschung.
+6. Idempotente Wiederaufnahme.
+7. Automatisierte Undo- und Recoverytests.

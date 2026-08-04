@@ -1,43 +1,45 @@
 # Changelog
 
-## 0.2.0-alpha.1 – 2026-08-04
+Alle wesentlichen Projektänderungen werden hier dokumentiert.
+
+## 0.3.0-alpha.1 – 2026-08-04
 
 ### Hinzugefügt
 
-- SQLite-Index mit Schema-Version 2.
-- Migrationstabelle und automatische V1→V2-Migration.
-- Transaktionaler Batch-Import.
-- Persistente Scan- und Hashing-Checkpoints.
-- Wiederaufnahme unterbrochener oder fehlgeschlagener Sitzungen.
-- Reparaturmodus mit konsistenter SQLite-Sicherheitskopie.
-- Integritäts-, Fremdschlüssel-, Index- und Statistikprüfung.
-- Reproduzierbarer Neuaufbau exakter Duplikatgruppen.
-- CSV-Berichte in UTF-8 mit BOM.
-- Eigenständige HTML-Berichte mit interaktiver lokaler Filterung.
-- Berichtfilter nach Dateikategorie, Größe, Namensproblem und Duplikatstatus.
-- CLI-Kommandos `index build`, `index status`, `index repair` und `report`.
-- 10 neue Index-, Berichts- und CLI-Tests.
-- GitHub-Actions-Prüfung unter Python 3.10 und 3.12.
+- SQLite-Schema 3 mit automatischer Migration von vorhandenen Schema-2-Datenbanken.
+- Inkrementeller Re-Scan auf Basis einer abgeschlossenen Index-Sitzung.
+- Erkennung neuer, geänderter, verschobener, entfernter und unveränderter Dateien.
+- Sichere Verschiebungserkennung über Geräte-/Inode-Identität plus identische Größe und Nanosekunden-Zeit.
+- Zusätzliche Hash-Verschiebungserkennung, wenn die Baseline bereits SHA-256-Werte besitzt.
+- Wiederverwendung vorhandener SHA-256-Werte für unveränderte Dateien.
+- Fortsetzbarer Re-Scan mit persistentem Checkpoint und kompatibilitätsgeprüfter Baseline.
+- Prozessübergreifender Linux-Dateilock auf Basis von `fcntl.flock`.
+- Persistente Fortschrittsereignisse sowie Ausgabe als verständlicher Text oder JSONL.
+- `index sessions` mit Status-, Wurzel- und Mengenfilter.
+- `index backup` über die konsistente SQLite-Backup-API.
+- `index restore` mit Vorabprüfung und standardmäßiger Sicherheitskopie des Zielindexes.
+- Zusätzliche Tests für Migration, Inode-Wiederverwendung, Wiederaufnahme, Backup und Restore.
 
-### Geändert
+### Verbessert
 
-- Scanner läuft deterministisch sortiert.
-- SHA-256-Dateifunktion ist für Index und Direkt-Scan gemeinsam nutzbar.
-- Versionsstand auf `0.2.0-alpha.1` angehoben.
-- Dokumentation und Projektregister vollständig aktualisiert.
+- Gleichgroße Dateiersetzungen werden über Geräte-/Inode-Wechsel als Änderung erkannt.
+- Inode-Wiederverwendung nach Löschen erzeugt keine falsche Verschiebung mehr.
+- Hashing im Re-Scan konzentriert sich auf neue oder geänderte Kandidaten.
+- Reparatur, Vollindex, Re-Scan, Backup und Restore verwenden denselben Prozesslock.
+- CLI-Status zeigt Scanmodus und Baseline-Sitzung.
 
 ### Validiert
 
-- 14/14 automatisierte Tests erfolgreich.
-- Kompilierung mit `compileall` erfolgreich.
-- Tests mit `PYTHONWARNINGS=error` ohne Warnungen.
-- End-to-End-Probelauf einschließlich Reparatursicherung erfolgreich.
+- Python-Kompilierung erfolgreich.
+- 19 von 19 Unittests erfolgreich mit `PYTHONWARNINGS=error`.
+- Schema-2→3-Migration mit historischer Phasen-Check-Constraint erfolgreich.
+- End-to-End-Abläufe für Build, Re-Scan, Sitzungen, Backup, Restore und Berichte erfolgreich.
 
-### Unverändert
+## 0.2.0-alpha.1 – 2026-08-04
 
-- `AGENTS.md` wurde nicht verändert.
-- Schreibende Operationen an Nutzerdaten bleiben gesperrt.
+- Persistenter SQLite-Index mit Schema-Versionierung, Batch-Import, Wiederaufnahme und Reparaturmodus.
+- Gefilterte CSV- und HTML-Berichte.
 
 ## 0.1.0-alpha.1 – 2026-08-04
 
-- Rein lesender Scanner, Klassifizierung, Dateinamenprüfung, große Dateien, optionale SHA-256-Duplikaterkennung und JSON-Berichte eingeführt.
+- Rein lesender Scanner, Dateiklassifizierung, Namensprüfung und exakte Duplikaterkennung.

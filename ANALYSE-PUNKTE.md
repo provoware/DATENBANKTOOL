@@ -1,72 +1,47 @@
 # Analyse-Punkte
 
-## In dieser Iteration vollständig gelöst
+## Ergebnis dieser Iteration
 
-1. Persistenz großer Scanergebnisse in SQLite.
-2. Nachvollziehbare Schema-Versionierung.
-3. Automatische V1→V2-Migration.
-4. Batchweise Transaktionen statt Einzelcommit pro Datei.
-5. Eindeutige Dateiimporte je Sitzung.
-6. Persistenter Scan-Checkpoint.
-7. Getrennte Phasen für Scan, Hashing und Finalisierung.
-8. Wiederaufnahme kompatibler Sitzungen.
-9. Reproduzierbarer Neuaufbau von Duplikatgruppen.
-10. Reparatur mit Sicherung vor verändernden Maßnahmen.
-11. Vorher-/Nachher-Integritätsprüfung.
-12. CSV-Bericht mit Datenfiltern.
-13. HTML-Bericht mit Daten- und Browserfiltern.
-14. Schutz vor stiller Berichtsüberschreibung.
-15. Schutz vor halber CSV-/HTML-Mehrfachausgabe durch Vorprüfung.
+Der Index arbeitet jetzt als Snapshot-Folge statt als überschreibbarer Einzelbestand. Ein Re-Scan erzeugt eine neue Sitzung, verknüpft sie mit einer abgeschlossenen Baseline und speichert jede erkannte Änderung separat.
 
-## Fachliche Entscheidungen
+## Änderungsmodell
 
-### SQLite statt flüchtigem Arbeitsspeicher
+- `added`: Pfad existiert nur im neuen Snapshot.
+- `modified`: Pfad existiert in beiden Snapshots, Identität oder Metadaten unterscheiden sich.
+- `moved`: eine alte und neue Datei konnten eindeutig über stabile Linux-Identität oder vorhandenen SHA-256-Wert verbunden werden.
+- `removed`: Baseline-Datei besitzt keine Zuordnung im neuen Snapshot.
+- `unchanged`: Pfad, Größe, Identität und Änderungszeit stimmen überein.
 
-Der Index ist die verbindliche Datenquelle für spätere Suche und Oberfläche. Große Sammlungen müssen nicht vollständig im RAM gehalten werden. Sitzungen, Fehler und Checkpoints bleiben nach Neustart erhalten.
+## Sicherheitsregeln der Verschiebungserkennung
 
-### Sitzungen statt global überschriebenem Bestand
+1. Geräte-ID und Inode allein reichen nicht, weil Inodes wiederverwendet werden können.
+2. Eine Inode-Verschiebung wird nur bei identischer Größe und identischer Nanosekunden-Zeit bestätigt.
+3. Hardlinks oder Mehrdeutigkeiten werden nicht automatisch zugeordnet.
+4. Hash-Zuordnung wird nur bei eindeutiger alter und neuer Datei verwendet.
+5. Unsichere Fälle bleiben als `added` und `removed` sichtbar.
 
-Jeder Scan besitzt eine eigene Sitzung. Dadurch bleiben ältere Ergebnisse nachvollziehbar und ein abgebrochener Lauf beschädigt keinen abgeschlossenen Bestand.
+## Wiederaufnahme
 
-### Fingerabdruck für Wiederaufnahme
+- Jeder Batch bestätigt Dateien, Fehler und Checkpoint gemeinsam.
+- Baseline, Wurzel und Scanoptionen fließen in den Fingerabdruck ein.
+- Eine Fortsetzung mit anderer Baseline oder anderen Sicherheitsoptionen wird abgelehnt.
+- Vergleich und Finalisierung sind idempotent wiederholbar.
 
-Wurzelpfad und sicherheitsrelevante Optionen werden zu einem SHA-256-Fingerabdruck zusammengefasst. Nur passende Sitzungen werden fortgesetzt. Batchgröße und Testgrenze gehören bewusst nicht zum Fingerabdruck.
+## Prozesslock
 
-### Atomarer Batchvertrag
+- Vollindex, Re-Scan, Reparatur, Backup und Restore verwenden einen gemeinsamen Dateilock.
+- Der Lock enthält PID, Host, Zeitpunkt und Operation als verständliche Diagnose.
+- Absturz oder Prozessende gibt den Betriebssystemlock automatisch frei.
+- Ein Timeout kann ausdrücklich gesetzt werden; Standard ist sofortiges, klares Scheitern.
 
-Dateien, Warnungen, Fehler, Zähler und Checkpoint werden innerhalb derselben SQLite-Transaktion gespeichert. Ein Absturz vor `COMMIT` bestätigt nichts; ein Absturz danach besitzt einen konsistenten Wiederaufnahmepunkt.
+## Backup und Restore
 
-### Reparatur ist kein falsches Heilversprechen
-
-Der Reparaturmodus kann lesbare Datenbanken prüfen, migrieren, liegengebliebene Sitzungen korrigieren, Duplikatgruppen neu aufbauen und Indizes regenerieren. Beliebig zerstörte SQLite-Dateien können nicht garantiert wiederhergestellt werden.
-
-## Noch offene Analysepunkte
-
-1. Stabiler Wiederanlauf, wenn die Checkpointdatei zwischenzeitlich entfernt wurde.
-2. Inkrementeller Vergleich abgeschlossener Sitzungen.
-3. Identifikation von Dateien über Gerät, Inode, Größe, Zeit und optional Hash.
-4. Behandlung von Umbenennungen ohne erneutes Vollhashing.
-5. Schutz vor zwei gleichzeitig laufenden Indexprozessen.
-6. Wechselnde Mountpunkte externer Datenträger.
-7. Dateisysteme mit anderer Groß-/Kleinschreibung.
-8. Hashing-Pause und kontrollierter Abbruch mitten im Kandidatenlauf.
-9. Aufteilung sehr großer HTML-Berichte.
-10. Datenschutzregeln für spätere Inhaltsindizierung.
-11. Lebenszyklus und Bereinigung alter Indexsitzungen.
-12. Export- und Importvertrag für portable Indexarchive.
+- Sicherungen werden über die SQLite-Backup-API erzeugt.
+- Eine temporäre Datei wird geprüft, bevor sie zum sichtbaren Sicherungsziel wird.
+- Restore prüft Schema und `quick_check`, bevor die aktive Datenbank ersetzt wird.
+- Vor Restore entsteht standardmäßig eine zusätzliche Rückfallsicherung.
+- Bei Übernahmefehlern wird die Rückfallsicherung verwendet.
 
 ## Architektur-Fazit
 
-Die belastbare Reihenfolge bleibt:
-
-1. Inventarisieren.
-2. Persistieren.
-3. Prüfen und suchen.
-4. Verständlich gruppieren.
-5. Änderungsplan erzeugen.
-6. Plan vollständig validieren.
-7. Transaktion mit Journal ausführen.
-8. Ergebnis prüfen.
-9. Undo und Wiederherstellung bereitstellen.
-
-Die ersten drei Stufen besitzen jetzt einen validierten Alpha-Kern. Schreibende Dateifunktionen bleiben korrekt blockiert.
+Der Datenkern ist nun ausreichend belastbar für eine echte Suchschicht. Die grafische Oberfläche sollte weiterhin erst nach Pagination, FTS5-Suche, Ordneraggregaten und Sitzungsaufbewahrung aufgebaut werden.

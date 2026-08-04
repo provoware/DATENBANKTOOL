@@ -27,6 +27,9 @@ class FileRecord:
     is_symlink: bool = False
     is_large: bool = False
     sha256: str | None = None
+    modified_ns: int = 0
+    device_id: int = 0
+    inode: int = 0
 
 
 @dataclass(slots=True)

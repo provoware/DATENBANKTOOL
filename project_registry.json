@@ -1,33 +1,47 @@
 {
-  "schema_version": 2,
+  "schema_version": 1,
   "project": "DATENBANKTOOL",
-  "version": "0.2.0-alpha.1",
-  "phase": "persistent-index-and-reports",
-  "development_progress_percent": 36,
+  "version": "0.3.0-alpha.1",
+  "phase": "persistent-incremental-index",
+  "development_progress_percent": 52,
+  "completed_main_items": 23,
+  "open_main_items": 21,
   "runtime": {
     "python": ">=3.10",
     "external_runtime_dependencies": []
+  },
+  "database": {
+    "engine": "SQLite",
+    "schema_version": 3,
+    "journal_mode": "WAL",
+    "migrations": true,
+    "incremental_rescan": true,
+    "process_lock": "fcntl-flock",
+    "backup_restore": true
   },
   "safety_defaults": {
     "filesystem_mode": "read-only",
     "follow_symlinks": false,
     "overwrite_reports": false,
-    "repair_backup": true,
+    "overwrite_backups": false,
+    "restore_safety_backup": true,
     "destructive_actions_available": false
   },
   "modules": {
-    "scanner": "alpha-validated",
-    "classification": "alpha-validated",
-    "filename_checks": "alpha-validated",
-    "exact_duplicate_detection": "alpha-validated",
-    "persistent_index": "alpha-validated",
-    "schema_migrations": "alpha-validated",
-    "batch_import": "alpha-validated",
-    "resume": "alpha-validated",
-    "repair_mode": "alpha-validated",
-    "csv_reports": "alpha-validated",
-    "html_reports": "alpha-validated",
+    "scanner": "alpha",
+    "classification": "alpha",
+    "filename_checks": "alpha",
+    "exact_duplicate_detection": "alpha",
+    "persistent_index": "alpha",
+    "incremental_rescan": "alpha",
+    "change_detection": "alpha",
+    "process_lock": "alpha",
+    "progress_events": "alpha",
+    "session_management": "alpha",
+    "backup_restore": "alpha",
+    "csv_html_reports": "alpha",
     "graphical_interface": "planned",
+    "search_engine": "planned",
     "file_operations": "blocked-until-safety-contract"
   }
 }

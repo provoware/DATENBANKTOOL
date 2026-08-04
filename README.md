@@ -1,233 +1,128 @@
 # DATENBANKTOOL
 
-> Sicheres, portables Linux-Werkzeug zum Suchen, Prüfen und Strukturieren großer chaotischer Datensammlungen – mit Schwerpunkt auf Medien, Audio, Texten, Archiven und Codeprojekten.
+> Sicheres, lokales Linux-Werkzeug zum Suchen, Prüfen und Strukturieren großer chaotischer Datensammlungen – mit Schwerpunkt auf Medien, Audio, Texten, Archiven und Codeprojekten.
 
 ## Projektstatus
 
 | Bereich | Stand |
 |---|---|
-| Version | `0.2.0-alpha.1` |
-| Entwicklungsphase | Persistenter Index und Berichte |
-| Entwicklungsfortschritt | **36 %** |
-| Erledigte Hauptpunkte | **15** |
-| Offene Hauptpunkte | **26** |
-| SQLite-Schema | **Version 2** |
-| Schreibende Dateioperationen | **Noch gesperrt** |
+| Version | `0.3.0-alpha.1` |
+| SQLite-Schema | `3` |
+| Entwicklungsphase | Persistenter inkrementeller Index |
+| Entwicklungsfortschritt | **52 %** |
+| Erledigte Hauptpunkte | **23** |
+| Offene Hauptpunkte | **21** |
+| Originaldatei-Schreibzugriffe | **Gesperrt** |
 | Standardmodus | **Rein lesend** |
 
 ### In dieser Iteration erledigt
 
-1. SQLite-Index mit versioniertem Schema eingeführt.
-2. Automatische Migration von Schema V1 auf V2 implementiert und getestet.
-3. Transaktionalen Batch-Import mit frei einstellbarer Batchgröße umgesetzt.
-4. Wiederaufnahme unterbrochener Scans über persistente Checkpoints umgesetzt.
-5. Scan-, Hashing-, Finalisierungs- und Abschlussphasen getrennt gespeichert.
-6. Reparaturmodus mit Sicherheitskopie, Integritätsprüfung, `REINDEX`, `ANALYZE` und optionalem `VACUUM` ergänzt.
-7. Duplikatgruppen nach Import oder Reparatur reproduzierbar neu aufbaubar gemacht.
-8. Gefilterte CSV- und eigenständige HTML-Berichte umgesetzt.
-9. Filter für Dateityp, Mindest-/Maximalgröße, Namensprobleme und Duplikatgruppen ergänzt.
-10. HTML-Berichte zusätzlich mit lokaler Schnellsuche und interaktiven Filtern ausgestattet.
-11. Mehrfachausgaben werden vorab geprüft, damit kein halbes Berichtspaket entsteht.
-12. CLI-Kommandos, Dokumentation und Versionsregister erweitert.
-13. 14 automatisierte Tests sowie ein vollständiger End-to-End-Probelauf erfolgreich ausgeführt.
+1. Inkrementellen Re-Scan entwickelt.
+2. Neue, geänderte, verschobene, entfernte und unveränderte Dateien getrennt erfasst.
+3. Sichere Linux-Verschiebungserkennung über Geräte-ID, Inode, Größe und Nanosekunden-Zeit entwickelt.
+4. Eindeutige Hash-Verschiebungserkennung ergänzt.
+5. Hashwerte unveränderter Dateien wiederverwendet.
+6. Re-Scan mit persistentem Checkpoint fortsetzbar gemacht.
+7. Prozesslock für Vollindex, Re-Scan, Reparatur, Backup und Restore entwickelt.
+8. Persistente Fortschrittsereignisse mit Text- und JSONL-Ausgabe entwickelt.
+9. `index sessions`, `index backup` und `index restore` ergänzt.
+10. Schema-2→3-Migration und 19 Regressionstests ergänzt.
 
 ### Wichtigste offene Punkte
 
-1. Inkrementelle Aktualisierung bereits abgeschlossener Indexsitzungen.
-2. Erkennung gelöschter, verschobener oder geänderter Dateien ohne Vollscan.
-3. Fortschrittsereignisse, Pause und kontrollierter Abbruch während Hashing.
-4. Volltextsuche und optionaler Inhaltsindex.
-5. Grafische, touchfähige Oberfläche für Linux-Desktop und kleine Displays.
-6. Vorschaumodule für Bild, Audio, Video, Text, PDF und Archive.
-7. Sichere Sortier-, Verschiebe- und Umbenennungspläne mit Voransicht.
-8. Transaktionales Undo, Papierkorb, Quarantäne und Wiederherstellung.
-9. Paketierung als portables Linux-Programm mit Doppelklick-Start.
+1. Schnelle SQLite-Suchschicht mit Pagination und stabiler Sortierung.
+2. FTS5-Suche für Namen, Pfade und ausgewählte Textmetadaten.
+3. Inkrementelle Ordneraggregate.
+4. Sichere Aufbewahrung und Bereinigung alter Sitzungen.
+5. Änderungsberichte als JSON, CSV und HTML.
+6. Touchfähige PySide6-Oberfläche.
+7. Medienvorschau und technische Medienprüfung.
+8. Transaktionale Dateiänderungspläne mit Undo und Quarantäne.
 
-### Mögliche nächste Upgrades
-
-- Inkrementeller Re-Scan mit Dateisystem-Fingerabdruck und Änderungsabgleich.
-- FTS5-Suchindex für Pfade, Dateinamen und freigegebene Textinhalte.
-- PySide6-Oberfläche mit **Einfach**, **Geführt** und **Experte**.
-- Fortschritts- und Abbruchkanal für Scan und Hashing.
-- FFmpeg/ffprobe- und MediaInfo-Anbindung für echte Medienprüfung.
-
-Weitere Ideen stehen in [`UPGRADE_POOL.md`](UPGRADE_POOL.md).
+Weitere Maßnahmen stehen in [`TODO.md`](TODO.md) und [`UPGRADE_POOL.md`](UPGRADE_POOL.md).
 
 ---
 
 ## Sicherheitsgrundsatz
 
-**Analyse zuerst. Änderung später.**
+**Inventarisieren → vergleichen → erklären → erst später planen und ändern.**
 
-Der aktuelle Stand verändert keine Dateien in den untersuchten Sammlungen. Schreibzugriffe betreffen ausschließlich ausdrücklich gewählte Index- und Berichtsdateien. Vorhandene Berichte werden ohne `--overwrite-report` nicht ersetzt. Der Reparaturmodus legt standardmäßig eine konsistente SQLite-Sicherheitskopie an.
+Die aktuelle Alpha-Version verändert keine gescannten Originaldateien. Sie liest Metadaten und Inhalte nur, wenn Hashing ausdrücklich benötigt wird. Löschen, Verschieben, Sortieren und Umbenennen bleiben gesperrt, bis Planmanifest, Konfliktprüfung, Transaktionsjournal, Undo und Recovery vollständig vorhanden sind.
 
-## Aktuell funktionsfähig
+## Kernfunktionen
 
-### Rein lesender Direkt-Scan
+### Rein lesender Scan
 
-```bash
-datenbanktool scan ~/Musik
-```
+- relative Pfade
+- Dateigröße
+- Änderungszeit in UTC und Nanosekunden
+- Geräte-ID und Inode
+- Dateiendung und Kategorie
+- Symlink-Status
+- große Dateien
+- problematische Dateinamen
+- optionale SHA-256-Werte
+- Einzelfehler ohne Gesamtabsturz
 
-Optionaler JSON-Bericht:
+### Persistenter SQLite-Index
 
-```bash
-datenbanktool scan ~/Musik \
-  --hash-duplicates \
-  --json reports/musik.json
-```
+- versioniertes Schema
+- automatische Migrationen
+- WAL-Modus
+- Fremdschlüssel
+- transaktionale Batches
+- sichere Wiederaufnahme
+- Reparaturmodus
+- frühere Sitzungen bleiben unverändert erhalten
 
-### Persistenten SQLite-Index aufbauen
+### Inkrementeller Re-Scan
 
-```bash
-datenbanktool index build ~/Medien \
-  --database index/medien.sqlite3 \
-  --batch-size 500 \
-  --hash-duplicates
-```
+Ein Re-Scan erzeugt einen neuen Snapshot und vergleicht ihn mit einer abgeschlossenen Baseline.
 
-Der Import speichert jeden Batch zusammen mit seinem Wiederaufnahme-Checkpoint in einer Transaktion.
+Ergebnisarten:
 
-### Unterbrochenen Index fortsetzen
-
-```bash
-datenbanktool index build ~/Medien \
-  --database index/medien.sqlite3 \
-  --hash-duplicates \
-  --resume
-```
-
-Eine Sitzung wird nur fortgesetzt, wenn Wurzelpfad und sicherheitsrelevante Scanoptionen zum gespeicherten Fingerabdruck passen. Andernfalls beginnt eine neue Sitzung.
-
-### Indexstatus anzeigen
-
-```bash
-datenbanktool index status index/medien.sqlite3
-```
-
-Angezeigt werden Schema-Version, Sitzung, Phase, Status, Dateizahl, Fehler und Duplikatgruppen.
-
-### Index prüfen und reparieren
-
-```bash
-datenbanktool index repair index/medien.sqlite3
-```
-
-Standardmaßnahmen:
-
-- konsistente SQLite-Sicherheitskopie,
-- `PRAGMA quick_check` vor der Reparatur,
-- automatische Schemamigration,
-- liegengebliebene Sitzungen als unterbrochen markieren,
-- Duplikatgruppen neu aufbauen,
-- `REINDEX` und `ANALYZE`,
-- `PRAGMA integrity_check` und Fremdschlüsselprüfung danach.
-
-Optionale Komprimierung:
-
-```bash
-datenbanktool index repair index/medien.sqlite3 --vacuum
-```
-
-Die Sicherung lässt sich nur bewusst deaktivieren:
-
-```bash
-datenbanktool index repair index/medien.sqlite3 --without-backup
-```
-
-### CSV- und HTML-Berichte erzeugen
-
-```bash
-datenbanktool report index/medien.sqlite3 \
-  --csv reports/medien.csv \
-  --html reports/medien.html
-```
-
-Filter lassen sich kombinieren:
-
-```bash
-datenbanktool report index/medien.sqlite3 \
-  --html reports/problematische-audios.html \
-  --category audio \
-  --min-size-mib 10 \
-  --max-size-mib 2000 \
-  --name-warning-only \
-  --duplicates-only
-```
-
-Verfügbare Kategorien:
-
-- `audio`
-- `video`
-- `image`
-- `text`
-- `archive`
-- `code`
-- `document`
-- `other`
-
-Der HTML-Bericht ist eine lokale Einzeldatei und bietet zusätzlich:
-
-- Schnellsuche,
-- Dateitypfilter,
-- Schalter für Namensprobleme,
-- Schalter für Duplikate,
-- sichtbare Trefferzahl.
-
-## SQLite-Architektur
-
-### Schema-Versionierung
-
-- SQLite `PRAGMA user_version`
-- Tabelle `schema_migrations`
-- Spiegelung in `metadata.schema_version`
-- Abbruch bei Datenbanken, deren Schema neuer als die Programmversion ist
-
-### Zentrale Tabellen
-
-| Tabelle | Zweck |
+| Typ | Bedeutung |
 |---|---|
-| `scan_sessions` | Sitzungsstatus, Phase, Checkpoints und Optionen |
-| `files` | Dateimetadaten und optionale SHA-256-Werte |
-| `filename_warnings` | normalisierte Warncodes pro Datei |
-| `scan_errors` | isolierte Datei- und Lesefehler |
-| `duplicate_groups` | exakte Duplikatgruppen |
-| `duplicate_members` | Zuordnung Dateien zu Duplikatgruppen |
-| `schema_migrations` | nachvollziehbare Datenbankmigrationen |
+| `added` | neue Datei |
+| `modified` | Datei am gleichen Pfad wurde geändert oder ersetzt |
+| `moved` | eindeutige Verschiebung erkannt |
+| `removed` | Datei aus der Baseline fehlt |
+| `unchanged` | Identität und relevante Metadaten stimmen überein |
 
-### Wiederaufnahmevertrag
+Unsichere Fälle werden nicht erfunden. Eine mehrdeutige mögliche Verschiebung bleibt sichtbar als `added` plus `removed`.
 
-1. Verzeichnislauf ist deterministisch sortiert.
-2. Datei-Batch und Checkpoint werden gemeinsam bestätigt.
-3. Dateipfade sind je Sitzung eindeutig.
-4. Wiederholte Importe aktualisieren statt zu duplizieren.
-5. Hashing besitzt einen eigenen Wiederaufnahme-Checkpoint.
-6. Erst nach Finalisierung erhält die Sitzung den Status `complete`.
+### Prozesslock
 
-## Projektstruktur
+Alle schreibenden Indexaktionen verwenden denselben Linux-Prozesslock:
 
-```text
-DATENBANKTOOL/
-├── src/datenbanktool/
-│   ├── cli.py
-│   └── core/
-│       ├── classification.py
-│       ├── index_database.py
-│       ├── models.py
-│       ├── naming.py
-│       ├── reports.py
-│       └── scanner.py
-├── tests/
-│   ├── test_cli.py
-│   ├── test_foundation.py
-│   └── test_index_database.py
-├── project_registry.json
-├── ANALYSE-PUNKTE.md
-├── SCHWACHSTELLEN.md
-├── TODO.md
-├── UPGRADE_POOL.md
-├── ENTWICKLERDOKU.md
-└── CHANGELOG.md
+- `index build`
+- `index rescan`
+- `index repair`
+- `index backup`
+- `index restore`
+
+Der Lock enthält Diagnoseinformationen zu PID, Host, Zeitpunkt und Operation. Nach Prozessende gibt Linux den Kernel-Lock automatisch frei.
+
+### Fortschrittsereignisse
+
+Indexläufe erzeugen persistente Ereignisse für:
+
+- Start oder Fortsetzung
+- bestätigte Batches
+- Vergleichsabschluss
+- Hashing
+- Unterbrechung
+- Fehler
+- erfolgreichen Abschluss
+
+Ausgabevarianten:
+
+```bash
+datenbanktool index rescan ~/Medien --database index.sqlite3 --progress human
+
+datenbanktool index rescan ~/Medien --database index.sqlite3 --progress jsonl
+
+datenbanktool index rescan ~/Medien --database index.sqlite3 --progress quiet
 ```
 
 ## Installation für die Entwicklung
@@ -243,33 +138,243 @@ python -m pip install --upgrade pip
 python -m pip install -e .
 ```
 
+## Verwendung
+
+### 1. Vollständige Baseline anlegen
+
+```bash
+datenbanktool index build ~/Medien \
+  --database index/medien.sqlite3 \
+  --batch-size 500 \
+  --hash-duplicates
+```
+
+### 2. Unterbrochenen Vollindex fortsetzen
+
+```bash
+datenbanktool index build ~/Medien \
+  --database index/medien.sqlite3 \
+  --hash-duplicates \
+  --resume
+```
+
+### 3. Inkrementellen Re-Scan ausführen
+
+```bash
+datenbanktool index rescan ~/Medien \
+  --database index/medien.sqlite3
+```
+
+Ohne weitere Angaben übernimmt der Re-Scan Hashing-, Symlink- und Größenoptionen aus der Baseline.
+
+### 4. Bestimmte Baseline verwenden
+
+```bash
+datenbanktool index rescan ~/Medien \
+  --database index/medien.sqlite3 \
+  --baseline-session-id 12
+```
+
+### 5. Unterbrochenen Re-Scan fortsetzen
+
+```bash
+datenbanktool index rescan ~/Medien \
+  --database index/medien.sqlite3 \
+  --resume
+```
+
+### 6. Lock-Wartezeit festlegen
+
+```bash
+datenbanktool index rescan ~/Medien \
+  --database index/medien.sqlite3 \
+  --lock-timeout 15
+```
+
+Ohne Wartezeit bricht eine konkurrierende Schreibaktion sofort mit verständlicher Besitzerdiagnose ab.
+
+## Sitzungen verwalten
+
+### Sitzungen auflisten
+
+```bash
+datenbanktool index sessions index/medien.sqlite3
+```
+
+### Als JSON ausgeben
+
+```bash
+datenbanktool index sessions index/medien.sqlite3 --json
+```
+
+### Filtern
+
+```bash
+datenbanktool index sessions index/medien.sqlite3 \
+  --status complete \
+  --root ~/Medien \
+  --limit 10
+```
+
+Die Ausgabe enthält Modus, Status, Baseline, Dateizahl, Fehler, Duplikatgruppen und Änderungszahlen.
+
+## Backup und Restore
+
+### Automatische Sicherung
+
+```bash
+datenbanktool index backup index/medien.sqlite3
+```
+
+### Festes Ziel
+
+```bash
+datenbanktool index backup index/medien.sqlite3 \
+  --output backups/medien-2026-08-04.sqlite3
+```
+
+Vorhandene Ziele werden nicht still überschrieben. Bewusste Freigabe:
+
+```bash
+datenbanktool index backup index/medien.sqlite3 \
+  --output backups/medien.sqlite3 \
+  --overwrite
+```
+
+### Wiederherstellen
+
+```bash
+datenbanktool index restore index/medien.sqlite3 \
+  --backup backups/medien-2026-08-04.sqlite3
+```
+
+Vor der Wiederherstellung wird standardmäßig eine zusätzliche Rückfallsicherung der aktiven Datenbank erzeugt. Nur bewusst deaktivieren:
+
+```bash
+datenbanktool index restore index/medien.sqlite3 \
+  --backup backups/medien.sqlite3 \
+  --without-safety-backup
+```
+
+### Sicherheitsablauf beim Restore
+
+1. Sicherungsdatei öffnen.
+2. SQLite-Schema prüfen.
+3. `PRAGMA quick_check` ausführen.
+4. aktive Datenbank optional sichern.
+5. Wiederherstellung in temporärer Datenbank aufbauen.
+6. temporäre Datenbank erneut prüfen.
+7. Ziel atomar ersetzen.
+8. Ziel nochmals prüfen.
+9. bei Fehler Rückfallsicherung einspielen.
+
+## Status und Reparatur
+
+```bash
+datenbanktool index status index/medien.sqlite3
+
+datenbanktool index repair index/medien.sqlite3
+```
+
+Optionale Komprimierung:
+
+```bash
+datenbanktool index repair index/medien.sqlite3 --vacuum
+```
+
+## CSV- und HTML-Berichte
+
+```bash
+datenbanktool report index/medien.sqlite3 \
+  --csv reports/problemdateien.csv \
+  --html reports/problemdateien.html \
+  --category audio \
+  --min-size-mib 10 \
+  --name-warning-only \
+  --duplicates-only
+```
+
+Filter:
+
+- Dateityp
+- Mindestgröße
+- Maximalgröße
+- Namensprobleme
+- Duplikatgruppen
+- konkrete Sitzung
+
+HTML-Berichte funktionieren vollständig lokal und enthalten Schnellsuche sowie interaktive Filter.
+
+## Dateinamenprüfung
+
+Linux erlaubt viele Zeichen, die in Shells, Archiven, Netzlaufwerken oder anderen Betriebssystemen problematisch sind. Das Tool meldet unter anderem:
+
+- führende oder abschließende Leerzeichen
+- führende Bindestriche
+- Steuerzeichen
+- Zeilenumbrüche
+- schlecht portable Sonderzeichen
+- uneinheitliche Unicode-Normalisierung
+- überlange Dateinamen
+- mehrfach aufeinanderfolgende Leerzeichen
+
+Es wird nichts automatisch umbenannt.
+
+## Projektstruktur
+
+```text
+DATENBANKTOOL/
+├── src/datenbanktool/
+│   ├── cli.py
+│   └── core/
+│       ├── classification.py
+│       ├── incremental.py
+│       ├── index_admin.py
+│       ├── index_database.py
+│       ├── index_lock.py
+│       ├── models.py
+│       ├── naming.py
+│       ├── progress.py
+│       ├── reports.py
+│       └── scanner.py
+├── tests/
+├── project_registry.json
+├── ANALYSE-PUNKTE.md
+├── SCHWACHSTELLEN.md
+├── TODO.md
+├── UPGRADE_POOL.md
+├── ENTWICKLERDOKU.md
+└── CHANGELOG.md
+```
+
 ## Prüfungen
 
 ```bash
 python -m compileall -q src tests
-PYTHONPATH=src PYTHONWARNINGS=error \
-  python -m unittest discover -s tests -v
+PYTHONPATH=src PYTHONWARNINGS=error python -m unittest discover -s tests -v
 ```
 
-Aktueller validierter Stand:
+Aktueller Prüfstand: **19 von 19 Tests erfolgreich**.
 
-- **14/14 Tests erfolgreich**
-- Python-Kompilierung erfolgreich
-- CLI-End-to-End-Test erfolgreich
-- Schema-Neuanlage erfolgreich
-- V1→V2-Migration erfolgreich
-- Unterbrechung und Wiederaufnahme erfolgreich
-- Duplikat-Neuaufbau erfolgreich
-- Reparatursicherung mit `quick_check = ok`
-- gefilterte CSV-/HTML-Ausgabe erfolgreich
-- keine Warnungen bei Testausführung mit `PYTHONWARNINGS=error`
+GitHub Actions prüft Python 3.10 und Python 3.12.
 
-Ruff und MyPy waren in der lokalen Prüfungsumgebung nicht installiert und wurden deshalb in dieser Iteration nicht als bestanden ausgewiesen.
+## Dokumentation
 
-## Aktuelle Grenzen
+- [`ANALYSE-PUNKTE.md`](ANALYSE-PUNKTE.md): Änderungsmodell und Architekturentscheidungen
+- [`SCHWACHSTELLEN.md`](SCHWACHSTELLEN.md): bekannte Grenzen und Risiken
+- [`TODO.md`](TODO.md): priorisierte Umsetzungsschritte
+- [`UPGRADE_POOL.md`](UPGRADE_POOL.md): spätere Erweiterungen
+- [`ENTWICKLERDOKU.md`](ENTWICKLERDOKU.md): Schema-, Lock-, Backup- und Restoreverträge
+- [`CHANGELOG.md`](CHANGELOG.md): Versionshistorie
 
-- Wiederaufnahme setzt voraus, dass der gespeicherte Checkpoint im Verzeichnislauf noch auffindbar ist.
-- Abgeschlossene Sitzungen werden noch nicht inkrementell aktualisiert.
-- Reparatur kann strukturell lesbare Datenbanken korrigieren, aber keine beliebig zerstörte SQLite-Datei garantieren.
-- Sehr große HTML-Berichte können den Browser stärker belasten; CSV und SQLite bleiben für große Bestände geeigneter.
-- Verschieben, Umbenennen, Editieren, Sortieren und Löschen bleiben gesperrt, bis Plan-, Journal-, Undo- und Recoveryverträge implementiert sind.
+## Aktuelle Grenze
+
+DATENBANKTOOL ist ein belastbarer, rein lesender Alpha-Datenkern, aber noch kein fertiger Dateimanager. Originaldateien können weiterhin nicht verschoben, gelöscht, sortiert oder umbenannt werden.
+
+## Direkt folgender technischer Entwicklungsschritt
+
+Eine lesende SQLite-Suchschicht mit Pagination, stabiler Sortierung, kombinierbaren Filtern und FTS5 entwickeln.
+
+## Alternative Verbesserung mit hohem Nutzen und geringem Risiko
+
+Änderungen einer Re-Scan-Sitzung über `index changes` als JSON, CSV und HTML sichtbar machen.

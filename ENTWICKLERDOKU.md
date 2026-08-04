@@ -1,141 +1,93 @@
 # Entwicklerdokumentation
 
-## Architekturstand 0.2.0-alpha.1
+## Architektur
 
-DATENBANKTOOL besitzt jetzt drei getrennte Schichten:
+1. Rein lesender Scanner.
+2. Versionierter SQLite-Snapshot-Index.
+3. Inkrementeller Vergleich zwischen abgeschlossenen Sitzungen.
+4. Lesende Berichts- und künftig Suchschicht.
+5. Spätere Planungsengine für Dateiänderungen.
+6. Spätere Transaktions- und Wiederherstellungsengine.
+7. Oberfläche ohne direkten Dateisystem-Schreibzugriff.
 
-1. **Scanner** – rein lesende Direktanalyse.
-2. **Indexkern** – persistente, versionierte und wiederaufnehmbare SQLite-Sitzungen.
-3. **Berichte** – gefilterte CSV-/HTML-Ausgabe ohne Zugriff auf Nutzerdaten.
+## SQLite-Schema 3
 
-Schreibende Dateioperationen bleiben außerhalb dieses Kerns.
+### Neue Strukturen
 
-## Quellaufbau
+- `scan_sessions.parent_session_id`: Baseline eines Re-Scans.
+- `scan_sessions.scan_mode`: `full` oder `incremental`.
+- `scan_sessions.incremental_stage`: interner, fortsetzbarer Re-Scan-Schritt.
+- `files.source_file_id`: Verbindung zur Baseline-Datei.
+- `file_identity`: Geräte-ID, Inode und Änderungszeit in Nanosekunden.
+- `file_changes`: normalisierte Änderungsereignisse.
+- `progress_events`: persistente Fortschritts- und Diagnoseereignisse.
 
-- `src/datenbanktool/cli.py`: CLI-Routing und laienverständliche Statusausgabe.
-- `src/datenbanktool/core/scanner.py`: Direkt-Scan und gemeinsame SHA-256-Funktion.
-- `src/datenbanktool/core/index_database.py`: Schema, Migrationen, Batch-Import, Resume, Status und Reparatur.
-- `src/datenbanktool/core/reports.py`: Datenfilter sowie atomare CSV-/HTML-Ausgabe.
-- `src/datenbanktool/core/models.py`: neutrale Scanmodelle.
-- `project_registry.json`: Projekt-, Versions- und Sicherheitsstatus.
+Die historische `phase`-Check-Constraint wird nicht erweitert. Neue Re-Scan-Unterphasen liegen deshalb bewusst in `incremental_stage`. Dadurch bleibt die Migration vorhandener Schema-2-Datenbanken kompatibel.
 
-## SQLite-Schema
+## Re-Scan-Ablauf
 
-Aktuelle Version: `2`.
-
-### Migrationsvertrag
-
-- `PRAGMA user_version` ist die technische Schemaquelle.
-- `schema_migrations` protokolliert jede angewandte Migration.
-- `metadata.schema_version` dient als prüfbarer Spiegel.
-- Migrationen laufen einzeln in Transaktionen.
-- Neuere, unbekannte Schemaversionen werden abgelehnt.
-- Migrationen müssen wiederholbar sicher sein, soweit SQLite dies erlaubt.
-
-### Sitzungsphasen
-
-- `scanning`
-- `hashing`
-- `finalizing`
-- `complete`
-
-### Sitzungsstatus
-
-- `running`
-- `interrupted`
-- `complete`
-- `failed`
-
-Status und Phase sind getrennt: Eine unterbrochene Sitzung kann beispielsweise weiterhin in der Phase `scanning` stehen.
-
-## Batch-Import
-
-Ein Batch enthält:
-
-- Datei-Metadaten,
-- normalisierte Namenswarnungen,
-- isolierte Scanfehler,
-- letzten bearbeiteten relativen Pfad,
-- aktualisierte Zähler,
-- UTC-Aktualisierungszeit.
-
-Alle Bestandteile werden gemeinsam bestätigt. `UNIQUE(session_id, relative_path)` verhindert doppelte Dateizeilen. Erneutes Einlesen aktualisiert vorhandene Daten.
-
-## Wiederaufnahme
-
-Der Fingerabdruck enthält:
-
-- kanonischen Wurzelpfad,
-- Duplikat-Hashing aktiviert/deaktiviert,
-- Grenze großer Dateien,
-- Symlink-Verhalten.
-
-Batchgröße und `max_files` sind Laufsteuerung und beeinflussen die Kompatibilität nicht.
-
-Der Verzeichnislauf sortiert Verzeichnisse und Dateien deterministisch. Die Wiederaufnahme sucht zunächst den exakten Checkpoint und fährt danach fort. Fehlt der Checkpoint, wird kontrolliert abgebrochen statt unsicher weiterzulaufen.
-
-## Hashing und Duplikate
-
-1. Nur Größenklassen mit mindestens zwei Dateien werden gehasht.
-2. Symlinks und leere Dateien werden ausgeschlossen.
-3. Hashwerte werden batchweise gespeichert.
-4. Duplikatgruppen werden erst in der Finalisierung aus dem Index aufgebaut.
-5. Der Reparaturmodus kann Gruppen reproduzierbar neu erzeugen.
-
-## Reparaturvertrag
-
-Standardmäßig wird vor Änderungen mit `sqlite3.Connection.backup()` eine konsistente Sicherungsdatenbank erzeugt. Danach:
-
-1. `quick_check` erfassen.
+1. Prozesslock erwerben.
 2. Schema migrieren.
-3. `running`-Sitzungen auf `interrupted` setzen.
-4. Duplikatgruppen neu aufbauen.
-5. `REINDEX` ausführen.
-6. `ANALYZE` ausführen.
-7. optional `VACUUM` ausführen.
-8. `foreign_key_check` und `integrity_check` auswerten.
+3. abgeschlossene Baseline bestimmen.
+4. kompatiblen Fingerabdruck erzeugen.
+5. neue oder unterbrochene Re-Scan-Sitzung öffnen.
+6. Dateibaum deterministisch durchlaufen.
+7. gleiche Pfade vergleichen und Hashwerte unveränderter Dateien übernehmen.
+8. eindeutige Inode-Verschiebungen erkennen.
+9. optional eindeutige Hash-Verschiebungen erkennen.
+10. nicht zugeordnete Baseline-Dateien als entfernt markieren.
+11. nur fehlende Hash-Kandidaten verarbeiten.
+12. Duplikatgruppen neu aufbauen.
+13. Sitzung vollständig abschließen.
 
-`successful=True` gilt nur bei `integrity_check = ok` und ohne Fremdschlüsselfehler.
+## Lockvertrag
 
-## Berichtsvertrag
+`IndexProcessLock` verwendet `<datenbank>.lock` und `fcntl.flock`.
 
-- Filter werden in SQL angewandt.
-- CSV verwendet UTF-8 mit BOM.
-- HTML ist vollständig lokal und eigenständig.
-- Dateipfade und Werte werden HTML-escaped.
-- vorhandene Ziele werden nicht still ersetzt.
-- bei CSV+HTML werden beide Ziele vor dem Schreiben geprüft.
-- temporäre Dateien werden bei Fehlern entfernt.
+- Der Lock muss vor jeder schreibenden Indexaktion erworben werden.
+- Das bloße Vorhandensein der Lockdatei bedeutet keine Sperre; entscheidend ist der Kernel-Lock.
+- Metadaten in der Datei dienen nur der Diagnose.
+- Callbacks oder Fortschrittsausgabe dürfen einen Indexlauf nicht beschädigen.
 
-## Qualitätsprüfungen
+## Backupvertrag
+
+- Sicherungsziel vorab prüfen.
+- niemals still überschreiben.
+- SQLite-Backup-API statt Dateikopie verwenden.
+- temporäre Sicherung mit `quick_check` prüfen.
+- erst danach atomar sichtbar machen.
+
+## Restorevertrag
+
+- Sicherung vorab vollständig prüfen.
+- neuere unbekannte Schemaversion ablehnen.
+- standardmäßig Rückfallsicherung erzeugen.
+- Wiederherstellung zuerst in temporärer Datenbank aufbauen.
+- Ziel atomar ersetzen und erneut prüfen.
+- bei Fehler Rückfallsicherung einspielen.
+
+## Fortschrittsereignisse
+
+`ProgressEvent` enthält:
+
+- Phase
+- Ereignisart
+- verständliche Nachricht
+- aktuellen und optional gesamten Wert
+- Sitzung
+- strukturierte Zusatzdaten
+
+Ereignisse werden in SQLite gespeichert und optional als Text oder JSONL ausgegeben.
+
+## Prüfungen
 
 ```bash
 python -m compileall -q src tests
-PYTHONPATH=src PYTHONWARNINGS=error \
-  python -m unittest discover -s tests -v
+PYTHONPATH=src PYTHONWARNINGS=error python -m unittest discover -s tests -v
 ```
 
-Validierte Fälle:
+Aktueller Stand: 19 Tests.
 
-- Schema-Neuanlage,
-- V1→V2-Migration,
-- Batchgröße 1,
-- Unterbrechung und Wiederaufnahme,
-- Eindeutigkeit importierter Pfade,
-- Duplikatgruppen nach Wiederaufnahme,
-- Indexstatus,
-- Reparatursicherung und Integrität,
-- kombinierte Berichtfilter,
-- Überschreibschutz,
-- Schutz vor halbem Mehrfachbericht,
-- CLI-End-to-End-Ablauf.
+## Nächster technischer Schritt
 
-Zusätzlich läuft GitHub Actions unter Python 3.10 und 3.12 mit `compileall`, vollständigen Unittests und `PYTHONWARNINGS=error`.
-
-## Nächster Architekturblock
-
-Inkrementeller Re-Scan mit Änderungsabgleich, Prozesslock und Fortschrittsereignissen. Erst danach sollte die grafische Oberfläche auf dem Indexkern aufsetzen.
-
-## Unverändert
-
-`AGENTS.md` bleibt unverändert.
+Eine lesende SQLite-Suchschicht mit Pagination, stabiler Sortierung, kombinierten Filtern und FTS5 entwickeln. Danach können GUI und mobile Bedienung auf eine belastbare API aufsetzen.

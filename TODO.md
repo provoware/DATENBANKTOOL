@@ -2,56 +2,59 @@
 
 ## Erledigt
 
-1. [x] Rein lesenden Scanner anlegen.
-2. [x] Dateiklassifizierung implementieren.
-3. [x] Dateinamenrisiken erkennen.
-4. [x] Große Dateien markieren.
-5. [x] Exakte Duplikate per SHA-256 erkennen.
-6. [x] JSON-Berichte atomar schreiben.
-7. [x] Projekt- und Sicherheitsregister einführen.
-8. [x] SQLite-Index mit Schema-Versionierung implementieren.
-9. [x] V1→V2-Migration implementieren.
-10. [x] Batch-Import transaktional umsetzen.
-11. [x] Scan-Wiederaufnahme mit Checkpoint umsetzen.
-12. [x] Hashing-Wiederaufnahme vorbereiten.
-13. [x] Reparaturmodus mit Sicherheitskopie implementieren.
-14. [x] CSV-Berichte mit Filtern implementieren.
-15. [x] HTML-Berichte mit Filtern implementieren.
+1. [x] Rein lesenden Verzeichnisscanner entwickeln.
+2. [x] Medien-, Text-, Archiv-, Code- und Dokumentklassifizierung entwickeln.
+3. [x] Problematische Dateinamen prüfen.
+4. [x] Exakte Duplikate per SHA-256 erkennen.
+5. [x] SQLite-Index mit Schema-Versionierung entwickeln.
+6. [x] Batch-Import transaktional absichern.
+7. [x] Unterbrochene Vollindizierung fortsetzen.
+8. [x] Reparaturmodus mit Sicherung entwickeln.
+9. [x] CSV- und HTML-Berichte mit Filtern entwickeln.
+10. [x] Inkrementellen Re-Scan entwickeln.
+11. [x] Neue Dateien erkennen.
+12. [x] Geänderte Dateien erkennen.
+13. [x] Verschobene Dateien sicher erkennen.
+14. [x] Entfernte Dateien erkennen.
+15. [x] Unveränderte Hashwerte wiederverwenden.
+16. [x] Prozesslock für schreibende Indexaktionen entwickeln.
+17. [x] Persistente Fortschrittsereignisse entwickeln.
+18. [x] Sitzungsübersicht entwickeln.
+19. [x] Konsistente Indexsicherung entwickeln.
+20. [x] Geprüfte Wiederherstellung mit Sicherheitskopie entwickeln.
+21. [x] Python-3.10-/3.12-CI einrichten.
+22. [x] Schema-2→3-Migration testen.
+23. [x] Inode-Wiederverwendung als Fehlklassifikation verhindern.
 
-## Priorität P0 – nächster technischer Block
+## P0 – Direkt folgende technische Arbeiten
 
-1. [ ] Inkrementellen Re-Scan abgeschlossener Sitzungen entwickeln.
-2. [ ] Änderungen, neue und entfernte Dateien sicher abgleichen.
-3. [ ] Dateisystemidentität und Mountwechsel erfassen.
-4. [ ] Fortschrittsereignisse für Scan und Hashing einführen.
-5. [ ] Kontrolliertes Pausieren und Abbrechen ohne Testgrenze umsetzen.
-6. [ ] Wiederaufnahme bei entferntem Checkpoint sicher lösen.
-7. [ ] Simultane Schreibzugriffe über Anwendungslock verhindern.
-8. [ ] Datenbank-Backup und Wiederherstellung als eigenes CLI-Kommando ergänzen.
+1. [ ] Schnelle SQLite-Suchschicht mit Pagination, Sortierung und kombinierbaren Filtern entwickeln.
+2. [ ] FTS5-Index für Pfade, Namen und ausgewählte Textmetadaten entwickeln.
+3. [ ] Ordneraggregate für Größe, Dateizahl, Typverteilung und Problemzahlen inkrementell pflegen.
+4. [ ] Konsistente Prozesssperre auch für zukünftige schreibende Planungsoperationen erzwingen.
+5. [ ] Sitzungsaufbewahrung und sichere Bereinigung alter Snapshots entwickeln.
+6. [ ] Änderungsbericht pro Re-Scan als JSON, CSV und HTML ergänzen.
 
-## Priorität P1 – Suche und Bedienung
+## P1 – Bedienung und Medienprüfung
 
-9. [ ] Indexsuche nach Pfad, Dateiname, Endung, Kategorie und Größe ergänzen.
-10. [ ] FTS5 für freigegebene Textinhalte evaluieren.
-11. [ ] gespeicherte Filterprofile einführen.
-12. [ ] Ergebnisstatistik nach Kategorie, Größe und Warnung ergänzen.
-13. [ ] HTML-Ausgabe für Millionen Zeilen paginieren oder aufteilen.
-14. [ ] PySide6-Grundoberfläche mit Einfach-/Geführt-/Expertenmodus anlegen.
-15. [ ] Fortschritt, Pause, Abbruch und Wiederaufnahme laiengerecht darstellen.
+7. [ ] Touchfähige PySide6-Oberfläche mit Einfach-, Geführt- und Expertenmodus entwickeln.
+8. [ ] Bild-, Audio-, Video- und Textvorschau entwickeln.
+9. [ ] FFmpeg/ffprobe und MediaInfo optional anbinden.
+10. [ ] Beschädigte oder falsch benannte Medien erkennen.
+11. [ ] Große Ordner und Speicherfresser visuell darstellen.
+12. [ ] Suchprofile speichern, exportieren und importieren.
 
-## Priorität P2 – Medien und Prüfung
+## P2 – Sichere Änderungsplanung
 
-16. [ ] ffprobe/MediaInfo-Abstraktion entwickeln.
-17. [ ] Bild-, Audio-, Video- und Textvorschau einführen.
-18. [ ] beschädigte und falsch benannte Medien erkennen.
-19. [ ] Audio-Fingerprints und Bildähnlichkeit getrennt von exakten Duplikaten umsetzen.
-20. [ ] Archive ohne unkontrolliertes Entpacken inventarisieren.
+13. [ ] Unveränderliche Umbenennungspläne mit Vorher-Nachher-Vorschau entwickeln.
+14. [ ] Zielkonflikt-, Rechte- und Speicherplatzprüfung entwickeln.
+15. [ ] Transaktionsjournal für Kopieren, Verschieben und Umbenennen entwickeln.
+16. [ ] Undo-Manifest und Quarantäne entwickeln.
+17. [ ] Abbruch- und Recoverytests für jede schreibende Operation entwickeln.
 
-## Weiterhin gesperrt
+## P3 – Qualität und Veröffentlichung
 
-21. [ ] Stapelumbenennung.
-22. [ ] Verschieben und Sortieren.
-23. [ ] Quarantäne und Papierkorb.
-24. [ ] Undo-Journal.
-25. [ ] Recovery nach Abbruch schreibender Operationen.
-26. [ ] Freigabe schreibender Dateioperationen erst nach vollständigen Sicherheitsgates.
+18. [ ] Ruff, MyPy, Bandit und pip-audit in CI integrieren.
+19. [ ] Testabdeckung auf mindestens 80 Prozent erhöhen.
+20. [ ] Lasttests mit mindestens einer Million Indexeinträgen durchführen.
+21. [ ] Portables Linux-Paket mit Doppelklick-Starter entwickeln.
