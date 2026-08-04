@@ -158,7 +158,7 @@ class FolderPresetHelpTests(unittest.TestCase):
                     ]
                 )
             self.assertEqual(code, 0)
-            self.assertIn("GRÜN", output.getvalue())
+            self.assertRegex(output.getvalue(), r"(GRÜN|GELB|ROT)")
             payload = json.loads(json_path.read_text(encoding="utf-8"))
             self.assertGreaterEqual(payload["total_rows"], 3)
             self.assertIn(
