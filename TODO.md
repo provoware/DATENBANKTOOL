@@ -2,34 +2,38 @@
 
 ## In dieser Iteration erledigt
 
-1. [x] Ordner-Zeitreihe über mehrere abgeschlossene Scans entwickeln.
-2. [x] Relativen Ordner einschließlich Unterordnern auswerten.
-3. [x] Dateizahl und Gesamtgröße je Scan darstellen.
-4. [x] Datei- und Größendifferenz zum vorherigen Scan berechnen.
-5. [x] Prozentuale Größenänderung mit Null-Ausgangswert sicher behandeln.
-6. [x] Wachstum, Rückgang, Neu, Entfernt, Dateizahländerung und Unverändert erkennen.
-7. [x] Scan-ID, UTC-Zeitpunkt und Scan-Modus ausgeben.
-8. [x] Zeitraum über Ausgangs- und Zielsitzung begrenzen.
-9. [x] Maximal 2 bis 500 Zeitpunkte über `--limit` zulassen.
-10. [x] Unterschiedliche Stammordner kontrolliert ablehnen.
-11. [x] Absolute Pfade und `..` im relativen Ordnerpfad ablehnen.
-12. [x] Mindestens zwei abgeschlossene Scans verlangen.
-13. [x] SQLite ausschließlich mit `mode=ro` und `query_only` öffnen.
-14. [x] JSON-Bericht der Zeitreihe atomar erzeugen.
-15. [x] Calc-kompatible CSV mit UTF-8-BOM und Semikolon erzeugen.
-16. [x] Eigenständigen Offline-HTML-Bericht mit Tooltips und ARIA erzeugen.
-17. [x] Vorhandene Berichte vor stillem Überschreiben schützen.
-18. [x] Ordnervergleich um `--all-pages` erweitern.
-19. [x] Alle gefilterten JSON-, CSV- und HTML-Zeilen vollständig exportieren.
-20. [x] Terminalanzeige trotz vollständigem Vergleichsexport paginiert halten.
-21. [x] Vergleichsergebnis nur einmal aggregieren und anschließend paginieren.
-22. [x] `--all-pages` ohne Exportziel kontrolliert ablehnen.
-23. [x] Handler, `CommandPolicy` und Modulzuständigkeit automatisch prüfen.
-24. [x] Zeitreihen-, Sicherheits- und Vollständigkeitstests ergänzen.
-25. [x] 71 Tests unter Python 3.10 und 3.12 erfolgreich ausführen.
-26. [x] Quick-Abnahme mit 600 Dateien und 11/11 Kriterien erneut ausführen.
-27. [x] Standard-Abnahme mit 10.000 Dateien und 11/11 Kriterien erneut ausführen.
-28. [x] Finale Abnahmeberichte und Prüfsummen im Projektregister dokumentieren.
+1. [x] Ordner-Zeitreihe als eigenen Startseitenpunkt 11 aufnehmen.
+2. [x] Indexdatenbank im geführten Dialog auswählen.
+3. [x] Relativen Ordner oder `.` verständlich abfragen.
+4. [x] Älteste und neueste Scan-ID optional abfragen.
+5. [x] Zeitpunkte vor dem Start auf 2 bis 500 validieren.
+6. [x] Berichtsauswahl auf kein, JSON, CSV oder HTML begrenzen.
+7. [x] Berichtspfad mit eigener Feldhilfe abfragen.
+8. [x] Geplanten Zeitreihenbefehl sichtbar anzeigen.
+9. [x] Sichere Argumentliste ohne Shell-Auswertung verwenden.
+10. [x] Detailhilfe über `?11` verbinden.
+11. [x] Schritt-für-Schritt-Hilfe über `g11` verbinden.
+12. [x] Feldhilfe über `?` für jede neue Eingabe ergänzen.
+13. [x] Zeitreihenspezifische Fehlerhilfe ergänzen.
+14. [x] Eigenständiges Hilfethema `folder-timeline` integrieren.
+15. [x] Hilfesuche nach Verlauf und Speicherentwicklung ergänzen.
+16. [x] Größenverlauf als lokales SVG-Liniendiagramm erzeugen.
+17. [x] Dateizahlverlauf als lokales SVG-Liniendiagramm erzeugen.
+18. [x] SVG-`title`, `desc` und `aria-labelledby` ergänzen.
+19. [x] Datenpunkte mit Tastaturfokus und `aria-label` versehen.
+20. [x] Achsen-, Scan- und Wertbeschriftungen sichtbar darstellen.
+21. [x] Minimum, Maximum und Nettoänderung textlich zusammenfassen.
+22. [x] Vollständige Wertetabelle unter den Diagrammen erhalten.
+23. [x] Lange Zeitreihen durch reduzierte sichtbare Beschriftung entzerren.
+24. [x] JavaScript und externe HTML-Ressourcen vollständig vermeiden.
+25. [x] Responsive Darstellung und sichtbare Fokusmarkierung ergänzen.
+26. [x] Menü-, Dialog- und Validierungstests ergänzen.
+27. [x] Detail-, Schritt-, Feld- und Fehlerhilfetests ergänzen.
+28. [x] SVG-, ARIA-, Offline- und Skriptfreiheitstests ergänzen.
+29. [x] 77 Tests unter Python 3.10 und 3.12 erfolgreich ausführen.
+30. [x] Quick-Abnahme mit 600 Dateien und 11/11 Kriterien ausführen.
+31. [x] Standard-Abnahme mit 10.000 Dateien und 11/11 Kriterien ausführen.
+32. [x] Version und Pflichtdokumentation auf 0.12.0-alpha.1 synchronisieren.
 
 ## Noch offen
 
@@ -43,10 +47,10 @@
 
 ## Direkt folgender technischer Entwicklungsschritt
 
-Den Zeitreihenbefehl als eigenen Punkt in die geführte Startseite aufnehmen und mit
-Detail-, Schritt-für-Schritt-, Feld- und Fehlerhilfe verbinden.
+Zeitreihen-Vorlagen entwickeln: häufig geprüfte relative Ordnerpfade lokal, validiert
+und überschreibgeschützt speichern und in der geführten Startseite auswählen.
 
 ## Alternative Verbesserung mit hohem Nutzen und geringem Risiko
 
-Den Offline-HTML-Bericht der Zeitreihe um zwei barrierefreie, lokal erzeugte
-SVG-Liniengrafiken für Größe und Dateizahl ergänzen.
+Optionale rein lesende Trendgrenzen für starkes Größen- oder Dateiwachstum ergänzen und
+im Terminal sowie HTML immer mit Klartext und Begründung anzeigen.
