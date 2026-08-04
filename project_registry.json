@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "project": "DATENBANKTOOL",
-  "version": "0.5.0-alpha.1",
-  "phase": "folder-guidance-and-presets",
-  "development_progress_percent": 77,
-  "completed_main_items": 34,
-  "open_main_items": 10,
+  "version": "0.6.0-alpha.1",
+  "phase": "guided-terminal-home-and-quality",
+  "development_progress_percent": 84,
+  "completed_main_items": 37,
+  "open_main_items": 7,
   "runtime": {
     "python": ">=3.10",
     "external_runtime_dependencies": []
@@ -33,6 +33,9 @@
     "fts_build_requires_explicit_flag": true,
     "colours_are_never_the_only_signal": true,
     "preset_delete_requires_confirmation": true,
+    "guided_writes_require_confirmation": true,
+    "guided_commands_use_shell": false,
+    "noninteractive_empty_start_blocks": false,
     "destructive_actions_available": false
   },
   "modules": {
@@ -60,7 +63,17 @@
     "accessible_colours": "alpha",
     "guided_help": "alpha",
     "html_tooltips": "alpha",
+    "terminal_home": "alpha",
+    "safe_argument_dispatch": "alpha",
+    "interactive_entrypoint": "alpha",
+    "cli_command_modularization": "in-progress",
     "graphical_interface": "planned",
     "file_operations": "blocked-until-safety-contract"
+  },
+  "validation": {
+    "python_3_10_tests": 39,
+    "python_3_12_tests": 39,
+    "warnings_as_errors": true,
+    "compileall": true
   }
 }
