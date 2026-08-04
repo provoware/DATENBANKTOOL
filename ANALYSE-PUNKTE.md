@@ -2,102 +2,133 @@
 
 ## Ergebnis dieser Iteration
 
-DATENBANKTOOL kann jetzt zwei abgeschlossene Scans desselben Stammordners rein lesend
-auf Ordnerebene vergleichen. Nutzer sehen sofort, welche Ordner gewachsen, kleiner,
-neu oder nicht mehr vorhanden sind. Größe, Dateizahl, Differenz, Prozentwert, Ampel und
-Begründung werden gemeinsam angezeigt.
+DATENBANKTOOL kann die normale Ordnerübersicht jetzt vollständig als
+LibreOffice-kompatible CSV speichern. Zusätzlich existiert eine reproduzierbare
+Abnahmepipeline mit synthetischen Beständen, festen Laufzeit- und Speichergrenzen,
+Quelldatenprüfung, maschinenlesbaren Berichten und einer klar getrennten realen
+Laien-Checkliste.
 
-## Vollständig gelöste Punkte
+## Vollständig gelöste CSV-Punkte
 
-1. Zwei abgeschlossene Sitzungen können direkt miteinander verglichen werden.
-2. Ohne manuelle Scan-Nummern wird ein passendes aktuelles Vergleichspaar gewählt.
-3. Der direkte Vorgänger eines Re-Scans wird bevorzugt.
-4. Ohne direkten Vorgänger wird der vorherige abgeschlossene Scan desselben Ordners
-   verwendet.
-5. Nicht abgeschlossene Sitzungen werden abgelehnt.
-6. Die Ausgangssitzung muss älter als die Zielsitzung sein.
-7. Unterschiedliche Stammordner werden sicher abgelehnt.
-8. SQLite wird mit `mode=ro` und `PRAGMA query_only=ON` geöffnet.
-9. Die Datenbank bleibt bei der reinen Auswertung unverändert.
-10. Originaldateien werden nicht erneut geöffnet oder verändert.
-11. Dateizahl und Größe werden für jeden Ordner einschließlich Unterordnern berechnet.
-12. Gewachsene Ordner werden erkannt.
-13. Kleiner gewordene Ordner werden erkannt.
-14. Neue Ordner werden erkannt.
-15. Nicht mehr vorhandene belegte Ordner werden erkannt.
-16. Gleiche Größe bei geänderter Dateizahl wird getrennt ausgewiesen.
-17. Unveränderte Ordner können gezielt eingeblendet werden.
-18. Absolute und prozentuale Größenänderung werden berechnet.
-19. Neue Ordner erhalten keinen irreführenden unendlichen Prozentwert.
-20. Filter nach Zustand, Pfad, Mindeständerung und Tiefe sind kombinierbar.
-21. Sortierung und Pagination sind stabil und begrenzt.
-22. Starkes Wachstum besitzt eine konfigurierbare Warnschwelle.
-23. Ampeln werden immer mit Klartext und Begründung ausgegeben.
-24. JSON-, CSV- und HTML-Berichte werden atomar geschrieben.
-25. CSV ist für LibreOffice Calc vorbereitet.
-26. HTML funktioniert offline und maskiert Nutzerdaten sicher.
-27. Vorhandene Berichte werden nicht still überschrieben.
-28. Startseitenpunkt 10 startet den Vergleich ohne Pflichtbestätigung, da er rein lesend ist.
-29. `?10` und `g10` bieten unterschiedliche Hilfetiefen.
-30. Direkte und klassische Hilfe enthalten dasselbe Thema.
-31. Der öffentliche Befehl besitzt eine geprüfte Seiteneffektrichtlinie.
-32. Die modulare CLI-Größen- und Importregeln bleiben erfüllt.
-33. 59 Tests laufen unter Python 3.10 und 3.12 erfolgreich.
+1. `index folders` akzeptiert `--csv PFAD`.
+2. UTF-8-BOM erleichtert die korrekte Erkennung deutscher Sonderzeichen.
+3. Semikolon ist für typische deutsche LibreOffice-Einstellungen geeignet.
+4. Ampelstufe, Status und Begründung stehen getrennt bereit.
+5. Direkte und rekursive Dateizahlen werden nicht vermischt.
+6. Direkte und rekursive Bytegrößen sind maschinell berechenbar.
+7. Namenshinweise und Duplikatzahlen besitzen eigene Spalten.
+8. Platzfresser werden als stabile Pfad-/Byte-Paare ausgegeben.
+9. CSV wird atomar geschrieben.
+10. Vorhandene Ziele werden nicht still überschrieben.
+11. `--all-pages` exportiert alle gefilterten Ordner.
+12. Terminalausgabe bleibt paginiert und übersichtlich.
+13. Der tatsächliche Exportumfang wird sichtbar genannt.
+14. `--all-pages` ohne Bericht wird kontrolliert abgelehnt.
+15. JSON und HTML profitieren ebenfalls von der vollständigen Auswertung.
+16. Vollständigkeit über mehr als eine Terminalseite wird automatisch geprüft.
+
+## Vollständig gelöste Abnahmepunkte
+
+17. Neuer öffentlicher Befehl `datenbanktool acceptance`.
+18. Drei feste Profile mit 600, 10.000 und 100.000 Dateien.
+19. Reproduzierbare Dateigrößen über festen Seed.
+20. Unterschiedliche Endungen, Leerzeichen, Umlaute und auffällige Namen.
+21. Sparse-Dateien begrenzen physischen Speicherbedarf.
+22. Arbeitsordner muss neu und nicht vorhanden sein.
+23. Vorhandene Ordner und deren Inhalte bleiben unangetastet.
+24. Gesamtlaufzeit wird gemessen.
+25. Einzelne Phasen werden separat gemessen.
+26. Python-Spitzenspeicher wird mit `tracemalloc` gemessen.
+27. Prozess-Maximal-RSS wird zusätzlich protokolliert.
+28. Quelldaten werden vor und nach dem Lauf manifestiert.
+29. Pfad, Größe und `mtime_ns` müssen unverändert bleiben.
+30. Indexstatus und importierte Dateizahl werden geprüft.
+31. Indexfehler müssen null sein.
+32. CSV-Zeilenanzahl muss der vollständigen Ordnerauswertung entsprechen.
+33. CSV-BOM wird geprüft.
+34. Hilfe muss CSV und `--all-pages` erklären.
+35. Laufzeit muss innerhalb der Profilgrenze liegen.
+36. Python-Spitzenspeicher muss innerhalb der Profilgrenze liegen.
+37. JSON-Bericht wird erzeugt.
+38. Markdown-Bericht wird erzeugt.
+39. Vollständige Ordner-CSV wird erzeugt.
+40. Reale Laien-Checkliste wird erzeugt.
+41. Reale Laienprüfung wird nicht fälschlich als abgeschlossen bezeichnet.
+42. Quick- und Standardprofile laufen in GitHub Actions.
+43. Beide Berichtssets werden als Artefakte archiviert.
+44. 66 Tests laufen unter Python 3.10 und 3.12 erfolgreich.
+45. Externe Laufzeitabhängigkeiten bleiben bei null.
+
+## Nachgewiesene Referenzwerte
+
+| Profil | Dateien | Kriterien | Laufzeit | Python-Spitzenspeicher |
+|---|---:|---:|---:|---:|
+| Quick | 600 | 11/11 | 1,086 s | 1.326.097 Byte |
+| Standard | 10.000 | 11/11 | 17,781 s | 13.394.783 Byte |
+
+Die Werte stammen aus GitHub Actions auf Ubuntu 24.04 und Python 3.12. Sie sind ein
+reproduzierbarer Referenzpunkt, keine Hardwaregarantie.
 
 ## Zentrale Architekturentscheidungen
 
-### Ganze Snapshots statt nur Dateiänderungsprotokoll
+### Vollständige Auswertung und Terminalseite trennen
 
-Der Vergleich aggregiert die gespeicherten Dateien beider Sitzungen. Dadurch können
-beliebige abgeschlossene Sitzungen desselben Stammordners verglichen werden, nicht nur
-ein einzelner inkrementeller Re-Scan mit seinem direkten Vorgänger.
+`analyse_folders(..., all_rows=True)` erzeugt die vollständige gefilterte und sortierte
+Ordnerliste genau einmal. `paginate_folder_page()` schneidet daraus nur die sichtbare
+Terminalseite. Dadurch ist der Export vollständig, ohne die Aggregation doppelt
+auszuführen.
 
-### Rekursive Ordnerwerte
+### Vollständigkeit bleibt ausdrücklich
 
-Jede Datei zählt für ihren direkten Elternordner und alle übergeordneten Ordner bis zur
-Wurzel. Das entspricht der Frage „Wie viel Speicher belegt dieser Ordner insgesamt?“.
-Die Dokumentation warnt deshalb ausdrücklich davor, Eltern- und Kindzeilen zu addieren.
+Das frühere Verhalten – Bericht der aktuellen Seite – bleibt kompatibel.
+`--all-pages` ist sichtbar und absichtlich. So erkennt der Nutzer vorab, dass mehr
+Zeilen verarbeitet und geschrieben werden.
 
-### Strenger Stammordnervertrag
+### CSV in eigenem Core-Modul
 
-Ähnliche relative Pfade aus unterschiedlichen Stammordnern könnten falsche Vergleiche
-erzeugen. Deshalb müssen die gespeicherten Wurzelpfade übereinstimmen. Das Tool rät
-nicht und mischt keine Bestände.
+`core/folder_csv.py` enthält nur CSV-Struktur und atomaren Byte-Schreibvorgang. Die
+Ordneranalyse bleibt frei von Formatlogik, und der CLI-Handler bleibt überschaubar.
 
-### Sichere automatische Sitzungswahl
+### Abnahmedaten sind keine Originaldateien
 
-Die automatische Auswahl ist nur eine Komfortfunktion. Die tatsächlich verwendeten
-Sitzungsnummern werden immer im Ausgabekopf angezeigt und können über explizite
-Optionen ersetzt werden.
+`CommandPolicy` besitzt `writes_test_data`. Dieser Seiteneffekt bedeutet ausschließlich
+synthetische Daten in einem neuen Arbeitsordner. Er ist ausdrücklich getrennt von
+`writes_original_files`, das weiterhin technisch verboten bleibt.
 
-### Zustände statt bloßer Vorzeichen
+### Kein automatisches Aufräumen nach Fehlern
 
-Positive und negative Bytewerte allein sind für Laien zu abstrakt. Der Vergleich
-übersetzt sie in verständliche Zustände und zeigt trotzdem die exakten Zahlen daneben.
+Ein fehlgeschlagener Abnahmelauf wird nicht automatisch gelöscht. Der unvollständige
+Arbeitsstand kann geprüft werden; eine falsche Pfadannahme führt nicht zu einer
+gefährlichen Bereinigung.
 
-### Kein automatisches Aufräumen
+### Technische und menschliche Abnahme trennen
 
-Wachstum oder Rückgang beweist nicht, dass Dateien unnötig oder korrekt entfernt sind.
-Der Vergleich bleibt deshalb reine Diagnose und löst keine Dateisystemaktion aus.
+Automatische Kriterien prüfen reproduzierbare Fakten. Die Checkliste prüft Orientierung,
+Hilfen, Sicherheitsverständnis und Fehlermeldungen mit einer realen Person. Der Status
+bleibt `pending-real-person`, bis diese Prüfung wirklich durchgeführt wurde.
 
-### Getrennter Exportbaustein
+### Quick und Standard in CI, Large auf Zielhardware
 
-Vergleichsberechnung und Dateiexporte sind getrennt. Dadurch bleibt der Kern rein
-lesend und kann unabhängig von JSON-, CSV- und HTML-Ausgabe getestet werden.
+600 Dateien erkennen schnelle Regressionen. 10.000 Dateien bilden einen realistischen
+Bestand. 100.000 Dateien bleiben verfügbar, werden aber nicht bei jedem Commit erzeugt,
+um CI-Ressourcen und Laufzeit kontrolliert zu halten.
 
 ## Erkannte nächste Analysepunkte
 
-1. CSV-Export der normalen Ordnerübersicht ergänzen.
-2. Wahlweise alle gefilterten Vergleichszeilen statt nur der aktuellen Seite exportieren.
-3. Entwicklung eines Ordners über mehr als zwei Scans als Zeitreihe darstellen.
-4. Leere Ordner nur nach einer späteren, bewusst versionierten Schemaerweiterung erfassen.
-5. Sehr große Bestände unter festen Laufzeit- und Speichergrenzen vermessen.
-6. Automatische Sitzungswahl und Begriffe mit Linux-Laien praktisch abnehmen.
-7. HTML- und CSV-Ausgaben mit realistischen Sonderzeichen und langen Pfaden prüfen.
+1. Reale Laienabnahme mit der erzeugten Checkliste durchführen.
+2. `large`-Profil auf der vorgesehenen Kubuntu-Hardware vermessen.
+3. Vergleichsexporte um einen eigenen `--all-pages`-Schalter erweitern.
+4. Ordnergrößen über mehr als zwei Scan-Sitzungen als Zeitreihe auswerten.
+5. Native Speichergrenze ergänzend zum Python-Spitzenspeicher definieren.
+6. Abnahmeberichte mehrerer Versionen rein lesend vergleichen.
+7. Fehlgeschlagene Abnahmearbeitsordner mit einem separaten rein lesenden
+   Diagnosebefehl erklären.
+8. Checklistenergebnisse später kontrolliert in JSON übertragen.
 
 ## Fazit
 
-Der Ordnervergleich ergänzt die bisherige Dateiansicht um eine verständliche
-Speicherentwicklung auf Ordnerebene. Die Funktion bleibt nachvollziehbar, offline,
-rein lesend und vollständig in Startseite, Hilfe, Sicherheitsvertrag und Tests
-eingebunden.
+Die beiden technischen Hauptpunkte sind abgeschlossen und automatisch belegt. Die
+Ordnerübersicht lässt sich ohne Seitenverlust in Calc öffnen. Die Abnahmepipeline
+prüft einen realistischen Bestand mit 10.000 Dateien und schützt die Quelldaten durch
+harte Pfad- und Manifestregeln. Offen bleibt bewusst nur der Teil, der tatsächlich eine
+reale unerfahrene Person benötigt.
