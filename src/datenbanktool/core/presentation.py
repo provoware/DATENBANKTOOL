@@ -35,10 +35,10 @@ _TRAFFIC = {
 def colour_enabled(mode: str = "auto", stream: TextIO = sys.stdout) -> bool:
     if mode not in _VALID_COLOR_MODES:
         raise ValueError(f"Unbekannter Farbmodus: {mode}")
-    if mode == "never" or os.environ.get("NO_COLOR") is not None:
-        return False
     if mode == "always":
         return True
+    if mode == "never" or os.environ.get("NO_COLOR") is not None:
+        return False
     return bool(getattr(stream, "isatty", lambda: False)())
 
 

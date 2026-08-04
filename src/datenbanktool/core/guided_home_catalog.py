@@ -23,7 +23,7 @@ ACTIONS = (
     MenuAction("9", "explain", "explain"),
     MenuAction("10", "folder-compare", "folder_compare"),
     MenuAction("11", "folder-timeline", "folder_timeline"),
-    MenuAction("12", "timeline-presets", "timeline_preset_save", True),
+    MenuAction("12", "timeline-presets", "timeline_presets_manage", True),
 )
 
 
@@ -56,6 +56,18 @@ FIELD_HELP = {
     "timeline_preset_name": (
         "Verständlicher eindeutiger Name mit 1 bis 64 Zeichen. Vorhandene Namen "
         "werden über die Startseite nicht überschrieben."
+    ),
+    "timeline_preset_existing_name": (
+        "Exakter Name einer vorhandenen Zeitreihen-Vorlage. Groß- und "
+        "Kleinschreibung ist egal, der Name muss aber eindeutig vorhanden sein."
+    ),
+    "timeline_preset_manage": (
+        "Anzeigen ist rein lesend. Ersetzen schreibt eine vorhandene Vorlage bewusst "
+        "neu. Löschen entfernt eine Vorlage erst nach Namensprüfung und Bestätigung."
+    ),
+    "timeline_preset_delete_name": (
+        "Zur Sicherheit den angezeigten Vorlagennamen noch einmal exakt eingeben. "
+        "So wird kein ähnlich benannter Eintrag versehentlich gelöscht."
     ),
     "timeline_preset_description": (
         "Optionaler kurzer Zweck der Vorlage, höchstens 240 Zeichen."
@@ -96,5 +108,9 @@ FIELD_HELP = {
     ),
     "confirmation": (
         "Ja startet den angezeigten Befehl. Nein verwirft ihn vollständig."
+    ),
+    "delete_confirmation": (
+        "Ja löscht nur die lokale Vorlage. Datenbank, Stammordner, Originaldateien "
+        "und Scan-Ergebnisse bleiben unverändert."
     ),
 }

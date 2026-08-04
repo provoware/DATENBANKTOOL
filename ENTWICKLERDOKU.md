@@ -2,18 +2,14 @@
 
 ## Architekturstand 0.14.0-alpha.1
 
-Startseitenpunkt 12 bündelt die Zeitreihen-Vorlagenverwaltung. Die geführte Logik nutzt die bestehende Vorlagendomäne für Lesen und Namensprüfung und übergibt Schreibaktionen weiter an die vorhandenen CLI-Befehle. Löschen verlangt eine exakte Namenswiederholung und eine Ja/Nein-Bestätigung; Vorlagen speichern weiterhin keine Datenbankpfade.
+Diese Wartungsiteration bereinigt den Release-Vertrag. `registry.json` ist die verbindliche Quelle für Paketname, PEP-440-Paketversion und menschenlesbare Anzeigeversion. `pyproject.toml`, `project_registry.json`, `datenbanktool.__version__`, CLI-Ausgabe und der Drift-Test müssen dieselben Werte führen.
+
+Startseitenpunkt 12 bündelt weiterhin die Zeitreihen-Vorlagenverwaltung. Die geführte Logik nutzt die bestehende Vorlagendomäne für Lesen und Namensprüfung und übergibt Schreibaktionen an die vorhandenen CLI-Befehle. Löschen verlangt eine exakte Namenswiederholung und eine Ja/Nein-Bestätigung; Vorlagen speichern weiterhin keine Datenbankpfade.
 
 ## Aufbau
-Stand: Version 0.13.0-alpha.1
 
-- `registry.json`: verbindlicher Name, PEP-440-Paketversion und menschenlesbare Projektversion.
-- `src/datenbanktool/core.py`: validierte, ausgabefreie SQLite-Logik.
-- `src/datenbanktool/cli.py`: Argumente, Text-/JSON-Ausgabe und Exitcodes.
-- `tests/test_cli.py`: fokussierte Integrations- und Logiktests.
-
+- `registry.json`: verbindlicher Name, PEP-440-Paketversion `0.14.0a1` und Anzeigeversion `0.14.0-alpha.1`.
 - `project_registry.json`: fachlicher Projektstand, Module, Sicherheitsvertrag und Prüfungsreferenzen.
-- `registry.json`: Paketname und aktuelle Paketversion.
 - `src/datenbanktool/`: modulare CLI-, Kernlogik-, Hilfe-, Export- und Testdatenlogik.
 - `tests/`: fokussierte Unit-, Integrations-, Architektur- und Abnahmetests.
 
@@ -27,7 +23,7 @@ Stand: Version 0.13.0-alpha.1
 
 ## Versionierung und Prüfung
 
-Semantische Versionierung wird verwendet: inkompatible Änderung = Hauptversion, neue kompatible Funktion = Nebenversion, Fehlerkorrektur = Patchversion. Technisch verbindlich für Paketmetadaten und `datenbanktool.__version__` ist die PEP-440-Schreibweise `0.13.0a1`. Menschenlesbar wird dieselbe Projektversion als `0.13.0-alpha.1` dokumentiert. `registry.json` führt beide Werte; falls `version` fehlt, ist die einzige dokumentierte Umrechnung `-alpha.` zu `a`.
+Semantische Versionierung wird verwendet: inkompatible Änderung = Hauptversion, neue kompatible Funktion = Nebenversion, Fehlerkorrektur = Patchversion. Technisch verbindlich für Paketmetadaten und `datenbanktool.__version__` ist die PEP-440-Schreibweise `0.14.0a1`. Menschenlesbar wird dieselbe Projektversion als `0.14.0-alpha.1` dokumentiert. `registry.json` führt beide Werte; falls `version` fehlt, ist die einzige dokumentierte Umrechnung `-alpha.` zu `a`.
 
 Vor einem Commit mit Codeänderung:
 

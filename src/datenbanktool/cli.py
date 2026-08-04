@@ -15,6 +15,7 @@ from datenbanktool.cli_folder_compare import register_folder_compare_parser
 from datenbanktool.cli_folder_timeline import register_folder_timeline_parser
 from datenbanktool.cli_help import register_explain_parser
 from datenbanktool.cli_index import register_admin_parsers, register_scan_index_parsers
+from datenbanktool.cli_legacy import register_legacy_parsers
 from datenbanktool.cli_reports import (
     register_index_report_parsers,
     register_report_parser,
@@ -52,12 +53,19 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     root.add_argument(
+        "--json",
+        action="store_true",
+        help="Legacy-Ausgabe als JSON für summary und tables.",
+    )
+    root.add_argument(
         "--hints",
         action=argparse.BooleanOptionalAction,
         default=True,
         help="Kurze Bedienhinweise ein- oder ausschalten.",
     )
     subparsers = root.add_subparsers(dest="command", required=True)
+
+    register_legacy_parsers(subparsers)
 
     register_explain_parser(subparsers)
     register_scan_parser(subparsers)
