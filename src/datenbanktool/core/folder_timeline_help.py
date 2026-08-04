@@ -36,14 +36,14 @@ FOLDER_TIMELINE_TOPIC = HelpTopic(
         "Anzahl der Zeitpunkte zwischen 2 und 500 wählen.",
         "Optional JSON, CSV oder HTML samt neuem Berichtspfad auswählen.",
         "Geplanten Befehl prüfen und die chronologische Ausgabe lesen.",
-        "Bei HTML zusätzlich die beschrifteten Größen- und Dateizahlgrafiken prüfen.",
+        "Bei HTML zusätzlich die zwei beschrifteten Trendgrafiken für Größe und Dateizahl prüfen.",
     ),
     success=(
         "Mindestens zwei chronologische Zeitpunkte erscheinen; Status, Differenzen, "
         "Minimum, Maximum und Gesamtänderung sind plausibel."
     ),
     problems=(
-        "Nur ein Scan vorhanden: denselben Stammordner erneut prüfen und abschließen.",
+        "Mindestens zwei Scans erforderlich: denselben Stammordner erneut prüfen und abschließen.",
         "Keine passenden Sitzungen: Scan-IDs und gemeinsamen Stammordner kontrollieren.",
         "Ungültiger Ordnerpfad: führenden Schrägstrich und '..' entfernen.",
         "Ordner bleibt bei null: Schreibweise und Groß-/Kleinschreibung im Scan prüfen.",
