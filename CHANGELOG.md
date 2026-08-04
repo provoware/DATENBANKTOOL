@@ -41,14 +41,21 @@
 - Vergleichshilfe erklärt den vollständigen Export.
 - Neue Fachmodule `core/folder_timeline.py`, `core/folder_timeline_exports.py`
   und `cli_folder_timeline.py`.
+- Architekturvertrag prüft Handler, `CommandPolicy` und Modulzuständigkeit.
 - SQLite-Zugriff ausschließlich über `mode=ro` und `PRAGMA query_only=ON`.
 - Originaldatei-Schreibzugriffe bleiben gesperrt.
 - Keine neue Laufzeitabhängigkeit und keine Shell-Auswertung.
 
-### Validiert
+### Finale Validierung
 
-- 71 von 71 Tests unter Python 3.10 erfolgreich.
-- Python 3.12, Quick- und Standardabnahme im finalen Versionslauf erneut geprüft.
+- Paket `datenbanktool-0.11.0a1` erfolgreich gebaut.
+- 71 von 71 Tests unter Python 3.10 und Python 3.12 erfolgreich.
+- Tests jeweils mit `PYTHONWARNINGS=error`.
+- Quick-Abnahme: 600 Dateien, 11/11 Kriterien, 0,994 Sekunden,
+  1.327.847 Byte Python-Spitzenspeicher.
+- Standard-Abnahme: 10.000 Dateien, 11/11 Kriterien, 15,816 Sekunden,
+  13.401.333 Byte Python-Spitzenspeicher.
+- Quick- und Standardberichte wurden als getrennte Artefakte 14 Tage archiviert.
 - Zeitreihenwerte, Datenbank-Unverändertheit und unsichere Pfade geprüft.
 - JSON-, Calc-CSV- und Offline-HTML-Export geprüft.
 - Vollständiger Vergleichsexport über mehrere Terminalseiten geprüft.
@@ -56,21 +63,10 @@
 
 ## 0.10.0-alpha.1 – 2026-08-04
 
-### Ordnerübersicht als CSV
-
-- Neuer Parameter `--csv PFAD` für `datenbanktool index folders`.
-- Neuer ausdrücklicher Schalter `--all-pages` für vollständige Exporte.
-- Terminalanzeige bleibt auch bei vollständigem Export paginiert.
-- CSV mit UTF-8-BOM und Semikolon für LibreOffice Calc.
-- Atomare Dateifreigabe und Schutz vor stillem Überschreiben.
-
-### Reproduzierbare Großbestandsabnahme
-
-- Neuer Befehl `datenbanktool acceptance`.
-- Profile `quick`, `standard` und `large` mit 600, 10.000 und 100.000 Dateien.
+- Ordnerübersicht als LibreOffice-kompatible CSV.
+- Vollständiger Ordnerexport über `--all-pages`.
+- Reproduzierbare Großbestandsabnahme mit quick, standard und large.
 - Laufzeit-, Speicher- und Quelldatenprüfung mit elf festen Kriterien.
-- JSON-, Markdown-, CSV- und Laien-Checklistenberichte.
-- Quick- und Standardprofile als GitHub-Actions-Artefakte archiviert.
 
 ## 0.9.0-alpha.1 – 2026-08-04
 
