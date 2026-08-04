@@ -4,7 +4,15 @@ import shlex
 from dataclasses import dataclass
 from typing import Callable, Sequence, TextIO
 
-from datenbanktool.core.layered_help import error_help, get_topic, render_topic
+from datenbanktool.core.folder_timeline_help import (
+    timeline_error_help,
+    timeline_topic,
+)
+from datenbanktool.core.layered_help import (
+    error_help as base_error_help,
+    get_topic as get_base_topic,
+    render_topic,
+)
 from datenbanktool.core.presentation import TrafficLight, status_text, traffic_text
 
 CommandRunner = Callable[[Sequence[str]], int]
@@ -30,6 +38,7 @@ class MenuAction:
 class HomeSession:
     last_database: str = ""
     last_root: str = ""
+    last_timeline_folder: str = "."
 
 
 _ACTIONS = (
@@ -43,6 +52,7 @@ _ACTIONS = (
     MenuAction("8", "presets", "presets"),
     MenuAction("9", "explain", "explain"),
     MenuAction("10", "folder-compare", "folder_compare"),
+    MenuAction("11", "folder-timeline", "folder_timeline"),
 )
 
 _FIELD_HELP = {
@@ -67,10 +77,47 @@ _FIELD_HELP = {
     "backup_output": (
         "Optionaler neuer Sicherungspfad. Leer erzeugt automatisch einen sicheren Namen."
     ),
+    "timeline_folder": (
+        "Relativer Pfad innerhalb des gescannten Stammordners, zum Beispiel Musik "
+        "oder Bilder/2026. Ein Punkt bedeutet den gesamten Stammordner. Absolute "
+        "Pfade und '..' sind nicht erlaubt."
+    ),
+    "timeline_from_session": (
+        "Optional die älteste abgeschlossene Scan-ID. Leer verwendet die ältesten "
+        "noch innerhalb der gewählten Höchstzahl liegenden Scans."
+    ),
+    "timeline_to_session": (
+        "Optional die neueste abgeschlossene Scan-ID. Leer verwendet automatisch "
+        "den neuesten abgeschlossenen Scan."
+    ),
+    "timeline_limit": (
+        "Höchstens so viele neueste Zeitpunkte laden. Zulässig sind 2 bis 500; "
+        "100 ist ein übersichtlicher Standard."
+    ),
+    "timeline_report": (
+        "Kein Bericht zeigt nur das Terminal. JSON ist maschinenlesbar, CSV passt "
+        "zu LibreOffice Calc und HTML enthält Tabelle sowie lokale Trendgrafiken."
+    ),
+    "timeline_report_path": (
+        "Neuer lokaler Dateipfad mit passender Endung, zum Beispiel "
+        "/home/name/Berichte/musik-verlauf.html. Vorhandene Dateien werden nicht "
+        "still überschrieben."
+    ),
     "confirmation": (
         "Ja startet den angezeigten Befehl. Nein verwirft ihn vollständig."
     ),
 }
+
+
+def _get_topic(name: str):
+    extension = timeline_topic(name)
+    return extension if extension is not None else get_base_topic(name)
+
+
+def _error_help(topic_name: str, exit_code: int) -> tuple[str, ...]:
+    if timeline_topic(topic_name) is not None:
+        return timeline_error_help(exit_code)
+    return base_error_help(topic_name, exit_code)
 
 
 def menu_actions() -> tuple[MenuAction, ...]:
@@ -100,7 +147,7 @@ class TerminalHome:
         if len(keys) != len(set(keys)):
             raise RuntimeError("Menü enthält doppelte Auswahlnummern")
         for action in _ACTIONS:
-            get_topic(action.help_topic)
+            _get_topic(action.help_topic)
 
     def _write(self, text: str = "", *, error: bool = False) -> None:
         stream = self.error_stream if error else self.output_stream
@@ -154,6 +201,58 @@ class TerminalHome:
             f"{label} [optional, ? Hilfe]: ",
             help_text=help_text,
         )
+
+    def _optional_integer(
+        self,
+        label: str,
+        *,
+        help_text: str,
+        minimum: int,
+        maximum: int | None = None,
+        default: int | None = None,
+    ) -> int | None:
+        while True:
+            suffix = f" [{default}]" if default is not None else " [optional]"
+            value = self._read(
+                f"{label}{suffix} [? Hilfe]: ",
+                help_text=help_text,
+            )
+            if not value:
+                return default
+            try:
+                number = int(value)
+            except ValueError:
+                self._write("Bitte eine ganze Zahl eingeben.", error=True)
+                continue
+            if number < minimum or (maximum is not None and number > maximum):
+                range_text = (
+                    f"zwischen {minimum} und {maximum}"
+                    if maximum is not None
+                    else f"ab {minimum}"
+                )
+                self._write(f"Bitte eine Zahl {range_text} eingeben.", error=True)
+                continue
+            return number
+
+    def _report_format(self) -> str:
+        aliases = {
+            "": "none",
+            "kein": "none",
+            "keiner": "none",
+            "ohne": "none",
+            "none": "none",
+            "json": "json",
+            "csv": "csv",
+            "html": "html",
+        }
+        while True:
+            value = self._read(
+                "Optionaler Bericht [kein/json/csv/html, Standard kein, ? Hilfe]: ",
+                help_text=_FIELD_HELP["timeline_report"],
+            ).casefold()
+            if value in aliases:
+                return aliases[value]
+            self._write("Bitte kein, json, csv oder html eingeben.", error=True)
 
     def _yes_no(
         self,
@@ -262,6 +361,47 @@ class TerminalHome:
     def _build_folder_compare(self) -> list[str]:
         return ["index", "folder-compare", self._database()]
 
+    def _build_folder_timeline(self) -> list[str]:
+        database = self._database()
+        folder = self._required(
+            "Relativer Ordner im Scan",
+            self.session.last_timeline_folder,
+            help_text=_FIELD_HELP["timeline_folder"],
+        )
+        self.session.last_timeline_folder = folder
+        command = ["index", "folder-timeline", database, folder]
+        from_session = self._optional_integer(
+            "Älteste Scan-ID",
+            help_text=_FIELD_HELP["timeline_from_session"],
+            minimum=1,
+        )
+        to_session = self._optional_integer(
+            "Neueste Scan-ID",
+            help_text=_FIELD_HELP["timeline_to_session"],
+            minimum=1,
+        )
+        limit = self._optional_integer(
+            "Höchste Zahl der Zeitpunkte",
+            help_text=_FIELD_HELP["timeline_limit"],
+            minimum=2,
+            maximum=500,
+            default=100,
+        )
+        if from_session is not None:
+            command.extend(("--from-session-id", str(from_session)))
+        if to_session is not None:
+            command.extend(("--to-session-id", str(to_session)))
+        if limit is not None:
+            command.extend(("--limit", str(limit)))
+        report_format = self._report_format()
+        if report_format != "none":
+            report_path = self._required(
+                f"Zielpfad für {report_format.upper()}",
+                help_text=_FIELD_HELP["timeline_report_path"],
+            )
+            command.extend((f"--{report_format}", report_path))
+        return command
+
     def _build_command(self, action: MenuAction) -> list[str]:
         builders: dict[str, Callable[[], list[str]]] = {
             "search": self._build_search,
@@ -274,6 +414,7 @@ class TerminalHome:
             "presets": self._build_presets,
             "explain": self._build_explain,
             "folder_compare": self._build_folder_compare,
+            "folder_timeline": self._build_folder_timeline,
         }
         try:
             return list(builders[action.builder_name]())
@@ -284,14 +425,14 @@ class TerminalHome:
 
     def _render_topic(self, topic_name: str, level: str) -> None:
         self._write("\n" + "-" * 72)
-        self._write_lines(render_topic(get_topic(topic_name), level))
+        self._write_lines(render_topic(_get_topic(topic_name), level))
         self._write("-" * 72)
 
     def _render_help_overview(self) -> None:
         self._write("\nMehrschichtige Hilfe")
         self._write("h          zeigt diese Übersicht")
-        self._write("?NUMMER    zeigt Details, zum Beispiel ?5")
-        self._write("gNUMMER    zeigt Schritt für Schritt, zum Beispiel g5")
+        self._write("?NUMMER    zeigt Details, zum Beispiel ?11")
+        self._write("gNUMMER    zeigt Schritt für Schritt, zum Beispiel g11")
         self._write("?          erklärt das aktuelle Eingabefeld")
         self._write("q          bricht den aktuellen Schritt ab")
         self._write("0          beendet die Startseite")
@@ -329,7 +470,7 @@ class TerminalHome:
         self._write("q bricht den aktuellen Schritt ab, 0 beendet das Tool.")
         self._write("=" * 72)
         for action in _ACTIONS:
-            topic = get_topic(action.help_topic)
+            topic = _get_topic(action.help_topic)
             if action.confirmation_required:
                 light = TrafficLight("yellow", "Bestätigung nötig", topic.writes)
             else:
@@ -388,7 +529,7 @@ class TerminalHome:
                 if result != 0:
                     self._write("Fehlerhilfe:", error=True)
                     self._write_lines(
-                        error_help(action.help_topic, result),
+                        _error_help(action.help_topic, result),
                         error=True,
                     )
             except UserCancelled:
