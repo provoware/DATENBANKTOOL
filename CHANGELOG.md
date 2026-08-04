@@ -1,29 +1,43 @@
 # Changelog
 
-Alle wesentlichen Projektänderungen werden in dieser Datei dokumentiert.
-
-## 0.1.0-alpha.1 – 2026-08-04
+## 0.2.0-alpha.1 – 2026-08-04
 
 ### Hinzugefügt
 
-- Python-Projektgrundlage mit CLI-Einstiegspunkt.
-- Rein lesender Scanner für große Verzeichnisbäume.
-- Dateiklassifizierung für Medien, Texte, Archive, Code und Dokumente.
-- Nicht destruktive Prüfung riskanter Dateinamen.
-- Kennzeichnung großer Dateien.
-- Optionale exakte Duplikaterkennung mit Größen-Vorfilter und SHA-256.
-- Atomare JSON-Berichtsausgabe ohne stilles Überschreiben.
-- Projekt- und Sicherheitsregister.
-- Basis-Regressionsprüfungen.
-- Ausführliche README, Roadmap, Analyse, Schwachstellen- und Entwicklerdokumentation.
+- SQLite-Index mit Schema-Version 2.
+- Migrationstabelle und automatische V1→V2-Migration.
+- Transaktionaler Batch-Import.
+- Persistente Scan- und Hashing-Checkpoints.
+- Wiederaufnahme unterbrochener oder fehlgeschlagener Sitzungen.
+- Reparaturmodus mit konsistenter SQLite-Sicherheitskopie.
+- Integritäts-, Fremdschlüssel-, Index- und Statistikprüfung.
+- Reproduzierbarer Neuaufbau exakter Duplikatgruppen.
+- CSV-Berichte in UTF-8 mit BOM.
+- Eigenständige HTML-Berichte mit interaktiver lokaler Filterung.
+- Berichtfilter nach Dateikategorie, Größe, Namensproblem und Duplikatstatus.
+- CLI-Kommandos `index build`, `index status`, `index repair` und `report`.
+- 10 neue Index-, Berichts- und CLI-Tests.
+- GitHub-Actions-Prüfung unter Python 3.10 und 3.12.
 
-### Sicherheitsentscheidungen
+### Geändert
 
-- Schreibende Dateioperationen sind nicht implementiert und im Register gesperrt.
-- Symbolischen Verzeichnissen wird standardmäßig nicht gefolgt.
-- Hashing wird nur ausdrücklich aktiviert.
-- Fehler einzelner Dateien werden protokolliert, statt den gesamten Scan unkontrolliert zu beenden.
+- Scanner läuft deterministisch sortiert.
+- SHA-256-Dateifunktion ist für Index und Direkt-Scan gemeinsam nutzbar.
+- Versionsstand auf `0.2.0-alpha.1` angehoben.
+- Dokumentation und Projektregister vollständig aktualisiert.
+
+### Validiert
+
+- 14/14 automatisierte Tests erfolgreich.
+- Kompilierung mit `compileall` erfolgreich.
+- Tests mit `PYTHONWARNINGS=error` ohne Warnungen.
+- End-to-End-Probelauf einschließlich Reparatursicherung erfolgreich.
 
 ### Unverändert
 
-- `AGENTS.md` wurde in dieser Iteration nicht verändert.
+- `AGENTS.md` wurde nicht verändert.
+- Schreibende Operationen an Nutzerdaten bleiben gesperrt.
+
+## 0.1.0-alpha.1 – 2026-08-04
+
+- Rein lesender Scanner, Klassifizierung, Dateinamenprüfung, große Dateien, optionale SHA-256-Duplikaterkennung und JSON-Berichte eingeführt.
