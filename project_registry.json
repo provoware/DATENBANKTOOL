@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "project": "DATENBANKTOOL",
-  "version": "0.6.0-alpha.1",
-  "phase": "guided-terminal-home-and-quality",
-  "development_progress_percent": 84,
-  "completed_main_items": 37,
-  "open_main_items": 7,
+  "version": "0.7.0-alpha.1",
+  "phase": "layered-novice-help",
+  "development_progress_percent": 91,
+  "completed_main_items": 40,
+  "open_main_items": 4,
   "runtime": {
     "python": ">=3.10",
     "external_runtime_dependencies": []
@@ -35,6 +35,8 @@
     "preset_delete_requires_confirmation": true,
     "guided_writes_require_confirmation": true,
     "guided_commands_use_shell": false,
+    "field_help_changes_data": false,
+    "help_command_changes_data": false,
     "noninteractive_empty_start_blocks": false,
     "destructive_actions_available": false
   },
@@ -61,18 +63,22 @@
     "folder_traffic_lights": "alpha",
     "search_presets": "alpha",
     "accessible_colours": "alpha",
-    "guided_help": "alpha",
     "html_tooltips": "alpha",
     "terminal_home": "alpha",
     "safe_argument_dispatch": "alpha",
     "interactive_entrypoint": "alpha",
+    "layered_novice_help": "alpha",
+    "field_context_help": "alpha",
+    "guided_help_command": "alpha",
+    "everyday_help_search": "alpha",
+    "contextual_error_help": "alpha",
     "cli_command_modularization": "in-progress",
     "graphical_interface": "planned",
     "file_operations": "blocked-until-safety-contract"
   },
   "validation": {
-    "python_3_10_tests": 39,
-    "python_3_12_tests": 39,
+    "python_3_10_tests": 48,
+    "python_3_12_tests": 48,
     "warnings_as_errors": true,
     "compileall": true
   }
