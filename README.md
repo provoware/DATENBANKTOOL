@@ -1,128 +1,234 @@
 # DATENBANKTOOL
 
-> Sicheres, portables Linux-Werkzeug zum Suchen, Prüfen, Bearbeiten und Strukturieren großer chaotischer Datensammlungen – mit Schwerpunkt auf Medien, Audio, Texten, Archiven und Codeprojekten.
+> Sicheres, portables Linux-Werkzeug zum Suchen, Prüfen und Strukturieren großer chaotischer Datensammlungen – mit Schwerpunkt auf Medien, Audio, Texten, Archiven und Codeprojekten.
 
 ## Projektstatus
 
 | Bereich | Stand |
 |---|---|
-| Version | `0.1.0-alpha.1` |
-| Entwicklungsphase | Fundament / sicherer Analyse-Kern |
-| Entwicklungsfortschritt | **18 %** |
-| Erledigte Hauptpunkte | **7** |
-| Offene Hauptpunkte | **32** |
+| Version | `0.2.0-alpha.1` |
+| Entwicklungsphase | Persistenter Index und Berichte |
+| Entwicklungsfortschritt | **36 %** |
+| Erledigte Hauptpunkte | **15** |
+| Offene Hauptpunkte | **26** |
+| SQLite-Schema | **Version 2** |
 | Schreibende Dateioperationen | **Noch gesperrt** |
 | Standardmodus | **Rein lesend** |
 
 ### In dieser Iteration erledigt
 
-1. Python-Projektstruktur und Versionsregister angelegt.
-2. Rein lesenden Verzeichnisscanner implementiert.
-3. Dateiklassifizierung für Audio, Video, Bilder, Texte, Archive, Code und Dokumente implementiert.
-4. Prüfung problematischer und schlecht portierbarer Dateinamen implementiert.
-5. Erkennung großer Dateien mit frei einstellbarer Grenze implementiert.
-6. Optionale Erkennung exakter Duplikate per Größen-Vorfilter und SHA-256 implementiert.
-7. Tests, Risikoanalyse, Roadmap und Entwicklerdokumentation angelegt.
+1. SQLite-Index mit versioniertem Schema eingeführt.
+2. Automatische Migration von Schema V1 auf V2 implementiert und getestet.
+3. Transaktionalen Batch-Import mit frei einstellbarer Batchgröße umgesetzt.
+4. Wiederaufnahme unterbrochener Scans über persistente Checkpoints umgesetzt.
+5. Scan-, Hashing-, Finalisierungs- und Abschlussphasen getrennt gespeichert.
+6. Reparaturmodus mit Sicherheitskopie, Integritätsprüfung, `REINDEX`, `ANALYZE` und optionalem `VACUUM` ergänzt.
+7. Duplikatgruppen nach Import oder Reparatur reproduzierbar neu aufbaubar gemacht.
+8. Gefilterte CSV- und eigenständige HTML-Berichte umgesetzt.
+9. Filter für Dateityp, Mindest-/Maximalgröße, Namensprobleme und Duplikatgruppen ergänzt.
+10. HTML-Berichte zusätzlich mit lokaler Schnellsuche und interaktiven Filtern ausgestattet.
+11. Mehrfachausgaben werden vorab geprüft, damit kein halbes Berichtspaket entsteht.
+12. CLI-Kommandos, Dokumentation und Versionsregister erweitert.
+13. 14 automatisierte Tests sowie ein vollständiger End-to-End-Probelauf erfolgreich ausgeführt.
 
 ### Wichtigste offene Punkte
 
-1. Persistenter Index für Millionen Dateien.
-2. Grafische, touchfähige Oberfläche für Linux-Desktop und kleine Displays.
-3. Vorschaumodule für Bild, Audio, Video, Text, PDF und Archive.
-4. Sichere Sortier-, Verschiebe- und Umbenennungspläne mit Voransicht.
-5. Transaktionales Undo, Papierkorb, Quarantäne und Wiederherstellung.
-6. Ähnlichkeitsanalyse für Bilder, Audio und Texte.
-7. Ressourcensteuerung, Pausieren, Fortsetzen und Wiederaufnahme nach Absturz.
-8. Paketierung als portables Linux-Programm mit Doppelklick-Start.
+1. Inkrementelle Aktualisierung bereits abgeschlossener Indexsitzungen.
+2. Erkennung gelöschter, verschobener oder geänderter Dateien ohne Vollscan.
+3. Fortschrittsereignisse, Pause und kontrollierter Abbruch während Hashing.
+4. Volltextsuche und optionaler Inhaltsindex.
+5. Grafische, touchfähige Oberfläche für Linux-Desktop und kleine Displays.
+6. Vorschaumodule für Bild, Audio, Video, Text, PDF und Archive.
+7. Sichere Sortier-, Verschiebe- und Umbenennungspläne mit Voransicht.
+8. Transaktionales Undo, Papierkorb, Quarantäne und Wiederherstellung.
+9. Paketierung als portables Linux-Programm mit Doppelklick-Start.
 
 ### Mögliche nächste Upgrades
 
-- SQLite-Index mit inkrementeller Aktualisierung.
-- PySide6-Oberfläche mit Modus **Einfach**, **Geführt** und **Experte**.
+- Inkrementeller Re-Scan mit Dateisystem-Fingerabdruck und Änderungsabgleich.
+- FTS5-Suchindex für Pfade, Dateinamen und freigegebene Textinhalte.
+- PySide6-Oberfläche mit **Einfach**, **Geführt** und **Experte**.
+- Fortschritts- und Abbruchkanal für Scan und Hashing.
 - FFmpeg/ffprobe- und MediaInfo-Anbindung für echte Medienprüfung.
-- Sichere Stapelumbenennung mit Vorschau, Konflikterkennung und Undo-Manifest.
-- Audio-Fingerprints und Bild-Ähnlichkeit statt bloßer Hash-Gleichheit.
 
 Weitere Ideen stehen in [`UPGRADE_POOL.md`](UPGRADE_POOL.md).
 
 ---
 
-## Ziel
-
-DATENBANKTOOL soll sehr große, unübersichtliche Datensammlungen durchschaubar machen, ohne den Nutzer mit Fachbegriffen oder riskanten Direktaktionen zu überfordern. Das Tool soll:
-
-- Dateien und Ordner schnell auffindbar machen,
-- technische und organisatorische Probleme sichtbar machen,
-- sichere Ordnungsvorschläge erzeugen,
-- Änderungen erst nach verständlicher Vorschau ausführen,
-- jede Änderung protokollieren und rückgängig machen,
-- vollständig lokal und datensparsam arbeiten.
-
-## Zielgruppen
-
-- Nutzer ohne Linux- oder Dateisystemkenntnisse,
-- Musiker, Fotografen, Videoproduzenten und Autoren,
-- Besitzer großer gewachsener Festplattenarchive,
-- Nutzer mit vielen Dubletten, kryptischen Namen und unsortierten Ordnern,
-- Entwickler mit vielen alten oder mehrfach kopierten Codeprojekten,
-- fortgeschrittene Nutzer, die transparente Stapelverarbeitung benötigen.
-
 ## Sicherheitsgrundsatz
 
 **Analyse zuerst. Änderung später.**
 
-Die aktuelle Version verändert keine gescannten Dateien. Sie liest Metadaten, klassifiziert Dateien und kann auf ausdrücklichen Wunsch Datei-Hashes berechnen. Geplante spätere Dateioperationen müssen folgende Sperren erfüllen:
-
-1. Vorher-Nachher-Vorschau.
-2. Konflikt- und Speicherplatzprüfung.
-3. Verständliche Zusammenfassung der Wirkung.
-4. Explizite Bestätigung.
-5. Transaktionsprotokoll.
-6. Undo-Manifest und Wiederherstellungstest.
-7. Papierkorb oder Quarantäne statt Direktlöschung.
-8. Abbruch ohne halbfertigen Zustand.
+Der aktuelle Stand verändert keine Dateien in den untersuchten Sammlungen. Schreibzugriffe betreffen ausschließlich ausdrücklich gewählte Index- und Berichtsdateien. Vorhandene Berichte werden ohne `--overwrite-report` nicht ersetzt. Der Reparaturmodus legt standardmäßig eine konsistente SQLite-Sicherheitskopie an.
 
 ## Aktuell funktionsfähig
 
-### Rein lesender Scan
+### Rein lesender Direkt-Scan
 
-Der Scanner erfasst:
+```bash
+datenbanktool scan ~/Musik
+```
 
-- relativen Pfad,
-- Dateigröße,
-- Änderungsdatum in UTC,
-- Dateiendung,
-- Dateikategorie,
-- symbolische Verknüpfungen,
-- große Dateien,
-- problematische Dateinamen,
-- optionale SHA-256-Prüfsummen für mögliche Duplikate,
-- Zugriffs- und Lesefehler ohne Gesamtabsturz.
+Optionaler JSON-Bericht:
 
-### Dateikategorien
+```bash
+datenbanktool scan ~/Musik \
+  --hash-duplicates \
+  --json reports/musik.json
+```
 
-- Audio
-- Video
-- Bilder
-- Texte
-- Archive
-- Code
-- Dokumente
-- Sonstige Dateien
+### Persistenten SQLite-Index aufbauen
 
-### Dateinamenprüfung
+```bash
+datenbanktool index build ~/Medien \
+  --database index/medien.sqlite3 \
+  --batch-size 500 \
+  --hash-duplicates
+```
 
-Linux verbietet innerhalb eines einzelnen Dateinamens nur NUL und `/`. Trotzdem können viele Namen in Shells, Archiven, Netzlaufwerken oder anderen Betriebssystemen Probleme verursachen. Deshalb meldet das Tool unter anderem:
+Der Import speichert jeden Batch zusammen mit seinem Wiederaufnahme-Checkpoint in einer Transaktion.
 
-- führende oder abschließende Leerzeichen,
-- führende Bindestriche,
-- Steuerzeichen und Zeilenumbrüche,
-- schlecht portable Sonderzeichen,
-- uneinheitliche Unicode-Normalisierung,
-- überlange Dateinamen,
-- mehrfach aufeinanderfolgende Leerzeichen.
+### Unterbrochenen Index fortsetzen
 
-Es wird **nichts automatisch umbenannt**.
+```bash
+datenbanktool index build ~/Medien \
+  --database index/medien.sqlite3 \
+  --hash-duplicates \
+  --resume
+```
+
+Eine Sitzung wird nur fortgesetzt, wenn Wurzelpfad und sicherheitsrelevante Scanoptionen zum gespeicherten Fingerabdruck passen. Andernfalls beginnt eine neue Sitzung.
+
+### Indexstatus anzeigen
+
+```bash
+datenbanktool index status index/medien.sqlite3
+```
+
+Angezeigt werden Schema-Version, Sitzung, Phase, Status, Dateizahl, Fehler und Duplikatgruppen.
+
+### Index prüfen und reparieren
+
+```bash
+datenbanktool index repair index/medien.sqlite3
+```
+
+Standardmaßnahmen:
+
+- konsistente SQLite-Sicherheitskopie,
+- `PRAGMA quick_check` vor der Reparatur,
+- automatische Schemamigration,
+- liegengebliebene Sitzungen als unterbrochen markieren,
+- Duplikatgruppen neu aufbauen,
+- `REINDEX` und `ANALYZE`,
+- `PRAGMA integrity_check` und Fremdschlüsselprüfung danach.
+
+Optionale Komprimierung:
+
+```bash
+datenbanktool index repair index/medien.sqlite3 --vacuum
+```
+
+Die Sicherung lässt sich nur bewusst deaktivieren:
+
+```bash
+datenbanktool index repair index/medien.sqlite3 --without-backup
+```
+
+### CSV- und HTML-Berichte erzeugen
+
+```bash
+datenbanktool report index/medien.sqlite3 \
+  --csv reports/medien.csv \
+  --html reports/medien.html
+```
+
+Filter lassen sich kombinieren:
+
+```bash
+datenbanktool report index/medien.sqlite3 \
+  --html reports/problematische-audios.html \
+  --category audio \
+  --min-size-mib 10 \
+  --max-size-mib 2000 \
+  --name-warning-only \
+  --duplicates-only
+```
+
+Verfügbare Kategorien:
+
+- `audio`
+- `video`
+- `image`
+- `text`
+- `archive`
+- `code`
+- `document`
+- `other`
+
+Der HTML-Bericht ist eine lokale Einzeldatei und bietet zusätzlich:
+
+- Schnellsuche,
+- Dateitypfilter,
+- Schalter für Namensprobleme,
+- Schalter für Duplikate,
+- sichtbare Trefferzahl.
+
+## SQLite-Architektur
+
+### Schema-Versionierung
+
+- SQLite `PRAGMA user_version`
+- Tabelle `schema_migrations`
+- Spiegelung in `metadata.schema_version`
+- Abbruch bei Datenbanken, deren Schema neuer als die Programmversion ist
+
+### Zentrale Tabellen
+
+| Tabelle | Zweck |
+|---|---|
+| `scan_sessions` | Sitzungsstatus, Phase, Checkpoints und Optionen |
+| `files` | Dateimetadaten und optionale SHA-256-Werte |
+| `filename_warnings` | normalisierte Warncodes pro Datei |
+| `scan_errors` | isolierte Datei- und Lesefehler |
+| `duplicate_groups` | exakte Duplikatgruppen |
+| `duplicate_members` | Zuordnung Dateien zu Duplikatgruppen |
+| `schema_migrations` | nachvollziehbare Datenbankmigrationen |
+
+### Wiederaufnahmevertrag
+
+1. Verzeichnislauf ist deterministisch sortiert.
+2. Datei-Batch und Checkpoint werden gemeinsam bestätigt.
+3. Dateipfade sind je Sitzung eindeutig.
+4. Wiederholte Importe aktualisieren statt zu duplizieren.
+5. Hashing besitzt einen eigenen Wiederaufnahme-Checkpoint.
+6. Erst nach Finalisierung erhält die Sitzung den Status `complete`.
+
+## Projektstruktur
+
+```text
+DATENBANKTOOL/
+├── src/datenbanktool/
+│   ├── cli.py
+│   └── core/
+│       ├── classification.py
+│       ├── index_database.py
+│       ├── models.py
+│       ├── naming.py
+│       ├── reports.py
+│       └── scanner.py
+├── tests/
+│   ├── test_cli.py
+│   ├── test_foundation.py
+│   └── test_index_database.py
+├── project_registry.json
+├── ANALYSE-PUNKTE.md
+├── SCHWACHSTELLEN.md
+├── TODO.md
+├── UPGRADE_POOL.md
+├── ENTWICKLERDOKU.md
+└── CHANGELOG.md
+```
 
 ## Installation für die Entwicklung
 
@@ -137,140 +243,33 @@ python -m pip install --upgrade pip
 python -m pip install -e .
 ```
 
-## Verwendung
-
-### Einfacher Scan
-
-```bash
-datenbanktool scan ~/Musik
-```
-
-### Bericht als JSON speichern
-
-```bash
-datenbanktool scan ~/Musik --json reports/musik-scan.json
-```
-
-Ein vorhandener Bericht wird nicht still überschrieben. Dafür ist eine ausdrückliche Freigabe erforderlich:
-
-```bash
-datenbanktool scan ~/Musik \
-  --json reports/musik-scan.json \
-  --overwrite-report
-```
-
-### Exakte Duplikate prüfen
-
-```bash
-datenbanktool scan ~/Medien \
-  --hash-duplicates \
-  --json reports/medien-mit-duplikaten.json
-```
-
-Die Hash-Prüfung liest den vollständigen Inhalt möglicher Kandidaten und kann bei großen Sammlungen lange dauern. Sie wird deshalb nur ausdrücklich aktiviert.
-
-### Grenze für große Dateien ändern
-
-```bash
-datenbanktool scan ~/Daten --large-file-mib 500
-```
-
-### Testscan begrenzen
-
-```bash
-datenbanktool scan ~/Daten --max-files 1000
-```
-
-## Geplantes Bedienkonzept für Laien
-
-### Modus „Einfach“
-
-- Ein großer Knopf: **Ordner auswählen und prüfen**.
-- Keine technischen Parameter im Hauptbild.
-- Ergebnisse als Ampel und verständliche Gruppen.
-- Keine direkte Löschfunktion.
-- Empfohlene sichere nächste Aktion pro Fund.
-
-### Modus „Geführt“
-
-- Schrittweise Assistenten für Duplikate, Dateinamen, große Dateien und Sortierung.
-- Jede Regel wird anhand echter Beispiele erklärt.
-- Wirkung und Risiko werden vor der Ausführung angezeigt.
-- Kritische Entscheidungen lassen sich zurücknehmen.
-
-### Modus „Experte“
-
-- Filterkombinationen, reguläre Ausdrücke, Metadatenregeln und Stapelpläne.
-- Exportierbare Profile.
-- Vollständige Protokolle und technische Diagnose.
-- Gleicher Sicherheitskern wie in den einfachen Modi.
-
-## Geplante Kernmodule
-
-| Modul | Aufgabe | Sicherheitsanforderung |
-|---|---|---|
-| Scanner | Dateien und Ordner inventarisieren | rein lesend, fehlertolerant |
-| Index | Millionen Einträge schnell durchsuchen | inkrementell, reparierbar |
-| Suche | Namen, Typen, Inhalte und Metadaten finden | klare Filteranzeige |
-| Vorschau | Medien, Texte, Archive und Code prüfen | kein automatisches Ausführen |
-| Duplikate | exakte und ähnliche Dateien gruppieren | Original nie automatisch wählen |
-| Benennung | sichere Linux- und portable Namen planen | Vorschau und Konflikttest |
-| Sortierung | Regeln und Zielstrukturen vorschlagen | nur als Plan starten |
-| Dateioperationen | kopieren, verschieben, umbenennen | Transaktion, Undo, Quarantäne |
-| Wiederherstellung | Abbruch und Fehler reparieren | journalbasiert |
-| Berichte | Ergebnisse dokumentieren | JSON, CSV, HTML, später PDF |
-
-## Technische Leitlinien
-
-- Linux zuerst, vollständig lokal und offline nutzbar.
-- Python-Kern ohne zwingende externe Laufzeitabhängigkeiten.
-- Grafische Oberfläche später getrennt vom Analyse-Kern.
-- Keine direkte Kopplung von UI und Dateioperationen.
-- Klare Datenmodelle und maschinenlesbare Berichte.
-- Symbolischen Links standardmäßig nicht folgen.
-- Hashing und Inhaltsprüfung nur gezielt aktivieren.
-- Große Aufgaben pausierbar und fortsetzbar ausführen.
-- Minimaler Schreibzugriff und atomare Berichtsdateien.
-
-## Projektstruktur
-
-```text
-DATENBANKTOOL/
-├── src/datenbanktool/
-│   ├── cli.py
-│   └── core/
-│       ├── classification.py
-│       ├── models.py
-│       ├── naming.py
-│       └── scanner.py
-├── tests/
-├── project_registry.json
-├── ANALYSE-PUNKTE.md
-├── SCHWACHSTELLEN.md
-├── TODO.md
-├── UPGRADE_POOL.md
-├── ENTWICKLERDOKU.md
-└── CHANGELOG.md
-```
-
 ## Prüfungen
 
 ```bash
 python -m compileall -q src tests
-PYTHONPATH=src python -m unittest discover -s tests -v
+PYTHONPATH=src PYTHONWARNINGS=error \
+  python -m unittest discover -s tests -v
 ```
 
-Spätere Qualitätsstufen sollen zusätzlich Ruff, MyPy, Bandit, pip-audit, Coverage und reale Dateisystemtests enthalten.
+Aktueller validierter Stand:
 
-## Dokumentation
+- **14/14 Tests erfolgreich**
+- Python-Kompilierung erfolgreich
+- CLI-End-to-End-Test erfolgreich
+- Schema-Neuanlage erfolgreich
+- V1→V2-Migration erfolgreich
+- Unterbrechung und Wiederaufnahme erfolgreich
+- Duplikat-Neuaufbau erfolgreich
+- Reparatursicherung mit `quick_check = ok`
+- gefilterte CSV-/HTML-Ausgabe erfolgreich
+- keine Warnungen bei Testausführung mit `PYTHONWARNINGS=error`
 
-- [`ANALYSE-PUNKTE.md`](ANALYSE-PUNKTE.md): vollständige Funktions- und Bedarfsanalyse
-- [`SCHWACHSTELLEN.md`](SCHWACHSTELLEN.md): aktuelle Risiken und technische Grenzen
-- [`TODO.md`](TODO.md): priorisierte Umsetzungsschritte
-- [`UPGRADE_POOL.md`](UPGRADE_POOL.md): spätere Erweiterungen
-- [`ENTWICKLERDOKU.md`](ENTWICKLERDOKU.md): Architektur und Entwicklungsregeln
-- [`CHANGELOG.md`](CHANGELOG.md): Versionshistorie
+Ruff und MyPy waren in der lokalen Prüfungsumgebung nicht installiert und wurden deshalb in dieser Iteration nicht als bestanden ausgewiesen.
 
-## Aktuelle Grenze
+## Aktuelle Grenzen
 
-Diese Alpha-Basis ist noch kein fertiger Dateimanager. Sie dient als überprüfbares Fundament. Verschieben, Umbenennen, Editieren, Sortieren und Löschen sind bewusst noch nicht freigeschaltet, weil dafür zuerst Transaktions-, Konflikt- und Wiederherstellungslogik fertig sein muss.
+- Wiederaufnahme setzt voraus, dass der gespeicherte Checkpoint im Verzeichnislauf noch auffindbar ist.
+- Abgeschlossene Sitzungen werden noch nicht inkrementell aktualisiert.
+- Reparatur kann strukturell lesbare Datenbanken korrigieren, aber keine beliebig zerstörte SQLite-Datei garantieren.
+- Sehr große HTML-Berichte können den Browser stärker belasten; CSV und SQLite bleiben für große Bestände geeigneter.
+- Verschieben, Umbenennen, Editieren, Sortieren und Löschen bleiben gesperrt, bis Plan-, Journal-, Undo- und Recoveryverträge implementiert sind.
