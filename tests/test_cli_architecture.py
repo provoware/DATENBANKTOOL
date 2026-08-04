@@ -91,6 +91,10 @@ class CliArchitectureTests(unittest.TestCase):
             ["index", "presets", "show", "beispiel"],
             ["index", "presets", "save", "beispiel"],
             ["index", "presets", "delete", "beispiel"],
+            ["index", "timeline-presets", "list"],
+            ["index", "timeline-presets", "show", "beispiel"],
+            ["index", "timeline-presets", "save", "beispiel", "Musik"],
+            ["index", "timeline-presets", "delete", "beispiel"],
             ["index", "backup", "/tmp/index.sqlite3"],
             [
                 "index",
@@ -139,6 +143,11 @@ class CliArchitectureTests(unittest.TestCase):
                 "/tmp/index.sqlite3",
                 "musik",
             ): "datenbanktool.cli_folder_timeline",
+            (
+                "index",
+                "timeline-presets",
+                "list",
+            ): "datenbanktool.cli_timeline_presets",
             (
                 "index",
                 "build",
