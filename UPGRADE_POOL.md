@@ -2,21 +2,27 @@
 
 ## Einfach verständliche nächste Verbesserungen
 
-1. **Ordnerübersicht** – zeigt pro Ordner Dateizahl, Größe und größte Platzfresser.
-2. **Gespeicherte Suchen** – häufige Filter lassen sich als Vorlage wiederverwenden.
-3. **Suchbericht** – aktuelle Treffer direkt als CSV oder HTML speichern.
-4. **Favoriten** – wichtige Dateien und Ordner im Index markieren.
-5. **Schnellfilter** – Schaltflächen für Audio, Bilder, große Dateien und Namensprobleme.
-6. **Verlauf vergleichen** – zwei beliebige Scans miteinander vergleichen.
-7. **Alte Scans aufräumen** – vorher mit Vorschau und Sicherung.
-8. **Medieninformationen** – Dauer, Auflösung, Codec, Künstler und Album anzeigen.
-9. **Bildvorschau** – Treffer als kleine Vorschaubilder anzeigen.
-10. **Audiovorschau** – gefundene Audiodateien direkt vorhören.
+1. **Startmenü** – wichtige Funktionen als nummerierte Auswahl anzeigen, damit keine Befehle auswendig gelernt werden müssen.
+2. **CSV für Ordner** – Ordnergrößen und Platzfresser direkt als Tabelle speichern.
+3. **Ordnervergleich** – anzeigen, welche Ordner seit dem letzten Scan gewachsen oder kleiner geworden sind.
+4. **Vorlagen übertragen** – Suchvorlagen als Datei sichern und auf einen anderen Rechner übernehmen.
+5. **Favoriten** – häufig verwendete Ordner und Scans schneller auswählen.
+6. **Einfachmodus** – nur die wichtigsten sicheren Funktionen anzeigen.
+7. **Geführte Prüfung** – Schritt für Schritt durch große Dateien, Namensprobleme und Duplikate führen.
+8. **HTML-Startbericht** – alle wichtigen Ergebnisse auf einer lokalen Übersichtsseite bündeln.
 
-## Spätere Profi-Funktionen
+## Später mit zusätzlicher Sicherheitsentwicklung
 
-- Volltextsuche in ausdrücklich ausgewählten Textdateien.
-- Suchprofile mit regulären Ausdrücken.
-- Ähnlichkeitssuche für Bilder und Audio.
-- Ordner- und Projektbeziehungen.
-- Sichere Änderungspläne mit Vorschau und Undo.
+9. **Umbenennungsvorschau** – neue Dateinamen zuerst vollständig anzeigen, aber noch nicht anwenden.
+10. **Sortierplan** – geplante Zielordner vor jeder Änderung verständlich darstellen.
+11. **Rückgängig-Funktion** – jede bestätigte Dateiänderung vollständig zurücknehmen können.
+12. **Quarantäne** – Dateien niemals direkt löschen, sondern sicher ablegen.
+13. **Grafische Oberfläche** – große Schaltflächen, Auswahlfenster, Tooltips und Ampeln statt manueller Befehle.
+
+## Bereits umgesetzt
+
+- Ordnerübersicht mit Dateizahl, Größe und Platzfressern.
+- Ampeln mit Farbe, Klartext und Begründung.
+- Suchvorlagen mit sicherem Speichern und bestätigtem Löschen.
+- HTML-Hoverhilfen.
+- Ausführliche Funktions- und Wirkungsbeschreibungen.
