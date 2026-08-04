@@ -1,16 +1,33 @@
 # Changelog
 
+## 0.14.0-alpha.1 – 2026-08-04
+
+### Geführte Vorlagenverwaltung
+
+- Startseitenpunkt 12 ist jetzt ein klares Untermenü für Zeitreihen-Vorlagen.
+- Vorlagen können geführt angezeigt, neu gespeichert, bewusst ersetzt und nach Namensprüfung bestätigt gelöscht werden.
+- Ersetzen und Löschen behalten den vorhandenen Zeitreihen-Vorlagen-Sicherheitsvertrag bei: keine Datenbankpfade, nur relative Ordner und Löschung nur nach Bestätigung.
+- Feld- und Fehlerhilfe erklären vorhandene Namen, bewusstes Ersetzen und sicheres Löschen.
+
 Alle wichtigen Änderungen werden hier dokumentiert. Das Projekt verwendet semantische Versionierung.
 
-## [0.1.0] - 2026-08-04
+## 0.13.0-alpha.2 – 2026-08-04
 
-### Hinzugefügt
+### Wartung und Korrekturen
 
-- Schreibgeschützte SQLite-Analyse mit den Befehlen `summary` und `tables`.
-- Validierung von Pfaden, Dateitypen und SQLite-Signaturen.
-- Menschenlesbare und JSON-Ausgabe mit definierten Exitcodes.
-- Versionsregistry, Paketkonfiguration und automatische Tests.
+- Doppelten alten CLI-Kopf entfernt, damit `from __future__ import annotations` wieder am Dateianfang steht und die Startseiten-Tests importieren können.
+- Startseiten-Kataloge und Eingabeparser bleiben in getrennten kleinen Modulen.
+- Negative Parser-Tests für ungültige Ganzzahlen, nicht endliche Prozentwerte und unbekannte Berichtsformate ergänzt.
+- Registry, README, TODO, Upgrade-Pool, Schwachstellenliste, Analysepunkte und Entwicklerdokumentation auf den aktuellen Wartungsstand synchronisiert.
+
 ## 0.13.0-alpha.1 – 2026-08-04
+
+### Versionierungsvertrag
+
+- PEP-440-Paketversion `0.13.0a1` als technische Schreibweise festgelegt.
+- Menschenlesbare Projektversion `0.13.0-alpha.1` in Registry, Projektregistry und Dokumentation beibehalten.
+- Harte zweite `__version__`-Zuweisung entfernt; die Paketversion kommt aus `registry.json` oder der dokumentierten Alpha-Umrechnung.
+- Drift-Test für CLI-Version, Registry, Projektregistry, Paketmetadaten und Dokumentation ergänzt.
 
 ### Zeitreihen-Vorlagen
 
@@ -74,6 +91,8 @@ Alle wichtigen Änderungen werden hier dokumentiert. Das Projekt verwendet seman
   SHA-256 `846ebbd02d213bc336800d330a8a2612e2a069e17e13362f0a27f5aa4ed7571d`.
 - CLI-Startdatei von einem alten duplizierten SQLite-MVP-Vorspann bereinigt; `from __future__` steht wieder am Dateianfang.
 - Large-Abnahme auf Zielhardware: 100.000 Dateien, 11/11, 218,722 s, 107.011.474 Byte Python-Peak, 309.166.080 Byte Prozess-RSS, Python 3.12.13, ext4 auf `/dev/vda`, KVM x86_64 mit 3 vCPU.
+- Pflichtdokumente, README-Kopfstand und Paketregistry auf `0.13.0-alpha.1` synchronisiert.
+- Historische MVP-Angaben vom aktuellen Status getrennt.
 
 ## 0.12.0-alpha.1 – 2026-08-04
 
@@ -128,3 +147,14 @@ Alle wichtigen Änderungen werden hier dokumentiert. Das Projekt verwendet seman
 ## 0.1.0-alpha.1 – 2026-08-04
 
 - Rein lesender Scanner, Klassifizierung, Namensprüfung und Duplikaterkennung.
+
+## Historisch: 0.1.0 - 2026-08-04
+
+Der frühe SQLite-MVP ist abgeschlossen und nicht mehr der aktuelle Projektstatus.
+
+### Hinzugefügt
+
+- Schreibgeschützte SQLite-Strukturprüfung mit den damaligen Basisbefehlen.
+- Validierung von Pfaden, Dateitypen und SQLite-Signaturen.
+- Menschenlesbare und JSON-Ausgabe mit definierten Exitcodes.
+- Versionsregistry, Paketkonfiguration und automatische Tests.

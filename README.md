@@ -7,8 +7,39 @@
 **Entwicklungsfortschritt:** **99 %** (Large-Abnahme bestanden; reale Laienabnahme offen).
 
 **Mögliche Upgrades:** geführte Vorlagenverwaltung, Mehrordner-Zeitreihe und Abnahmehistorie; Details stehen im [Upgrade-Pool](UPGRADE_POOL.md).
+**Erledigt:** schreibgeschützte SQLite-Analyse, Tabellenübersicht, Zeitreihen-Vorlagenverwaltung auf der Startseite, validierte Text-/JSON-Ausgabe und automatische Tests.
 
-Das DATENBANKTOOL zeigt Aufbau und Kerndaten einer lokalen SQLite-Datenbank, ohne sie zu verändern. Es benötigt Python 3.10 oder neuer und keine zusätzlichen Laufzeitpakete.
+**Offen:** reale Laienabnahme, weiterer Großbestandstest, weitere Datenbanktreiber und eine grafische Oberfläche.
+
+**Entwicklungsfortschritt:** **99 %** (stabiler lokaler Dateiindex mit geführter Vorlagenverwaltung).
+
+**Mögliche Upgrades:** Mehrordner-Zeitreihe, reale Laienabnahme und optionale PostgreSQL-Anbindung; Details stehen im [Upgrade-Pool](UPGRADE_POOL.md).
+> Sicheres Linux-Werkzeug zum Finden, Prüfen und übersichtlichen Strukturieren großer Dateisammlungen.
+
+## Projektstatus
+
+| Bereich | Stand |
+|---|---|
+| Aktuelle Version | `0.13.0-alpha.1` |
+| Entwicklungsfortschritt | **99 %** |
+| Erledigte Hauptpunkte | **51** – Scanner, SQLite-Index, Re-Scan, Suche, Berichte, Ordnervergleich, Zeitreihe, Vorlagen, Trendgrenzen, Hilfe und Abnahmeprofile |
+| Offene Hauptpunkte | **1** – reale Laienabnahme auf einem Zielsystem durchführen |
+| Nächste Upgrades aus `UPGRADE_POOL.md` | Geführte Vorlagenverwaltung, Mehrordner-Zeitreihe, reale Laienabnahme, 100.000-Dateien-Zieltest |
+| SQLite-Schema | `3` |
+| Automatische Originaldateiänderungen | **Gesperrt** |
+| Externe Laufzeitabhängigkeiten | **0** |
+| Automatisierte Tests | **86/86** unter Python 3.10 und 3.12 |
+| Quick-Abnahme | **600 Dateien · 11/11 bestanden** |
+| Standard-Abnahme | **10.000 Dateien · 11/11 bestanden** |
+**Erledigt:** schreibgeschützte SQLite-Analyse, Zeitreihen-/Vorlagenfunktionen, verbindlicher Registry-Versionsvertrag und Drift-Test.
+
+**Offen:** reale Laienabnahme, 100.000-Dateien-Zieltest, geführte Vorlagenverwaltung und grafische Oberfläche.
+
+**Entwicklungsfortschritt:** **99 %** (Alpha-Funktionsstand mit abgesicherter Versionierung).
+
+**Mögliche Upgrades:** geführte Vorlagenverwaltung und Mehrordner-Zeitreihe; Details stehen im [Upgrade-Pool](UPGRADE_POOL.md).
+
+Das DATENBANKTOOL arbeitet standardmäßig rein lesend. Es erstellt einen lokalen, versionierten SQLite-Index und zeigt Dateibestände, Änderungen, Suchen, Ordnerberichte, Zeitreihen und sichere Exportberichte, ohne Originaldateien zu verändern. Es benötigt Python 3.10 oder neuer und keine zusätzlichen Laufzeitpakete.
 
 ## Installation
 
@@ -18,13 +49,16 @@ python -m pip install -e .
 
 ## Verwendung
 
+Aktuelle Einstiegspunkte:
+
 ```bash
-datenbanktool summary beispiel.sqlite
-datenbanktool tables beispiel.sqlite
-datenbanktool --json summary beispiel.sqlite
+datenbanktool start
+datenbanktool help
+datenbanktool index build ~/Daten --database index.sqlite3
+datenbanktool index status index.sqlite3
 ```
 
-`summary` zeigt Dateigröße sowie die Anzahl der Tabellen und Spalten. `tables` zeigt die Spalten jeder selbst angelegten Tabelle. `--json` erzeugt maschinenlesbare Ausgaben; ein Eingabefehler endet mit Statuscode `2`.
+`start` öffnet die geführte Terminal-Bedienung. `help` erklärt Themen in einfacher Sprache. `index build` erstellt einen lokalen Index für einen Ordner. `index status` zeigt den Zustand eines vorhandenen Index. Weitere aktuelle Indexbefehle sind unter anderem `search`, `folders`, `changes`, `folder-compare`, `folder-timeline`, `presets` und `timeline-presets`. Eingabefehler enden mit Statuscode `2`.
 
 ## Entwicklung
 
@@ -32,21 +66,30 @@ datenbanktool --json summary beispiel.sqlite
 PYTHONPATH=src python -m unittest discover -s tests -v
 ```
 
-Die Version wird ausschließlich in `registry.json` gepflegt. Architektur und Qualitätsregeln beschreibt die [Entwicklerdokumentation](ENTWICKLERDOKU.md).
+Die technische Paketversion wird als PEP 440 in `registry.json` gepflegt (`0.13.0a1`). Die menschenlesbare Projektversion lautet `0.13.0-alpha.1`. Architektur und Qualitätsregeln beschreibt die [Entwicklerdokumentation](ENTWICKLERDOKU.md).
 > Sicheres Linux-Werkzeug zum Finden, Prüfen und übersichtlichen Strukturieren großer Dateisammlungen.
 
 ## Projektstatus
 
 | Bereich | Stand |
 |---|---|
-| Version | `0.13.0-alpha.1` |
+| Version | `0.14.0-alpha.1` |
 | SQLite-Schema | `3` |
 | Entwicklungsfortschritt | **99 %** |
-| Erledigte Hauptpunkte | **51** |
+| Erledigte Hauptpunkte | **54** |
 | Offene Hauptpunkte | **1** |
 | Automatische Originaldateiänderungen | **Gesperrt** |
 | Externe Laufzeitabhängigkeiten | **0** |
-| Automatisierte Tests | **86/86** unter Python 3.10 und 3.12 |
+| Automatisierte Tests | **gezielt erweitert** |
+| Projektversion | `0.13.0-alpha.1` |
+| Paketversion | `0.13.0a1` |
+| SQLite-Schema | `3` |
+| Entwicklungsfortschritt | **99 %** |
+| Erledigte Hauptpunkte | **52** |
+| Offene Hauptpunkte | **1** |
+| Automatische Originaldateiänderungen | **Gesperrt** |
+| Externe Laufzeitabhängigkeiten | **0** |
+| Automatisierte Tests | **87/87** unter Python 3.10 und 3.12 |
 | Quick-Abnahme | **600 Dateien · 11/11 bestanden** |
 | Standard-Abnahme | **10.000 Dateien · 11/11 bestanden** |
 | Large-Abnahme | **100.000 Dateien · 11/11 bestanden · 218,722 s · 107.011.474 Byte Python-Peak** |
@@ -89,19 +132,20 @@ datenbanktool start
 
 ```text
 11. Ordner-Zeitreihe
-12. Zeitreihen-Vorlage speichern
+12. Zeitreihen-Vorlagen verwalten
 ```
 
 Punkt 11 zeigt vorhandene Vorlagen nummeriert mit Name, Ordner und Beschreibung. Eine
 Vorlage kann per Nummer oder exaktem Namen gewählt werden. Der Ordner bleibt vor dem
-Start sichtbar und kann bewusst angepasst werden. Punkt 12 schreibt erst nach sichtbarer
-Befehlsprüfung und ausdrücklicher Bestätigung eine neue Vorlage.
+Start sichtbar und kann bewusst angepasst werden. Punkt 12 verwaltet Vorlagen über ein
+Untermenü: anzeigen, speichern, bewusst ersetzen oder nach exakter Namensprüfung und
+Bestätigung löschen.
 
 Hilfen:
 
 ```text
 ?11 / g11   Zeitreihe erklären oder Schritt für Schritt führen
-?12 / g12   Vorlagenspeicherung erklären oder Schritt für Schritt führen
+?12 / g12   Vorlagenverwaltung erklären oder Schritt für Schritt führen
 ?           aktuelles Eingabefeld erklären
 ```
 
@@ -229,14 +273,19 @@ Hardware. Large wurde lokal im Container auf KVM x86_64 mit 3 vCPU, Python 3.12.
 - Je Zeitreihe wird weiterhin ein relativer Ordner dargestellt.
 - Diagramme positionieren Punkte nach Scan-Reihenfolge, nicht proportional zum
   tatsächlichen Zeitabstand.
+- reale Laienabnahme,
+- `large`-Profil auf Zielhardware,
+- geführte Vorlagenverwaltung,
+- Mehrordner-Zeitreihe.
+
+Weitere technische Grenzen: Vorlagen speichern bewusst nur den Ordner, Prozentwerte sind bei vorherigem Wert null nicht berechenbar, Warnschwellen betrachten Übergänge und Diagramme positionieren Punkte nach Scan-Reihenfolge.
 
 ## Mögliche weitere Upgrades
 
-- Geführtes Vorlagen-Untermenü für Anzeigen, Ersetzen und Löschen.
-- Mehrere ausgewählte Ordner gemeinsam als getrennte Trends darstellen.
-- Diagrammpunkte optional nach realem Scan-Zeitabstand positionieren.
-- Reale Laienabnahme und 100.000-Dateien-Zieltest durchführen.
-- Später eine grafische Oberfläche mit Pfadauswahldialogen ergänzen.
+- reale Laienabnahme,
+- `large`-Profil auf Zielhardware,
+- geführte Vorlagenverwaltung,
+- Mehrordner-Zeitreihe.
 
 ## Direkt folgender technischer Entwicklungsschritt
 

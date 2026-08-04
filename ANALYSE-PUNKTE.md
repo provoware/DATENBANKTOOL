@@ -1,6 +1,15 @@
 # Analyse-Punkte
 
+Stand: Version 0.14.0-alpha.1
+
+| Bereich | Befund | Maßnahme / Status |
+| --- | --- | --- |
+| Nutzerfreundlichkeit | Zeitreihen-Vorlagen waren auf der Startseite nur speicher- und auswählbar | Punkt 12 ist jetzt ein Untermenü für Anzeigen, Speichern, Ersetzen und Löschen |
+| Robustheit | Löschen über eine geführte Oberfläche kann bei ähnlichen Namen riskant sein | Exakte Namenswiederholung und Ja/Nein-Bestätigung sind vorgeschaltet |
+| Hilfesystem | Ersetzen und Löschen benötigten eigene Feldhilfe | Feld- und Fehlertexte erklären Namen, Ersetzen und Löschwirkung |
+
 Stand: Version 0.1.0
+Stand: Version 0.13.0-alpha.2
 
 | Bereich | Befund | Maßnahme / Status |
 | --- | --- | --- |
@@ -8,7 +17,7 @@ Stand: Version 0.1.0
 | Fehlerfreiheit | SQLite-Fehler waren nicht behandelt | Einheitlicher `DatabaseError` und Exitcode 2 |
 | Inkonsistenzen | Zuvor gab es keine definierte Ausgabe | Stabile Text- und JSON-Strukturen eingeführt |
 | Redundanzen | Pfadprüfung könnte je Befehl doppelt entstehen | Zentral in `validate_database` gebündelt |
-| Vereinheitlichung | Kein verbindlicher Versionsort vorhanden | `registry.json` ist alleinige Quelle |
+| Vereinheitlichung | Zwei Versionsschreibweisen können driften | `registry.json` führt PEP-440-Version und Anzeigeversion; Drift-Test gleicht CLI, Doku und Projektregistry ab |
 | Wartbarkeit | Kein Quellcodeaufbau vorhanden | CLI, Kernlogik, Konfiguration und Tests getrennt |
 | Komplexität | Zusätzliche Treiber würden den MVP überladen | Bewusst auf SQLite und Standardbibliothek begrenzt |
 | Prüfungsqualität | Keine Prüfungen vorhanden | Erfolgs-, Validierungs- und JSON-Fehlerfälle getestet |
@@ -18,10 +27,12 @@ Stand: Version 0.1.0
 | Stabilität | Schreibzugriff wäre ein Datenrisiko | SQLite-Verbindung erzwingt `mode=ro` |
 | Laienfreundlichkeit | Fachbegriff „SQLite“ bleibt nötig | README erklärt Zweck und Beispiele knapp |
 | Abhängigkeiten | Externe Pakete erhöhen Pflegeaufwand | Keine Laufzeitabhängigkeiten |
+| Inkonsistenzen | Alter README-MVP-Block widersprach dem aktuellen 0.13-Status | Startstatus, offene Hauptpunkte und aktuelle Einstiegspunkte konsolidiert |
 
 ## Nächste Analyse
 
-Vor dem CSV-Export sind Formel-Injektion in Tabellenprogrammen, Überschreiben vorhandener Dateien und große Ergebnismengen zu bewerten.
+Vor der nächsten Funktionsrunde sind reale Laienabnahme, 100.000-Dateien-Zielmessung und eine geführte Vorlagenverwaltung zu bewerten.
+
 ## Ergebnis dieser Iteration
 
 DATENBANKTOOL besitzt jetzt sichere lokale Zeitreihen-Vorlagen und optionale,
@@ -119,8 +130,8 @@ Die neuen Tests decken ab:
 
 Gesamtstand:
 
-- 86 Tests unter Python 3.10,
-- 86 Tests unter Python 3.12,
+- 87 Tests unter Python 3.10,
+- 87 Tests unter Python 3.12,
 - Warnungen als Fehler,
 - Quick-Abnahme 11/11,
 - Standard-Abnahme 11/11,
@@ -145,11 +156,20 @@ Run `30927676213`, Funktionscommit
 4. Reale Laienabnahme auf Kubuntu durchführen.
 5. Abnahmehistorie für mehrere Large-Läufe rein lesend vergleichbar machen.
 6. Später grafische Pfadauswahldialoge ergänzen.
+7. Bei der nächsten Release-Erhöhung zuerst `registry.json`, `project_registry.json` und `pyproject.toml` gemeinsam aktualisieren.
 
 ## Fazit
 
 Die Large-Abnahme ist vermessen und blieb deutlich unter den Grenzen von 3.600 Sekunden und 4.096 MiB Python-Speicher. Beide Aufträge sind vollständig umgesetzt und automatisch abgesichert. Vorlagen
+Die Versionierung ist jetzt zusätzlich gegen Drift abgesichert. Beide vorherigen Fachaufträge bleiben vollständig umgesetzt und automatisch abgesichert. Vorlagen
 reduzieren wiederholte Eingaben, ohne sensible oder unnötige Pfade zu speichern.
 Trendgrenzen erhöhen die Sichtbarkeit auffälligen Wachstums, bleiben aber strikt
 rein lesend und frei von automatischen Entscheidungen. Offen bleibt bewusst nur die
 menschliche Laienabnahme.
+
+## Ergebnis der Wartungsiteration 0.13.0-alpha.2
+
+- Fehlerfreiheit: Der doppelte alte CLI-Kopf wurde entfernt; `from __future__ import annotations` steht wieder am Dateianfang.
+- Robustheit: Negative Parser-Tests sichern ungültige Ganzzahlen, nicht endliche Prozentwerte und unbekannte Berichtsformate ab.
+- Wartbarkeit: Startseiten-Kataloge, Eingabeparser und orchestrierende Klasse bleiben klar getrennt.
+- Konsistenz: Registry und Info-Dateien verweisen auf denselben aktuellen Entwicklungsstand.
