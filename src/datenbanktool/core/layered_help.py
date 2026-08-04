@@ -118,6 +118,33 @@ _TOPICS = {
         "datenbanktool index folders index.sqlite3",
         ("ordner", "größe", "platzfresser", "speicher"),
     ),
+    "folder-compare": _topic(
+        "folder-compare",
+        "Ordner vergleichen",
+        "Zeigt, welche Ordner zwischen zwei abgeschlossenen Scans größer oder kleiner wurden.",
+        "Vergleicht rekursive Dateizahl und Gesamtgröße pro Ordner in zwei gespeicherten Sitzungen desselben Stammordners.",
+        "Rein lesend; nur ausdrücklich gewählte JSON-, CSV- oder HTML-Berichte werden geschrieben.",
+        "Sehr gering.",
+        "Wenn Speicherwachstum, Rückgang, neue oder nicht mehr vorhandene Ordner nachvollzogen werden sollen.",
+        (
+            "Mindestens zwei abgeschlossene Scans desselben Stammordners werden benötigt.",
+            "Ohne Sitzungsnummern wählt das Tool automatisch das neueste passende Paar.",
+        ),
+        (
+            "Indexdatenbank wählen.",
+            "Automatisch gewählte Scan-Nummern im Kopf der Ausgabe prüfen.",
+            "Zustand, Größenunterschied, Prozentwert und Dateidifferenz lesen.",
+            "Optional Filter oder einen lokalen Bericht wählen.",
+        ),
+        "Gewachsene, kleinere, neue und nicht mehr vorhandene Ordner werden mit Klartext und Begründung angezeigt.",
+        (
+            "Nur ein Scan vorhanden: zuerst denselben Ordner erneut prüfen.",
+            "Unterschiedliche Stammordner: passende Sitzungsnummern desselben Ordners wählen.",
+            "Keine Treffer: Filter oder Mindeständerung reduzieren.",
+        ),
+        "datenbanktool index folder-compare index.sqlite3",
+        ("ordnervergleich", "wachstum", "gewachsen", "kleiner", "speicherverlauf"),
+    ),
     "changes": _topic(
         "changes",
         "Änderungen anzeigen",
