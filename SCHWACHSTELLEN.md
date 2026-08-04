@@ -2,6 +2,7 @@
 
 ## Aktuell begrenzt
 
+- Versionen haben zwei zulässige Schreibweisen; automatisierte Drift-Prüfung verhindert Abweichungen zwischen Registry, CLI und Dokumentation.
 - Nur lokale SQLite-Dateien werden unterstützt; Serverdatenbanken fehlen bewusst.
 - Die Dateisignaturprüfung erkennt SQLite-Dateien, aber keine logischen Schäden jeder Datenbankseite.
 - Die Struktur wird vollständig eingelesen; extrem viele Tabellen sind noch nicht mit Messwerten abgesichert.
@@ -78,7 +79,7 @@ Sicherheitsrelevante Fehler sollen ohne sensible Dateiinhalte, Zugangsdaten oder
 
 ## 0.13-Funktionsreferenz
 
-- 86/86 Tests unter Python 3.10 und Python 3.12.
+- 87/87 Tests unter Python 3.10 und Python 3.12.
 - Quick: 600 Dateien, 11/11 Kriterien, 1,129 Sekunden.
 - Standard: 10.000 Dateien, 11/11 Kriterien, 18,150 Sekunden.
 - Diese CI-Werte sind Referenzen und keine Zusage für andere Hardware.
