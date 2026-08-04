@@ -51,11 +51,15 @@
 - Paket `datenbanktool-0.11.0a1` erfolgreich gebaut.
 - 71 von 71 Tests unter Python 3.10 und Python 3.12 erfolgreich.
 - Tests jeweils mit `PYTHONWARNINGS=error`.
-- Quick-Abnahme: 600 Dateien, 11/11 Kriterien, 0,994 Sekunden,
-  1.327.847 Byte Python-Spitzenspeicher.
-- Standard-Abnahme: 10.000 Dateien, 11/11 Kriterien, 15,816 Sekunden,
-  13.401.333 Byte Python-Spitzenspeicher.
-- Quick- und Standardberichte wurden als getrennte Artefakte 14 Tage archiviert.
+- Quick-Abnahme: 600 Dateien, 11/11 Kriterien, 1,085 Sekunden,
+  1.327.597 Byte Python-Spitzenspeicher.
+- Standard-Abnahme: 10.000 Dateien, 11/11 Kriterien, 18,718 Sekunden,
+  13.396.633 Byte Python-Spitzenspeicher.
+- Quick-Artefakt: ID 8896682878,
+  SHA-256 `ce9e7ca3ae074ffb9f64f22b5c6f9a3bb0d2306a7a8d16541c87633019df55e8`.
+- Standard-Artefakt: ID 8896694104,
+  SHA-256 `24410db0850c99f7a4fe9167906f35b34780463fa4ad802176b21e8109c31f17`.
+- Beide Berichtssets werden 14 Tage aufbewahrt.
 - Zeitreihenwerte, Datenbank-Unverändertheit und unsichere Pfade geprüft.
 - JSON-, Calc-CSV- und Offline-HTML-Export geprüft.
 - Vollständiger Vergleichsexport über mehrere Terminalseiten geprüft.
