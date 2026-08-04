@@ -1,311 +1,406 @@
 # Entwicklerdokumentation
 
-## Architekturstand 0.9.0-alpha.1
+## Architekturstand 0.10.0-alpha.1
 
-Die CLI bleibt modular. Der neue Ordnervergleich ist in drei klar getrennte Schichten
-aufgeteilt:
+Diese Iteration ergänzt zwei getrennte Funktionsbereiche:
 
-1. `core/folder_compare.py` – reine Auswahl, Aggregation und Klassifizierung.
-2. `core/folder_compare_exports.py` – atomare JSON-, CSV- und HTML-Ausgabe.
-3. `cli_folder_compare.py` – Argumente, verständliche Terminaldarstellung und Dispatch.
+1. vollständiger CSV-Export der normalen Ordnerübersicht,
+2. reproduzierbare technische Großbestands- und vorbereitete Laienabnahme.
 
-Die bestehenden Schichten bleiben unverändert:
+Neue Fachmodule:
 
-- `cli.py` – Zusammensetzung, Dispatch und zentrale Fehlergrenze,
-- `cli_scan.py` – einmaliger Scan,
-- `cli_search.py` – Suche und Suchvorlagen,
-- `cli_reports.py` – bisherige Berichte,
-- `cli_index.py` – Indexverwaltung,
-- `cli_help.py` – klassischer Erklärungsbefehl,
-- `cli_common.py` – gemeinsame Parser- und Ausgabehilfen,
-- `cli_contract.py` – Handler- und Seiteneffektvertrag,
-- `core/guided_home.py` – geführte Startseite,
-- `core/layered_help.py` – mehrschichtiger Hilfekatalog.
+- `core/folder_csv.py` – CSV-Schema und atomarer Byte-Schreibvorgang,
+- `core/acceptance.py` – Profile, Datensatz, Messung, Kriterien und Berichte,
+- `cli_acceptance.py` – Argumente und sichtbare Abnahmeausgabe,
+- `tests/test_folder_csv.py` – CSV- und Vollständigkeitstests,
+- `tests/test_acceptance.py` – Abnahme- und Sicherheitsprüfungen.
 
-## Öffentlicher Befehl
+Bestehende Modulgrenzen bleiben erhalten. `cli.py` registriert lediglich den neuen
+Parser und enthält keine Abnahmelogik.
+
+## Ordner-CSV
+
+### Öffentlicher Befehl
 
 ```text
-datenbanktool index folder-compare DATENBANK
+datenbanktool index folders DATENBANK --csv ZIEL
 ```
 
-Optionale Sitzungswahl:
+Vollständiger Export:
 
 ```text
---from-session-id ID
---to-session-id ID
+datenbanktool index folders DATENBANK --csv ZIEL --all-pages
 ```
 
-Filter und Ausgabe:
+`--all-pages` ist nur erlaubt, wenn mindestens eines der Ziele `--json`, `--csv` oder
+`--html` gesetzt ist.
+
+### Vollständige Auswertung
+
+`analyse_folders()` besitzt den zusätzlichen Parameter:
+
+```python
+all_rows: bool = False
+```
+
+Verhalten:
+
+- `False`: bisherige paginierte `FolderPage`,
+- `True`: vollständige gefilterte und sortierte Zeilenmenge in einer `FolderPage`.
+
+Die vollständige Auswertung setzt:
+
+- `page=1`,
+- `total_pages=1`,
+- `page_size=max(1, total_rows)`,
+- `rows=tuple(output)`.
+
+Damit bleibt das Datenmodell kompatibel. Es wurde kein zweites paralleles
+Exportdatenmodell eingeführt.
+
+### Terminalpagination
+
+`paginate_folder_page()` erzeugt aus einer vollständigen `FolderPage` eine sichtbare
+Seite. Vorbedingung:
 
 ```text
---type grown|shrunk|new|removed|changed|unchanged
---contains TEXT
---min-change-mib MIB
---max-depth N
---page N
---page-size N
---sort path|change|percent|files|current-size
---descending / --no-descending
---attention-growth-mib MIB
---json PFAD
---csv PFAD
---html PFAD
---overwrite-report
---no-terminal
+len(complete_page.rows) == complete_page.total_rows
 ```
 
-## `core/folder_compare.py`
+Dadurch wird die teure Ordneraggregation nur einmal ausgeführt. Terminal und Export
+verwenden dieselbe sortierte Ergebnismenge.
 
-### Datenmodelle
+### CSV-Schema
 
-`FolderComparisonFilter` enthält:
+`export_folder_csv()` schreibt folgende feste Basisspalten:
 
-- gewünschte Zustände,
-- Pfadtext,
-- absolute Mindeständerung,
-- maximale Tiefe,
-- Seite und Seitengröße,
-- Sortierung und Richtung,
-- Warnschwelle für starkes Wachstum.
+```text
+Ampelstufe
+Ampelstatus
+Ampelbegründung
+Ordner
+Ordnertiefe
+Dateien direkt
+Dateien mit Unterordnern
+Größe direkt Byte
+Gesamtgröße Byte
+Namenshinweise
+Dateien in Duplikatgruppen
+```
 
-`FolderComparisonRow` enthält:
+Danach folgen pro vorhandenem `largest_files`-Rang:
 
-- Ordnerpfad und Tiefe,
-- technischen und sichtbaren Zustand,
-- Dateizahl vorher und nachher,
-- Dateidifferenz,
-- Größe vorher und nachher,
-- absolute Größenänderung,
-- prozentuale Größenänderung oder `None`,
-- Ampelstufe, Status und Begründung.
+```text
+Platzfresser N Pfad
+Platzfresser N Byte
+```
 
-`FolderComparisonPage` enthält:
+Die maximale Anzahl richtet sich nach der ausgewerteten Seite beziehungsweise bei
+`--all-pages` nach der vollständigen Ergebnismenge. Fehlende Werte werden als leere
+Zellen geschrieben.
 
-- Datenbankpfad,
-- Ausgangs- und Zielsitzung,
-- Stammordner,
-- Pagination,
-- ungefilterte Zustandszähler,
-- ausgewählte Zeilen.
+### CSV-Kompatibilität
 
-Alle öffentlichen Datenmodelle sind unveränderliche Dataclasses mit Slots.
+- Kodierung: `utf-8-sig`,
+- Trennzeichen: Semikolon,
+- Zeilenende: `\n`,
+- numerische Rohwerte: Integer in Byte,
+- kein ANSI,
+- keine menschenlesbaren Größen in Zahlenfeldern.
 
-### Rein lesende Verbindung
+### Atomarer Schreibvertrag
 
-Die Funktion `_readonly_connection()`:
+`_write_atomic_bytes()`:
 
-1. normalisiert den Datenbankpfad,
-2. verlangt eine vorhandene Datei,
-3. öffnet SQLite über URI mit `mode=ro`,
-4. aktiviert `PRAGMA query_only=ON`,
-5. lehnt neuere unbekannte Schemaversionen ab,
-6. verlangt Schema 3 für Sitzungsbeziehungen.
+1. normalisiert den Zielpfad,
+2. lehnt vorhandenes Ziel ohne `overwrite` ab,
+3. erstellt notwendige Elternordner,
+4. schreibt in eine Prozess-spezifische temporäre Datei,
+5. gibt per `replace()` atomar frei,
+6. entfernt die temporäre Datei bei Fehlern.
 
-Der Vergleich führt kein `INSERT`, `UPDATE`, `DELETE`, `CREATE` oder `VACUUM` aus.
+Die gescannte SQLite-Datenbank und Originaldateien bleiben unverändert.
 
-### Auswahl der Zielsitzung
+## Abnahmeprofile
 
-Mit `--to-session-id` wird genau diese abgeschlossene Sitzung verwendet.
+`AcceptanceProfile` enthält:
 
-Ohne Angabe wird die neueste abgeschlossene Sitzung gewählt, die entweder:
+- `name`,
+- `file_count`,
+- `folder_count`,
+- `max_sparse_file_bytes`,
+- `max_seconds`,
+- `max_python_memory_mib`,
+- `description`.
 
-- einen `parent_session_id` besitzt oder
-- einen älteren abgeschlossenen Scan desselben Stammordners besitzt.
+Vordefinierte Profile:
 
-Dadurch wird nicht versehentlich ein einzelner isolierter Erstscan ausgewählt.
+| Profil | Dateien | Ordner | maximale Sparse-Datei | Zeit | Python-Speicher |
+|---|---:|---:|---:|---:|---:|
+| quick | 600 | 24 | 64 KiB | 30 s | 256 MiB |
+| standard | 10.000 | 250 | 512 KiB | 600 s | 1.024 MiB |
+| large | 100.000 | 1.000 | 2 MiB | 3.600 s | 4.096 MiB |
 
-### Auswahl der Ausgangssitzung
+Jedes Profil validiert positive Werte.
 
-Reihenfolge:
+## Abnahmearbeitsordner
 
-1. explizite `--from-session-id`,
-2. direkter `parent_session_id` der Zielsitzung,
-3. vorherige abgeschlossene Sitzung desselben Stammordners.
+`_safe_workspace()` verlangt einen nicht vorhandenen Zielpfad. Das Modul führt keine
+Löschung, Leerung oder Wiederverwendung aus.
 
-Danach gelten zwei harte Prüfungen:
+Struktur:
 
-- Ausgangs-ID muss kleiner als Ziel-ID sein,
-- normalisierte Stammordner müssen übereinstimmen.
+```text
+WORKSPACE/
+├── dataset/
+├── index.sqlite3
+├── ordneruebersicht.csv
+├── acceptance-result.json
+├── acceptance-report.md
+└── NOVICE_ACCEPTANCE_CHECKLIST.md
+```
 
-### Rekursive Aggregation
+Bei einem vorhandenen Pfad wird `FileExistsError` ausgelöst, bevor eine Datei verändert
+wird.
 
-Für jede Datei einer Sitzung werden gespeichert:
+## Reproduzierbarer Testbestand
 
-- Gesamtdateizahl,
-- Gesamtgröße in Byte.
+`_create_dataset()` verwendet `random.Random(seed)`. Damit bleiben Dateigrößen bei
+gleichem Profil und Seed reproduzierbar.
 
-Die Werte werden dem direkten Elternordner und allen Vorfahren bis `.` zugerechnet.
-Ein Ordner ohne Dateien und ohne belegte Unterordner kann nicht entstehen, weil das
-aktuelle Schema keine eigenständigen Verzeichniszeilen speichert.
+Eigenschaften:
 
-### Klassifizierung
+- deterministische Ordnerverteilung,
+- gemischte Endungen,
+- Leerzeichen,
+- Umlaute,
+- Fragezeichen und mehrfach gepunktete Namen,
+- Dateien werden mit `truncate()` sparse angelegt,
+- jede Datei wird exklusiv mit Modus `xb` erzeugt.
 
-Reihenfolge der Zustände:
+Sparse-Dateien prüfen Dateisystem-, Metadaten-, SQLite- und Auswertungsleistung, ohne
+den logischen Datenumfang vollständig physisch zu schreiben.
 
-1. vorher 0 Dateien, nachher >0 → `new`,
-2. vorher >0 Dateien, nachher 0 → `removed`,
-3. positive Größendifferenz → `grown`,
-4. negative Größendifferenz → `shrunk`,
-5. gleiche Größe, andere Dateizahl → `changed`,
-6. sonst → `unchanged`.
+## Quelldaten-Manifest
 
-Neue Ordner erhalten `size_delta_percent=None`, da eine Division durch einen
-Ausgangswert von null keinen sinnvollen Prozentwert liefert.
+`_source_manifest()` erfasst für jede Testdatei:
 
-### Ampellogik
+```text
+relative_path
+st_size
+st_mtime_ns
+```
 
-- `grown` oberhalb der Warnschwelle → Rot / Stark gewachsen,
-- sonstiges `grown` → Gelb / Gewachsen,
-- `new` → Gelb / Neu,
-- `changed` → Gelb / Dateizahl geändert,
-- `shrunk` → Grün / Kleiner geworden,
-- `removed` → Grün / Nicht mehr vorhanden,
-- `unchanged` → Grün / Unverändert.
+Vor und nach Indexaufbau, Ordnerauswertung und CSV-Export werden die Tupel bytegenau
+verglichen. Eine Abweichung lässt das Kriterium „Quelldateien unverändert“ scheitern.
 
-Ampeln sind Darstellungsmetadaten. Die konkrete Begründung wird in jeder Ausgabe
-zusätzlich verwendet.
+Das Manifest verwendet bewusst keine Inhalts-Hashes: Der Indexlauf ohne
+Duplikat-Hashing darf Dateiinhalte nicht verändern, und Größe plus Nanosekundenzeit
+entdeckt die im Testvertrag relevanten Seiteneffekte mit wesentlich geringerem
+Messaufwand.
 
-### Filter und Sortierung
+## Messungen
 
-Ohne `change_types` werden unveränderte Ordner ausgeblendet. Sobald mindestens ein
-Zustand angegeben ist, werden exakt diese Zustände verwendet.
+### Gesamt- und Phasenzeit
 
-`min_change_bytes` arbeitet mit dem Absolutbetrag. Ein Rückgang um 500 MiB erfüllt
-damit dieselbe Mindestschwelle wie ein Wachstum um 500 MiB.
+`time.perf_counter()` misst:
 
-Stabile Sortierungen besitzen immer Pfad-Fallbacks. Die Seitengröße ist auf 200
-begrenzt.
+- Testbestand erzeugen,
+- Vorvalidierung,
+- Index aufbauen,
+- Ordner auswerten,
+- CSV exportieren,
+- Nachvalidierung,
+- Gesamtzeit.
 
-## `core/folder_compare_exports.py`
+### Python-Spitzenspeicher
 
-### Atomare Schreibweise
+`tracemalloc` liefert den Python-Peak in Byte. Dieser Wert besitzt die harte
+Profilgrenze.
 
-Alle Formate werden zuerst in eine Prozess-spezifische temporäre Datei geschrieben und
-erst danach per `replace()` freigegeben. Bei Fehlern wird die temporäre Datei entfernt.
-Vorhandene Ziele benötigen `overwrite=True`.
+### Prozess-Maximal-RSS
+
+`resource.getrusage(resource.RUSAGE_SELF).ru_maxrss` wird unter Linux in KiB gelesen
+und in Byte umgerechnet. Der Wert wird dokumentiert, besitzt derzeit aber keine harte
+profilübergreifende Grenze, weil native Speicherwerte stärker von Plattform und
+Bibliotheksbuild abhängen.
+
+## Elf automatische Kriterien
+
+`AcceptanceCheck` enthält Name, Ergebnis, beobachteten Wert, Grenze und Erklärung.
+
+Die Kriterien prüfen:
+
+1. vollständige Erzeugung,
+2. Indexstatus `complete`,
+3. importierte Dateizahl,
+4. null Indexfehler,
+5. vorhandene Ordnerauswertung,
+6. CSV-Zeilenanzahl,
+7. UTF-8-BOM,
+8. unverändertes Manifest,
+9. CSV- und `all-pages`-Hilfe,
+10. Laufzeitgrenze,
+11. Python-Speichergrenze.
+
+`result.passed` ist nur wahr, wenn alle Kriterien wahr sind.
+
+## Rückgabecodes
+
+`run_acceptance_command()` liefert:
+
+- `0`, wenn alle automatischen Kriterien bestanden sind,
+- `1`, wenn mindestens ein Kriterium verfehlt wird,
+- zentrale CLI-Fehlergrenze liefert `2` bei Eingabe-, Pfad-, Datei- oder
+  Sicherheitsfehlern.
+
+## Berichte
 
 ### JSON
 
-- UTF-8,
-- eingerückt,
-- vollständige Seitenmetadaten,
-- keine ANSI-Farben oder Bedienhinweise.
+`AcceptanceResult.to_dict()` enthält Profil, Seed, Arbeitsordner, Dateizahlen,
+Messwerte, Phasen, Kriterien und Berichtspfade.
 
-### CSV
+### Markdown
 
-- UTF-8 mit BOM,
-- Semikolon als Trennzeichen,
-- Rohwerte in Byte für verlässliche Berechnung,
-- Status, Ampel und Begründung als getrennte Spalten.
+Der Bericht enthält:
 
-### HTML
+- Profil und Beschreibung,
+- Gesamtergebnis,
+- Laufzeit und Speicher,
+- Phasen,
+- Tabelle aller Kriterien,
+- Sicherheitsfazit,
+- Hinweis auf offene reale Laienabnahme.
 
-- vollständig eigenständig und offline,
-- alle dynamischen Texte HTML-maskiert,
-- responsive Standardtabelle,
-- Farbklasse plus sichtbarer Status,
-- `title`-Tooltip und `aria-label`,
-- Scan-IDs und Stammordner im Kopf.
+### Laien-Checkliste
 
-Die Exporte enthalten die Zeilen der übergebenen `FolderComparisonPage`, also die
-aktuell gefilterte Seite.
+Die Checkliste prüft:
 
-## `cli_folder_compare.py`
+- Startseite,
+- Ordnerübersicht,
+- CSV-Export,
+- mehrschichtige Hilfe,
+- Sicherheitsverständnis,
+- Überschreibfehler,
+- Zeit und Irrwege,
+- Bewertungen von 1 bis 5,
+- klare Bestehensbedingungen.
 
-Das Modul registriert Parser und Handler gemeinsam und erfüllt damit Regel G-002.
-
-Die Richtlinie lautet:
-
-```python
-CommandPolicy("index.folder-compare", writes_reports=True)
-```
-
-`writes_original_files` und `writes_index` bleiben `False`.
-
-Der Handler:
-
-1. prüft `--no-terminal` gegen vorhandene Exportziele,
-2. übersetzt MiB-Werte in Byte,
-3. ruft den Vergleichskern auf,
-4. gibt Sitzungsnummern und Zustandszähler aus,
-5. rendert jede Zeile mit Ampel, Klartext und Differenzen,
-6. erzeugt gewählte Berichte,
-7. liefert Rückgabecode 0 bei Erfolg.
-
-## Startseite und Hilfe
-
-`core/guided_home.py` besitzt die neue Aktion:
-
-```python
-MenuAction("10", "folder-compare", "folder_compare")
-```
-
-Sie benötigt keine Bestätigung, da der direkte Vergleich rein lesend ist. Der Builder
-übergibt nur eine sichere Argumentliste:
+Der Maschinenstatus bleibt:
 
 ```text
-index folder-compare DATENBANK
+pending-real-person
 ```
 
-`core/layered_help.py` bietet:
+Er wird nicht automatisch auf bestanden gesetzt.
 
-- Soforthilfe in der Menüzeile,
-- Detailhilfe über `?10`,
-- geführte Hilfe über `g10`,
-- Fehlerhilfe bei Rückgabecode ungleich null,
-- direkte Hilfe über `datenbanktool help folder-compare`.
+## CommandPolicy
 
-`core/help_system.py` hält zusätzlich den kompatiblen Befehl
-`datenbanktool explain folder-compare` bereit.
+Die Abnahme besitzt:
 
-## Automatische Prüfungen
+```python
+CommandPolicy(
+    "acceptance",
+    writes_reports=True,
+    writes_test_data=True,
+)
+```
 
-`tests/test_folder_compare.py` prüft:
+Folgende Werte bleiben falsch:
 
-1. Wachstum,
-2. Größenrückgang,
-3. neue Ordner,
-4. nicht mehr vorhandene Ordner,
-5. unveränderte Ordner auf ausdrückliche Anforderung,
-6. automatische Sitzungswahl,
-7. explizite Sitzungswahl,
-8. bytegenau unveränderte Datenbank,
-9. Ablehnung unterschiedlicher Stammordner,
-10. Terminalausgabe,
-11. JSON-, CSV- und HTML-Export,
-12. UTF-8-BOM des CSV-Exports,
-13. Pflicht eines Exports bei `--no-terminal`,
-14. Verbindung zu Startseite und mehrschichtiger Hilfe.
+```text
+reads_original_files
+writes_original_files
+writes_index
+```
 
-`tests/test_cli_architecture.py` prüft zusätzlich Handler, `CommandPolicy`,
-Modulzuständigkeit, Größenlimits und Shell-Verbote.
+Der im Arbeitsordner erzeugte Testindex gilt als Teil der isolierten Testdaten, nicht
+als Änderung eines Nutzerindexes.
 
-Gesamtstand:
+## GitHub Actions
 
-- 59 Tests unter Python 3.10,
-- 59 Tests unter Python 3.12,
-- `PYTHONWARNINGS=error`,
-- vollständige Kompilierung von `src` und `tests`.
+Python 3.10 und 3.12 führen aus:
 
-## Bekannte technische Grenzen
+```text
+Installation
+compileall
+66 Unit-/Integrationstests
+```
 
-- Vergleich von genau zwei Sitzungen, keine Zeitreihe.
-- Keine leeren Ordner ohne Dateieinträge.
-- Rekursive Elternwerte überlappen Kindwerte bewusst.
-- Export der aktuellen Seite, nicht automatisch aller gefilterten Treffer.
-- Praktische Ressourcenmessung mit sehr großen Beständen steht noch aus.
+Python 3.12 führt zusätzlich aus:
 
-## Nächster Entwicklungsblock
+```text
+quick: 600 Dateien
+standard: 10.000 Dateien
+```
 
-CSV-Export der normalen Ordnerübersicht mit denselben Filtern, stabiler Sortierung,
-UTF-8-BOM, atomarem Schreiben und Überschreibschutz ergänzen.
+Für jedes Profil archiviert `actions/upload-artifact@v4`:
 
-## Sichere Zusatzverbesserung
+- Ergebnis-JSON,
+- Markdown-Bericht,
+- Laien-Checkliste,
+- vollständige Ordner-CSV.
 
-Reproduzierbare Großbestands- und Laienabnahme vorbereiten, ohne automatische
-Originaldateioperationen freizuschalten.
+Aufbewahrung: 14 Tage.
+
+## Referenzlauf
+
+Commit `1ebc892d83642d42516da76919cec0c69c036b32`:
+
+| Profil | Kriterien | Laufzeit | Python-Peak | Artefakt-ID |
+|---|---:|---:|---:|---:|
+| quick | 11/11 | 1,086 s | 1.326.097 Byte | 8895038828 |
+| standard | 11/11 | 17,781 s | 13.394.783 Byte | 8895049504 |
+
+Die Werte sind CI-Referenzen und dürfen nicht als plattformunabhängige Zusage behandelt
+werden.
+
+## Automatische Tests
+
+`tests/test_folder_csv.py` prüft:
+
+- vollständige Auswertung,
+- nachträgliche Pagination,
+- UTF-8-BOM,
+- Spaltenvertrag,
+- Platzfresser,
+- Überschreibschutz,
+- CLI-Vollständigkeit,
+- kontrollierten Fehler ohne Exportziel.
+
+`tests/test_acceptance.py` prüft:
+
+- kleinen reproduzierbaren Lauf,
+- vollständige Berichte,
+- unveränderte Quellen,
+- offenen realen Laienstatus,
+- Schutz vorhandener Arbeitsordner,
+- Seiteneffektvertrag.
+
+`tests/test_cli_architecture.py` prüft zusätzlich Parser, Handler, Modulzuständigkeit,
+Zeilengrenzen und verbotene Shell-Funktionen.
+
+## Bekannte Grenzen
+
+- Reale Laienabnahme noch offen.
+- `large`-Profil noch nicht auf Zielhardware ausgeführt.
+- Sparse-Dateien simulieren nicht vollständige Medienleselast.
+- Harte native RSS-Grenze fehlt noch.
+- Ordnervergleich besitzt noch kein `--all-pages`.
+- Zeitreihen über mehr als zwei Scans fehlen.
+
+## Direkt folgender Entwicklungsblock
+
+Eine rein lesende Ordner-Zeitreihe über mehrere abgeschlossene Scan-Sitzungen
+entwickeln.
+
+## Sichere Alternative
+
+Den Ordnervergleich um einen ausdrücklichen vollständigen Export über `--all-pages`
+erweitern.
 
 ## Unverändert
 
-`AGENTS.md` wird nicht verändert. Die globalen Wartungsregeln und das Verbot
-automatischer Originaldatei-Schreibzugriffe bleiben vollständig wirksam.
+`AGENTS.md` wird nicht verändert. Automatische Schreibzugriffe auf gescannte
+Originaldateien bleiben gesperrt.
