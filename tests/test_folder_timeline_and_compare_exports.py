@@ -104,10 +104,19 @@ class FolderTimelineAndCompleteExportTests(unittest.TestCase):
                 3,
             )
             self.assertTrue(csv_path.read_bytes().startswith(b"\xef\xbb\xbf"))
-            self.assertIn(
-                "Ordner-Zeitreihe",
-                html_path.read_text(encoding="utf-8"),
-            )
+            html_text = html_path.read_text(encoding="utf-8")
+            self.assertIn("Ordner-Zeitreihe", html_text)
+            self.assertEqual(html_text.count("<svg"), 2)
+            self.assertIn("Größenverlauf", html_text)
+            self.assertIn("Dateizahlverlauf", html_text)
+            self.assertIn('role="img"', html_text)
+            self.assertIn('aria-labelledby="size-chart-title size-chart-description"', html_text)
+            self.assertIn("<desc id=\"files-chart-description\">", html_text)
+            self.assertIn('tabindex="0"', html_text)
+            self.assertIn("Vollständige Zeitreihenwerte", html_text)
+            self.assertNotIn("<script", html_text.casefold())
+            self.assertNotIn("https://", html_text.casefold())
+            self.assertNotIn("http://", html_text.casefold())
 
             cli_json = Path(directory) / "cli-timeline.json"
             output = StringIO()
