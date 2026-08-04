@@ -23,11 +23,11 @@ class ScanOptions:
     max_files: int | None = None
 
 
-def _utc_now() -> str:
+def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def _sha256(path: Path) -> str:
+def sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
         while chunk := handle.read(_HASH_CHUNK_SIZE):
@@ -44,18 +44,34 @@ def scan_tree(options: ScanOptions) -> ScanReport:
     if options.max_files is not None and options.max_files < 1:
         raise ValueError("max_files muss mindestens 1 sein")
 
-    started_utc = _utc_now()
+    started_utc = utc_now()
     records: list[FileRecord] = []
     errors: list[ScanError] = []
     truncated = False
 
     def on_walk_error(error: OSError) -> None:
-        errors.append(ScanError(path=str(getattr(error, "filename", root)), operation="walk", message=str(error)))
+        errors.append(
+            ScanError(
+                path=str(getattr(error, "filename", root)),
+                operation="walk",
+                message=str(error),
+            )
+        )
 
-    for current_root, directory_names, file_names in os.walk(root, followlinks=options.follow_symlinks, onerror=on_walk_error):
+    for current_root, directory_names, file_names in os.walk(
+        root,
+        followlinks=options.follow_symlinks,
+        onerror=on_walk_error,
+    ):
+        directory_names.sort(key=str.casefold)
+        file_names.sort(key=str.casefold)
         current_path = Path(current_root)
         if not options.follow_symlinks:
-            directory_names[:] = [name for name in directory_names if not (current_path / name).is_symlink()]
+            directory_names[:] = [
+                name
+                for name in directory_names
+                if not (current_path / name).is_symlink()
+            ]
 
         for file_name in file_names:
             if options.max_files is not None and len(records) >= options.max_files:
@@ -65,23 +81,29 @@ def scan_tree(options: ScanOptions) -> ScanReport:
             try:
                 stat_result = path.stat(follow_symlinks=options.follow_symlinks)
             except OSError as error:
-                errors.append(ScanError(path=path.as_posix(), operation="stat", message=str(error)))
+                errors.append(
+                    ScanError(path=path.as_posix(), operation="stat", message=str(error))
+                )
                 continue
             relative_path = path.relative_to(root).as_posix()
-            records.append(FileRecord(
-                relative_path=relative_path,
-                size_bytes=stat_result.st_size,
-                modified_utc=datetime.fromtimestamp(stat_result.st_mtime, tz=timezone.utc).isoformat(),
-                suffix=path.suffix.casefold(),
-                category=classify_path(path),
-                filename_warnings=filename_warnings(path.name),
-                is_symlink=path.is_symlink(),
-                is_large=stat_result.st_size >= options.large_file_bytes,
-            ))
+            records.append(
+                FileRecord(
+                    relative_path=relative_path,
+                    size_bytes=stat_result.st_size,
+                    modified_utc=datetime.fromtimestamp(
+                        stat_result.st_mtime, tz=timezone.utc
+                    ).isoformat(),
+                    suffix=path.suffix.casefold(),
+                    category=classify_path(path),
+                    filename_warnings=filename_warnings(path.name),
+                    is_symlink=path.is_symlink(),
+                    is_large=stat_result.st_size >= options.large_file_bytes,
+                )
+            )
         if truncated:
             break
 
-    records.sort(key=lambda record: record.relative_path.casefold())
+    records.sort(key=lambda record: (record.relative_path.casefold(), record.relative_path))
     duplicate_groups: list[DuplicateGroup] = []
 
     if options.hash_duplicates:
@@ -95,24 +117,35 @@ def scan_tree(options: ScanOptions) -> ScanReport:
             by_hash: dict[str, list[FileRecord]] = defaultdict(list)
             for record in candidates:
                 try:
-                    record.sha256 = _sha256(root / record.relative_path)
+                    record.sha256 = sha256_file(root / record.relative_path)
                 except OSError as error:
-                    errors.append(ScanError(path=record.relative_path, operation="sha256", message=str(error)))
+                    errors.append(
+                        ScanError(
+                            path=record.relative_path,
+                            operation="sha256",
+                            message=str(error),
+                        )
+                    )
                     continue
                 by_hash[record.sha256].append(record)
             for digest, matches in sorted(by_hash.items()):
                 if len(matches) > 1:
-                    duplicate_groups.append(DuplicateGroup(
-                        sha256=digest,
-                        size_bytes=size_bytes,
-                        paths=sorted((record.relative_path for record in matches), key=str.casefold),
-                    ))
+                    duplicate_groups.append(
+                        DuplicateGroup(
+                            sha256=digest,
+                            size_bytes=size_bytes,
+                            paths=sorted(
+                                (record.relative_path for record in matches),
+                                key=str.casefold,
+                            ),
+                        )
+                    )
 
     category_counts = Counter(record.category.value for record in records)
     return ScanReport(
         root=str(root),
         started_utc=started_utc,
-        finished_utc=_utc_now(),
+        finished_utc=utc_now(),
         files=records,
         errors=errors,
         duplicate_groups=duplicate_groups,
