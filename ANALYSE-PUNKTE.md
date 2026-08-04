@@ -2,64 +2,68 @@
 
 ## Ergebnis dieser Iteration
 
-Die Startseite erklärt Funktionen nicht mehr nur mit einem einzelnen Textblock. Nutzer können zwischen kurzer Orientierung, ausführlicher Wirkungserklärung, vollständiger Schrittanleitung und Hilfe zur konkreten Eingabe wechseln. Nach Fehlern zeigt das Tool einen sicheren nächsten Prüfweg.
+Der bisherige CLI-Monolith wurde ohne sichtbare Befehlsänderung vollständig aufgeteilt. Parser und Ausführung liegen jetzt im jeweiligen Fachmodul. Gemeinsame Regeln, Sicherheitswirkungen und Größenlimits sind zentral definiert und werden automatisch geprüft.
 
 ## Vollständig gelöste Punkte
 
-1. Jede Hauptfunktion besitzt eine kurze Soforthilfe.
-2. `?NUMMER` zeigt ausführliche Detailhilfe, ohne die Funktion zu starten.
-3. `gNUMMER` zeigt eine vollständige Schrittfolge.
-4. `?` erklärt das aktuelle Eingabefeld und wiederholt danach dieselbe Frage.
-5. Hilfen nennen Schreibwirkung und Risiko ausdrücklich.
-6. Hilfen erklären Voraussetzungen vor dem Start.
-7. Hilfen erklären, woran ein erfolgreicher Abschluss erkennbar ist.
-8. Typische Probleme erhalten eine konkrete sichere Lösung.
-9. Fehlercodes führen zu kontextbezogener Fehlerhilfe.
-10. Die Fehlerhilfe führt keine automatische Reparatur aus.
-11. `datenbanktool help` funktioniert unabhängig von der interaktiven Startseite.
-12. Drei Hilfestufen stehen bereit: `quick`, `detail` und `guided`.
-13. Themen können über Alltagsbegriffe gesucht werden.
-14. Hilfedaten können als JSON ausgegeben werden.
-15. Unbekannte Themen enden kontrolliert mit Rückgabecode 2.
-16. Hilfekatalog und Startseitenlogik sind voneinander getrennt.
-17. Der alte Importpfad bleibt kompatibel, enthält aber keine zweite aktive Logik.
-18. Die große `cli.py` wurde nicht weiter vergrößert.
-19. Originaldateien bleiben durch sämtliche Hilfefunktionen unverändert.
-20. 48 Tests laufen unter Python 3.10 und 3.12 erfolgreich.
+1. `cli.py` wurde von 1.409 auf rund 100 Zeilen reduziert.
+2. Einmalige Scans besitzen ein eigenes CLI-Modul.
+3. Suche und Suchvorlagen besitzen ein eigenes CLI-Modul.
+4. Ordner-, Änderungs- und Dateiberichte besitzen ein eigenes CLI-Modul.
+5. Indexaufbau, Re-Scan, Status, Sitzungen, Backup, Restore und Reparatur besitzen ein eigenes CLI-Modul.
+6. Der klassische Erklärungsbefehl besitzt ein eigenes CLI-Modul.
+7. Gemeinsame Validierer und Ausgabefunktionen liegen nur noch in `cli_common.py`.
+8. Parser und Handler liegen jeweils im selben Fachmodul.
+9. Ein zentraler Dispatch ersetzt die frühere große Befehlstabelle.
+10. Jeder öffentliche Befehl besitzt eine maschinenlesbare `CommandPolicy`.
+11. Originaldatei-Schreibzugriffe werden durch `CommandPolicy.validate()` technisch abgewiesen.
+12. Handler müssen einen ganzzahligen Rückgabecode liefern.
+13. Ungültige oder fehlende Handler werden kontrolliert abgefangen.
+14. Bestehende Befehlsnamen und Parameter bleiben unverändert.
+15. Globale Regeln sind als verständliches Dokument und JSON-Manifest vorhanden.
+16. `cli.py` darf automatisch höchstens 150 Zeilen besitzen.
+17. CLI-Fachmodule dürfen automatisch höchstens 500 Zeilen besitzen.
+18. Zyklische Importe zurück zu `cli.py` werden geprüft.
+19. `subprocess`, `os.system`, `eval`, `exec` und `shell=True` werden in CLI-Fachmodulen geprüft.
+20. Die fachliche Modulzuständigkeit ausgewählter Befehle wird getestet.
+21. Alle öffentlichen Parser werden auf Handler und Richtlinie geprüft.
+22. Sämtliche bisherigen Regressionstests bleiben grün.
+23. 54 Tests laufen unter Python 3.10 und 3.12 erfolgreich.
+24. Externe Laufzeitabhängigkeiten bleiben bei null.
 
 ## Zentrale Architekturentscheidungen
 
-### Hilfe auf Wunsch statt Zwangsdialoge
+### Parser und Handler zusammenhalten
 
-Zusätzliche Pflichtfragen würden erfahrene Nutzer ausbremsen und bestehende Abläufe verändern. Deshalb bleibt die normale Nummernauswahl direkt nutzbar; tiefergehende Hilfe wird gezielt über `?NUMMER`, `gNUMMER` oder `?` aufgerufen.
+Ein Parser ohne nahegelegene Ausführungsfunktion erschwert Änderungen und führt schnell zu widersprüchlichen Parametern. Jedes Fachmodul registriert deshalb seine Parser und bindet dort unmittelbar den passenden Handler.
 
-### Ein zentraler Hilfekatalog
+### Dünner zentraler Einstieg
 
-Titel, Kurzbeschreibung, Schreibwirkung, Voraussetzungen, Schritte, Erfolgskontrolle und typische Probleme liegen in einem zentralen Modul. Dadurch können Startseite, Hilfebefehl und spätere GUI dieselben Inhalte verwenden.
+`cli.py` kennt nur die Reihenfolge der Fachbereiche, globale Anzeigeoptionen, den Dispatch und die zentrale Fehlergrenze. Fachliche Datenbank-, Such- oder Berichtsfunktionen dürfen nicht wieder dorthin zurückwandern.
 
-### Keine automatische Fehlerreparatur
+### Seiteneffekte als Datenmodell
 
-Ein Fehlercode kann viele Ursachen besitzen. Automatisches Korrigieren könnte falsche Pfade, Datenbanken oder Berechtigungen verändern. Die Hilfe nennt deshalb sichere Prüfstellen und überlässt die Entscheidung dem Nutzer.
+Die Wirkung eines Befehls ist nicht mehr nur Dokumentation. `CommandPolicy` beschreibt Lese- und Schreibwirkungen maschinenlesbar. Dadurch können spätere Startseiten, Hilfetexte und Sicherheitsprüfungen dieselbe Quelle verwenden.
 
-### Alltagssuche ohne Online-Abhängigkeit
+### Konservative Sicherheitsangaben
 
-Die Hilfesuche arbeitet vollständig offline über Funktionsnamen, Beschreibungen und gepflegte Stichwörter. Sie bleibt schnell, nachvollziehbar und ohne Cloud-Abhängigkeit.
+Ein Befehl mit optionalem Schreibmodus wird in der Richtlinie als potenziell schreibend eingestuft. Das verhindert eine irreführende grüne Einstufung, auch wenn der konkrete Aufruf rein lesend bleibt.
 
-### Kompatibilität ohne doppelte Logik
+### Regeln automatisch absichern
 
-`core/terminal_home.py` bleibt als kleiner Importadapter bestehen. Die tatsächliche Implementierung liegt nur noch in `core/guided_home.py`.
+Nur dokumentierte Regeln werden mit der Zeit leicht übergangen. Deshalb enthält `maintenance_rules.json` maschinenlesbare Limits, während `test_cli_architecture.py` die wichtigsten davon bei jedem CI-Lauf erzwingt.
 
 ## Erkannte nächste Analysepunkte
 
-1. Große `cli.py` in getrennte Parser- und Ausführungsmodule zerlegen.
-2. Hilfetexte künftig direkt aus den Fachmodulen registrieren, ohne Importzyklen zu erzeugen.
-3. CSV-Export der Ordnerübersicht ergänzen.
-4. Ordnerwachstum zwischen Scan-Sitzungen darstellen.
-5. Hilfekatalog später für Übersetzungen vorbereiten.
-6. Bedienabnahme mit Linux-Laien durchführen.
-7. Hilfesuche mit weiteren realen Nutzerformulierungen testen.
-8. Sehr große Bestände unter festen Ressourcenlimits prüfen.
+1. CSV-Export für die Ordnerübersicht ergänzen.
+2. Ordnerwachstum zwischen zwei abgeschlossenen Sitzungen berechnen.
+3. `cli_search.py` bei der nächsten größeren Funktion in Suche und Vorlagen trennen.
+4. `cli_index.py` bei zusätzlichen Verwaltungsbefehlen in Scanverwaltung und Administration trennen.
+5. `CommandPolicy` später direkt für automatische Hilfetexte und Startseitenampeln verwenden.
+6. Stärker typisierte Befehlsargumente als mögliche spätere Qualitätsstufe prüfen.
+7. Reale Großbestände und Bedienwege mit Linux-Laien abnehmen.
+8. Regeln für Core-Modulgrößen und Komplexität ergänzen, sobald belastbare Grenzwerte vorliegen.
 
 ## Fazit
 
-Die Bedienung ist deutlich fehlertoleranter und verständlicher, ohne den Sicherheitsvertrag aufzuweichen. Hilfe ist jederzeit erreichbar, bleibt vollständig offline und löst keine versteckten Datenänderungen aus.
+Die größte bekannte Wartbarkeitsschwäche der Kommandozeilenoberfläche ist behoben. Änderungen können jetzt fachlich begrenzt vorgenommen werden, während automatische Prüfungen verhindern, dass erneut ein unkontrollierter Monolith, Shell-Auswertung oder Originaldatei-Schreibzugriff entsteht.
