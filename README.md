@@ -1,12 +1,12 @@
 # DATENBANKTOOL
 
-**Erledigt:** schreibgeschützte SQLite-Analyse, Tabellenübersicht, validierte Text-/JSON-Ausgabe und automatische Tests.
+**Erledigt:** schreibgeschützte SQLite-Analyse, Tabellenübersicht, Zeitreihen-Vorlagenverwaltung auf der Startseite, validierte Text-/JSON-Ausgabe und automatische Tests.
 
-**Offen:** weitere Datenbanktreiber und eine grafische Oberfläche.
+**Offen:** reale Laienabnahme, weiterer Großbestandstest, weitere Datenbanktreiber und eine grafische Oberfläche.
 
-**Entwicklungsfortschritt:** **35 %** (stabiler SQLite-MVP).
+**Entwicklungsfortschritt:** **99 %** (stabiler lokaler Dateiindex mit geführter Vorlagenverwaltung).
 
-**Mögliche Upgrades:** CSV-Export und optionale PostgreSQL-Anbindung; Details stehen im [Upgrade-Pool](UPGRADE_POOL.md).
+**Mögliche Upgrades:** Mehrordner-Zeitreihe, reale Laienabnahme und optionale PostgreSQL-Anbindung; Details stehen im [Upgrade-Pool](UPGRADE_POOL.md).
 
 Das DATENBANKTOOL zeigt Aufbau und Kerndaten einer lokalen SQLite-Datenbank, ohne sie zu verändern. Es benötigt Python 3.10 oder neuer und keine zusätzlichen Laufzeitpakete.
 
@@ -39,14 +39,14 @@ Die Version wird ausschließlich in `registry.json` gepflegt. Architektur und Qu
 
 | Bereich | Stand |
 |---|---|
-| Version | `0.13.0-alpha.1` |
+| Version | `0.14.0-alpha.1` |
 | SQLite-Schema | `3` |
 | Entwicklungsfortschritt | **99 %** |
-| Erledigte Hauptpunkte | **51** |
+| Erledigte Hauptpunkte | **54** |
 | Offene Hauptpunkte | **1** |
 | Automatische Originaldateiänderungen | **Gesperrt** |
 | Externe Laufzeitabhängigkeiten | **0** |
-| Automatisierte Tests | **86/86** unter Python 3.10 und 3.12 |
+| Automatisierte Tests | **gezielt erweitert** |
 | Quick-Abnahme | **600 Dateien · 11/11 bestanden** |
 | Standard-Abnahme | **10.000 Dateien · 11/11 bestanden** |
 | Reale Laienabnahme | **Noch offen** |
@@ -88,19 +88,20 @@ datenbanktool start
 
 ```text
 11. Ordner-Zeitreihe
-12. Zeitreihen-Vorlage speichern
+12. Zeitreihen-Vorlagen verwalten
 ```
 
 Punkt 11 zeigt vorhandene Vorlagen nummeriert mit Name, Ordner und Beschreibung. Eine
 Vorlage kann per Nummer oder exaktem Namen gewählt werden. Der Ordner bleibt vor dem
-Start sichtbar und kann bewusst angepasst werden. Punkt 12 schreibt erst nach sichtbarer
-Befehlsprüfung und ausdrücklicher Bestätigung eine neue Vorlage.
+Start sichtbar und kann bewusst angepasst werden. Punkt 12 verwaltet Vorlagen über ein
+Untermenü: anzeigen, speichern, bewusst ersetzen oder nach exakter Namensprüfung und
+Bestätigung löschen.
 
 Hilfen:
 
 ```text
 ?11 / g11   Zeitreihe erklären oder Schritt für Schritt führen
-?12 / g12   Vorlagenspeicherung erklären oder Schritt für Schritt führen
+?12 / g12   Vorlagenverwaltung erklären oder Schritt für Schritt führen
 ?           aktuelles Eingabefeld erklären
 ```
 

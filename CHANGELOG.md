@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.14.0-alpha.1 – 2026-08-04
+
+### Geführte Vorlagenverwaltung
+
+- Startseitenpunkt 12 ist jetzt ein klares Untermenü für Zeitreihen-Vorlagen.
+- Vorlagen können geführt angezeigt, neu gespeichert, bewusst ersetzt und nach Namensprüfung bestätigt gelöscht werden.
+- Ersetzen und Löschen behalten den vorhandenen Zeitreihen-Vorlagen-Sicherheitsvertrag bei: keine Datenbankpfade, nur relative Ordner und Löschung nur nach Bestätigung.
+- Feld- und Fehlerhilfe erklären vorhandene Namen, bewusstes Ersetzen und sicheres Löschen.
+
 Alle wichtigen Änderungen werden hier dokumentiert. Das Projekt verwendet semantische Versionierung.
 
 ## [0.1.0] - 2026-08-04

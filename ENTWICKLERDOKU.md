@@ -1,5 +1,9 @@
 # Entwicklerdokumentation
 
+## Architekturstand 0.14.0-alpha.1
+
+Startseitenpunkt 12 bündelt die Zeitreihen-Vorlagenverwaltung. Die geführte Logik nutzt die bestehende Vorlagendomäne für Lesen und Namensprüfung und übergibt Schreibaktionen weiter an die vorhandenen CLI-Befehle. Löschen verlangt eine exakte Namenswiederholung und eine Ja/Nein-Bestätigung; Vorlagen speichern weiterhin keine Datenbankpfade.
+
 ## Aufbau
 
 - `registry.json`: verbindlicher Name und Version.

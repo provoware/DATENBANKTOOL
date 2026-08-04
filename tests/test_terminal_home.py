@@ -40,7 +40,7 @@ class TerminalHomeTests(unittest.TestCase):
         self.assertEqual(actions["11"].builder_name, "folder_timeline")
         self.assertFalse(actions["11"].confirmation_required)
         self.assertEqual(actions["12"].help_topic, "timeline-presets")
-        self.assertEqual(actions["12"].builder_name, "timeline_preset_save")
+        self.assertEqual(actions["12"].builder_name, "timeline_presets_manage")
         self.assertTrue(actions["12"].confirmation_required)
 
     def test_invalid_selection_returns_to_menu(self) -> None:
@@ -154,7 +154,7 @@ class TerminalHomeTests(unittest.TestCase):
         with TemporaryDirectory() as directory:
             preset_path = Path(directory) / "presets.json"
             home, output, error, calls = self.home(
-                "12\nMusik\nMusik/Archiv\nWöchentlich\nj\n0\n",
+                "12\nspeichern\nMusik\nMusik/Archiv\nWöchentlich\nj\n0\n",
                 timeline_preset_path=preset_path,
             )
             self.assertEqual(home.run(), 0)
@@ -173,6 +173,93 @@ class TerminalHomeTests(unittest.TestCase):
                 ],
             )
             self.assertIn("Bestätigung nötig", output.getvalue())
+            self.assertEqual(error.getvalue(), "")
+
+    def test_timeline_preset_menu_lists_saved_presets(self) -> None:
+        with TemporaryDirectory() as directory:
+            preset_path = Path(directory) / "presets.json"
+            save_timeline_preset(
+                "Musik",
+                "Musik/Archiv",
+                description="Wöchentlich",
+                path=preset_path,
+            )
+            home, output, error, calls = self.home(
+                "12\nanzeigen\nj\n0\n",
+                timeline_preset_path=preset_path,
+            )
+            self.assertEqual(home.run(), 0)
+            self.assertEqual(
+                calls[0],
+                [
+                    "index",
+                    "timeline-presets",
+                    "list",
+                    "--preset-file",
+                    str(preset_path),
+                ],
+            )
+            self.assertIn("Gespeicherte Zeitreihen-Vorlagen:", output.getvalue())
+            self.assertIn("Musik: Musik/Archiv", output.getvalue())
+            self.assertEqual(error.getvalue(), "")
+
+    def test_timeline_preset_replace_checks_existing_name(self) -> None:
+        with TemporaryDirectory() as directory:
+            preset_path = Path(directory) / "presets.json"
+            save_timeline_preset("Musik", "Musik/Archiv", path=preset_path)
+            home, output, error, calls = self.home(
+                "12\nersetzen\nMusik\nBilder/2026\nNeu\nj\n0\n",
+                timeline_preset_path=preset_path,
+            )
+            self.assertEqual(home.run(), 0)
+            self.assertEqual(
+                calls[0],
+                [
+                    "index",
+                    "timeline-presets",
+                    "save",
+                    "Musik",
+                    "Bilder/2026",
+                    "--replace",
+                    "--description",
+                    "Neu",
+                    "--preset-file",
+                    str(preset_path),
+                ],
+            )
+            self.assertIn("Ersetzt wird: Musik", output.getvalue())
+            self.assertEqual(error.getvalue(), "")
+
+    def test_timeline_preset_delete_requires_name_check_and_confirmation(self) -> None:
+        with TemporaryDirectory() as directory:
+            preset_path = Path(directory) / "presets.json"
+            save_timeline_preset("Musik", "Musik/Archiv", path=preset_path)
+            home, output, error, calls = self.home(
+                "12\nlöschen\nMusik\nFalsch\n0\n",
+                timeline_preset_path=preset_path,
+            )
+            self.assertEqual(home.run(), 0)
+            self.assertEqual(calls, [])
+            self.assertIn("Zum Löschen vorgemerkt: Musik", output.getvalue())
+            self.assertIn("Name stimmt nicht überein", error.getvalue())
+
+            home, output, error, calls = self.home(
+                "12\nlöschen\nMusik\nMusik\nj\nj\n0\n",
+                timeline_preset_path=preset_path,
+            )
+            self.assertEqual(home.run(), 0)
+            self.assertEqual(
+                calls[0],
+                [
+                    "index",
+                    "timeline-presets",
+                    "delete",
+                    "Musik",
+                    "--yes",
+                    "--preset-file",
+                    str(preset_path),
+                ],
+            )
             self.assertEqual(error.getvalue(), "")
 
     def test_write_action_requires_confirmation(self) -> None:

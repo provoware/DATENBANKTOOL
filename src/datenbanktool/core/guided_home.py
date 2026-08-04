@@ -60,7 +60,7 @@ _ACTIONS = (
     MenuAction("9", "explain", "explain"),
     MenuAction("10", "folder-compare", "folder_compare"),
     MenuAction("11", "folder-timeline", "folder_timeline"),
-    MenuAction("12", "timeline-presets", "timeline_preset_save", True),
+    MenuAction("12", "timeline-presets", "timeline_presets_manage", True),
 )
 
 _FIELD_HELP = {
@@ -92,6 +92,18 @@ _FIELD_HELP = {
     "timeline_preset_name": (
         "Verständlicher eindeutiger Name mit 1 bis 64 Zeichen. Vorhandene Namen "
         "werden über die Startseite nicht überschrieben."
+    ),
+    "timeline_preset_existing_name": (
+        "Exakter Name einer vorhandenen Zeitreihen-Vorlage. Groß- und "
+        "Kleinschreibung ist egal, der Name muss aber eindeutig vorhanden sein."
+    ),
+    "timeline_preset_manage": (
+        "Anzeigen ist rein lesend. Ersetzen schreibt eine vorhandene Vorlage bewusst "
+        "neu. Löschen entfernt eine Vorlage erst nach Namensprüfung und Bestätigung."
+    ),
+    "timeline_preset_delete_name": (
+        "Zur Sicherheit den angezeigten Vorlagennamen noch einmal exakt eingeben. "
+        "So wird kein ähnlich benannter Eintrag versehentlich gelöscht."
     ),
     "timeline_preset_description": (
         "Optionaler kurzer Zweck der Vorlage, höchstens 240 Zeichen."
@@ -132,6 +144,10 @@ _FIELD_HELP = {
     ),
     "confirmation": (
         "Ja startet den angezeigten Befehl. Nein verwirft ihn vollständig."
+    ),
+    "delete_confirmation": (
+        "Ja löscht nur die lokale Vorlage. Datenbank, Stammordner, Originaldateien "
+        "und Scan-Ergebnisse bleiben unverändert."
     ),
 }
 
@@ -548,6 +564,128 @@ class TerminalHome:
             command.extend(("--preset-file", str(self.timeline_preset_path)))
         return command
 
+    def _timeline_preset_menu_choice(self) -> str:
+        aliases = {
+            "": "list",
+            "a": "list",
+            "anzeigen": "list",
+            "liste": "list",
+            "list": "list",
+            "s": "save",
+            "speichern": "save",
+            "save": "save",
+            "e": "replace",
+            "ersetzen": "replace",
+            "replace": "replace",
+            "l": "delete",
+            "löschen": "delete",
+            "loeschen": "delete",
+            "delete": "delete",
+        }
+        while True:
+            value = self._read(
+                "Aktion [anzeigen/speichern/ersetzen/löschen, Standard anzeigen, ? Hilfe]: ",
+                help_text=_FIELD_HELP["timeline_preset_manage"],
+            ).casefold()
+            if value in aliases:
+                return aliases[value]
+            self._write(
+                "Bitte anzeigen, speichern, ersetzen, löschen oder ? für Hilfe eingeben.",
+                error=True,
+            )
+
+    def _show_timeline_presets(self) -> None:
+        try:
+            presets = list_timeline_presets(self.timeline_preset_path)
+        except (OSError, ValueError) as error:
+            self._write(f"Zeitreihen-Vorlagen konnten nicht gelesen werden: {error}", error=True)
+            return
+        if not presets:
+            self._write("Zeitreihen-Vorlagen: noch keine gespeichert.")
+            return
+        self._write("Gespeicherte Zeitreihen-Vorlagen:")
+        for number, preset in enumerate(presets, 1):
+            description = f" – {preset.description}" if preset.description else ""
+            self._write(f"  {number}. {preset.name}: {preset.folder}{description}")
+
+    def _build_timeline_preset_replace(self) -> list[str]:
+        name = self._required(
+            "Name der zu ersetzenden Zeitreihen-Vorlage",
+            help_text=_FIELD_HELP["timeline_preset_existing_name"],
+        )
+        try:
+            existing = get_timeline_preset(name, self.timeline_preset_path)
+        except KeyError as error:
+            self._write(f"Vorlage wurde nicht gefunden: {error}", error=True)
+            raise UserCancelled from error
+        self._write(f"Ersetzt wird: {existing.name} → {existing.folder}")
+        folder = self._required(
+            "Neuer relativer Ordner für die Vorlage",
+            existing.folder,
+            help_text=_FIELD_HELP["timeline_folder"],
+        )
+        description = self._optional(
+            "Neue kurze Beschreibung",
+            help_text=_FIELD_HELP["timeline_preset_description"],
+        )
+        command = [
+            "index",
+            "timeline-presets",
+            "save",
+            existing.name,
+            folder,
+            "--replace",
+        ]
+        if description:
+            command.extend(("--description", description))
+        if self.timeline_preset_path is not None:
+            command.extend(("--preset-file", str(self.timeline_preset_path)))
+        return command
+
+    def _build_timeline_preset_delete(self) -> list[str]:
+        name = self._required(
+            "Name der zu löschenden Zeitreihen-Vorlage",
+            help_text=_FIELD_HELP["timeline_preset_existing_name"],
+        )
+        try:
+            existing = get_timeline_preset(name, self.timeline_preset_path)
+        except KeyError as error:
+            self._write(f"Vorlage wurde nicht gefunden: {error}", error=True)
+            raise UserCancelled from error
+        self._write(f"Zum Löschen vorgemerkt: {existing.name} → {existing.folder}")
+        checked_name = self._required(
+            f"Bitte Vorlagennamen exakt wiederholen ({existing.name})",
+            help_text=_FIELD_HELP["timeline_preset_delete_name"],
+        )
+        if checked_name != existing.name:
+            self._write("Name stimmt nicht überein. Löschung abgebrochen.", error=True)
+            raise UserCancelled
+        if not self._yes_no(
+            "Diese Vorlage wirklich löschen?",
+            help_text=_FIELD_HELP["delete_confirmation"],
+        ):
+            raise UserCancelled
+        command = ["index", "timeline-presets", "delete", existing.name, "--yes"]
+        if self.timeline_preset_path is not None:
+            command.extend(("--preset-file", str(self.timeline_preset_path)))
+        return command
+
+    def _build_timeline_presets_manage(self) -> list[str]:
+        action = self._timeline_preset_menu_choice()
+        if action == "list":
+            self._show_timeline_presets()
+            command = ["index", "timeline-presets", "list"]
+            if self.timeline_preset_path is not None:
+                command.extend(("--preset-file", str(self.timeline_preset_path)))
+            return command
+        if action == "save":
+            return self._build_timeline_preset_save()
+        if action == "replace":
+            return self._build_timeline_preset_replace()
+        if action == "delete":
+            return self._build_timeline_preset_delete()
+        raise RuntimeError(f"Unbekannte Zeitreihen-Vorlagenaktion: {action}")
+
     def _build_command(self, action: MenuAction) -> list[str]:
         builders: dict[str, Callable[[], list[str]]] = {
             "search": self._build_search,
@@ -562,6 +700,7 @@ class TerminalHome:
             "folder_compare": self._build_folder_compare,
             "folder_timeline": self._build_folder_timeline,
             "timeline_preset_save": self._build_timeline_preset_save,
+            "timeline_presets_manage": self._build_timeline_presets_manage,
         }
         try:
             return list(builders[action.builder_name]())
