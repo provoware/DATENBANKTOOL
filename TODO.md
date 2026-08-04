@@ -1,21 +1,19 @@
 # TODO
 
-## Offene Punkte
+Stand: Version 0.13.0-alpha.1
 
-- [ ] CSV-Export mit expliziter Zielpfadprüfung ergänzen.
-- [ ] Große Datenbanken mit Messwerten testen und ein sinnvolles Zeitlimit festlegen.
-- [ ] Paket-Build in einer kontinuierlichen Integration prüfen.
+## Offen
 
-## Erledigte Punkte
+1. [ ] reale Laienabnahme,
+2. [ ] `large`-Profil auf Zielhardware,
+3. [ ] geführte Vorlagenverwaltung,
+4. [ ] Mehrordner-Zeitreihe.
 
-- [x] SQLite-Dateien schreibgeschützt öffnen und validieren.
-- [x] Strukturübersicht als Text und JSON ausgeben.
-- [x] Kernlogik und Fehlerausgaben automatisch testen.
+## Historisch erledigter MVP-Status
 
-## Erinnerungsliste für spätere Maßnahmen
+Der frühe SQLite-MVP ist abgeschlossen. Seine Punkte werden nicht mehr als aktuelle
+Offenliste geführt, damit der Status nicht doppelt erscheint.
 
-1. Erst nach geklärtem Bedarf weitere Datenbanktreiber auswählen.
-2. Vor einer GUI die barrierefreie Bedienung und Tastaturnavigation spezifizieren.
 ## In dieser Iteration erledigt
 
 1. [x] Eigenständige Zeitreihen-Vorlagendomäne entwickeln.
@@ -54,21 +52,7 @@
 
 ## Noch offen
 
-1. [ ] Reale Laienabnahme auf einem Zielsystem durchführen und die erzeugte
-   `NOVICE_ACCEPTANCE_CHECKLIST.md` durch eine unerfahrene Testperson ausfüllen lassen.
-
-## Zusätzliche, nicht blockierende Zielsystemprüfung
-
-- [ ] `large`-Profil mit 100.000 Dateien auf geeigneter Zielhardware ausführen und
-  Referenzwerte dokumentieren.
-
-## Direkt folgender technischer Entwicklungsschritt
-
-Geführte Vorlagenverwaltung entwickeln: Zeitreihen-Vorlagen auf der Startseite
-zusätzlich anzeigen, bewusst ersetzen und nach Namensprüfung bestätigt löschen können.
-
-## Alternative Verbesserung mit hohem Nutzen und geringem Risiko
-
-Mehrere ausgewählte relative Ordner rein lesend in einem gemeinsamen Zeitreihenbericht
-anzeigen – mit getrennten Linien, eindeutiger Legende und Hinweis auf überlappende
-rekursive Eltern- und Kindwerte.
+1. [ ] reale Laienabnahme,
+2. [ ] `large`-Profil auf Zielhardware,
+3. [ ] geführte Vorlagenverwaltung,
+4. [ ] Mehrordner-Zeitreihe.

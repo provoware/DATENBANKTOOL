@@ -1,13 +1,16 @@
 # Upgrade-Pool
 
-| Priorität | Upgrade | Nutzen | Voraussetzung |
-| --- | --- | --- | --- |
-| Hoch | CSV-Export | Ergebnisse einfach weitergeben | sichere Zielpfad- und Überschreibprüfung |
-| Mittel | PostgreSQL-Anbindung | Serverdatenbanken analysieren | Treiber- und Geheimnisverwaltung festlegen |
-| Mittel | Schema-Vergleich | Änderungen zwischen zwei Ständen erkennen | stabiles neutrales Schemamodell |
-| Niedrig | Barrierefreie GUI | Nutzung ohne Kommandozeile | Bedienkonzept und GUI-Technik auswählen |
+Stand: Version 0.13.0-alpha.1
 
-Upgrades werden erst umgesetzt, wenn Eingaben, Ausgaben und Fehlerfälle spezifiziert sind.
+Upgrades werden erst umgesetzt, wenn Eingaben, Ausgaben, Fehlerfälle und der passende Registry-Eintrag spezifiziert sind.
+
+## Einheitlich offene Punkte
+
+1. reale Laienabnahme,
+2. `large`-Profil auf Zielhardware,
+3. geführte Vorlagenverwaltung,
+4. Mehrordner-Zeitreihe.
+
 ## Einfach verständliche nächste Verbesserungen
 
 1. **Geführte Vorlagenverwaltung** – Vorlagen auf der Startseite anzeigen, bewusst

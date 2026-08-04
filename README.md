@@ -1,38 +1,15 @@
 # DATENBANKTOOL
 
-**Erledigt:** schreibgeschützte SQLite-Analyse, Tabellenübersicht, validierte Text-/JSON-Ausgabe und automatische Tests.
+**Erledigt:** sicherer Scanner, versionierter SQLite-Index, Suche, Ordnerberichte, Vergleiche, Zeitreihen, Vorlagen, Warnschwellen, Hilfesystem und automatisierte Quick-/Standard-Abnahme.
 
-**Offen:** weitere Datenbanktreiber und eine grafische Oberfläche.
+**Offen:** reale Laienabnahme, `large`-Profil auf Zielhardware, geführte Vorlagenverwaltung und Mehrordner-Zeitreihe.
 
-**Entwicklungsfortschritt:** **35 %** (stabiler SQLite-MVP).
+**Entwicklungsfortschritt:** **99 %** (Alpha-Funktionsstand `0.13.0-alpha.1`).
 
-**Mögliche Upgrades:** CSV-Export und optionale PostgreSQL-Anbindung; Details stehen im [Upgrade-Pool](UPGRADE_POOL.md).
+**Mögliche Upgrades aus dem [Upgrade-Pool](UPGRADE_POOL.md):** geführte Vorlagenverwaltung, Mehrordner-Zeitreihe, reale Laienabnahme und `large`-Profil-Zieltest.
 
-Das DATENBANKTOOL zeigt Aufbau und Kerndaten einer lokalen SQLite-Datenbank, ohne sie zu verändern. Es benötigt Python 3.10 oder neuer und keine zusätzlichen Laufzeitpakete.
+Das DATENBANKTOOL ist ein sicheres Linux-Werkzeug zum Finden, Prüfen und übersichtlichen Strukturieren großer Dateisammlungen. Es benötigt Python 3.10 oder neuer und keine zusätzlichen Laufzeitpakete.
 
-## Installation
-
-```bash
-python -m pip install -e .
-```
-
-## Verwendung
-
-```bash
-datenbanktool summary beispiel.sqlite
-datenbanktool tables beispiel.sqlite
-datenbanktool --json summary beispiel.sqlite
-```
-
-`summary` zeigt Dateigröße sowie die Anzahl der Tabellen und Spalten. `tables` zeigt die Spalten jeder selbst angelegten Tabelle. `--json` erzeugt maschinenlesbare Ausgaben; ein Eingabefehler endet mit Statuscode `2`.
-
-## Entwicklung
-
-```bash
-PYTHONPATH=src python -m unittest discover -s tests -v
-```
-
-Die Version wird ausschließlich in `registry.json` gepflegt. Architektur und Qualitätsregeln beschreibt die [Entwicklerdokumentation](ENTWICKLERDOKU.md).
 > Sicheres Linux-Werkzeug zum Finden, Prüfen und übersichtlichen Strukturieren großer Dateisammlungen.
 
 ## Projektstatus
@@ -217,24 +194,19 @@ Hardware.
 
 ## Aktuelle Grenzen
 
-- Die reale Laienabnahme ist noch nicht durchgeführt.
-- Das `large`-Profil wurde noch nicht auf Zielhardware ausgeführt.
-- Die Startseite kann Vorlagen speichern und auswählen; geführtes Anzeigen, Ersetzen und
-  Löschen ist noch nicht als eigenes Untermenü vorhanden.
-- Vorlagen speichern bewusst nur den Ordner, nicht Warnschwellen oder Berichtspfade.
-- Prozentwerte sind bei vorherigem Wert null nicht berechenbar.
-- Warnschwellen betrachten Übergänge, keine langfristige statistische Anomalie.
-- Je Zeitreihe wird weiterhin ein relativer Ordner dargestellt.
-- Diagramme positionieren Punkte nach Scan-Reihenfolge, nicht proportional zum
-  tatsächlichen Zeitabstand.
+- reale Laienabnahme,
+- `large`-Profil auf Zielhardware,
+- geführte Vorlagenverwaltung,
+- Mehrordner-Zeitreihe.
+
+Weitere technische Grenzen: Vorlagen speichern bewusst nur den Ordner, Prozentwerte sind bei vorherigem Wert null nicht berechenbar, Warnschwellen betrachten Übergänge und Diagramme positionieren Punkte nach Scan-Reihenfolge.
 
 ## Mögliche weitere Upgrades
 
-- Geführtes Vorlagen-Untermenü für Anzeigen, Ersetzen und Löschen.
-- Mehrere ausgewählte Ordner gemeinsam als getrennte Trends darstellen.
-- Diagrammpunkte optional nach realem Scan-Zeitabstand positionieren.
-- Reale Laienabnahme und 100.000-Dateien-Zieltest durchführen.
-- Später eine grafische Oberfläche mit Pfadauswahldialogen ergänzen.
+- reale Laienabnahme,
+- `large`-Profil auf Zielhardware,
+- geführte Vorlagenverwaltung,
+- Mehrordner-Zeitreihe.
 
 ## Direkt folgender technischer Entwicklungsschritt
 
