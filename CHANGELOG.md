@@ -2,14 +2,15 @@
 
 Alle wichtigen Änderungen werden hier dokumentiert. Das Projekt verwendet semantische Versionierung.
 
-## [0.1.0] - 2026-08-04
+## 0.13.0-alpha.2 – 2026-08-04
 
-### Hinzugefügt
+### Wartung und Korrekturen
 
-- Schreibgeschützte SQLite-Analyse mit den Befehlen `summary` und `tables`.
-- Validierung von Pfaden, Dateitypen und SQLite-Signaturen.
-- Menschenlesbare und JSON-Ausgabe mit definierten Exitcodes.
-- Versionsregistry, Paketkonfiguration und automatische Tests.
+- Doppelten alten CLI-Kopf entfernt, damit `from __future__ import annotations` wieder am Dateianfang steht und die Startseiten-Tests importieren können.
+- Startseiten-Kataloge und Eingabeparser bleiben in getrennten kleinen Modulen.
+- Negative Parser-Tests für ungültige Ganzzahlen, nicht endliche Prozentwerte und unbekannte Berichtsformate ergänzt.
+- Registry, README, TODO, Upgrade-Pool, Schwachstellenliste, Analysepunkte und Entwicklerdokumentation auf den aktuellen Wartungsstand synchronisiert.
+
 ## 0.13.0-alpha.1 – 2026-08-04
 
 ### Zeitreihen-Vorlagen

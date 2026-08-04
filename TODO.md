@@ -2,20 +2,22 @@
 
 ## Offene Punkte
 
-- [ ] CSV-Export mit expliziter Zielpfadprüfung ergänzen.
-- [ ] Große Datenbanken mit Messwerten testen und ein sinnvolles Zeitlimit festlegen.
-- [ ] Paket-Build in einer kontinuierlichen Integration prüfen.
+- [ ] Reale Laienabnahme auf einem Zielsystem durchführen.
+- [ ] `large`-Profil mit 100.000 Dateien auf geeigneter Zielhardware ausführen.
+- [ ] Geführte Vorlagenverwaltung für Anzeigen, Ersetzen und Löschen als späteres Upgrade prüfen.
 
 ## Erledigte Punkte
 
 - [x] SQLite-Dateien schreibgeschützt öffnen und validieren.
-- [x] Strukturübersicht als Text und JSON ausgeben.
-- [x] Kernlogik und Fehlerausgaben automatisch testen.
+- [x] Versionierten Dateiindex, Ordnerberichte, Vergleich und Zeitreihe bereitstellen.
+- [x] Geführte Startseite mit ausgelagerten Katalogen und Eingabeparsern strukturieren.
+- [x] CLI-Importfehler korrigieren und Parser-Fehlerfälle testen.
 
 ## Erinnerungsliste für spätere Maßnahmen
 
 1. Erst nach geklärtem Bedarf weitere Datenbanktreiber auswählen.
 2. Vor einer GUI die barrierefreie Bedienung und Tastaturnavigation spezifizieren.
+
 ## In dieser Iteration erledigt
 
 1. [x] Eigenständige Zeitreihen-Vorlagendomäne entwickeln.
@@ -64,8 +66,8 @@
 
 ## Direkt folgender technischer Entwicklungsschritt
 
-Geführte Vorlagenverwaltung entwickeln: Zeitreihen-Vorlagen auf der Startseite
-zusätzlich anzeigen, bewusst ersetzen und nach Namensprüfung bestätigt löschen können.
+Reale Laienabnahme durchführen und danach entscheiden, ob die geführte
+Vorlagenverwaltung für Anzeigen, Ersetzen und Löschen priorisiert wird.
 
 ## Alternative Verbesserung mit hohem Nutzen und geringem Risiko
 

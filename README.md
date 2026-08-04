@@ -1,14 +1,14 @@
 # DATENBANKTOOL
 
-**Erledigt:** schreibgeschützte SQLite-Analyse, Tabellenübersicht, validierte Text-/JSON-Ausgabe und automatische Tests.
+**Erledigt:** versionierter SQLite-Dateiindex, geführte Startseite, Ordnerberichte, Ordnervergleich, Ordner-Zeitreihe, lokale Zeitreihen-Vorlagen, Trendgrenzen, ausgelagerte Startseiten-Kataloge und Eingabeparser sowie korrigierter CLI-Import.
 
-**Offen:** weitere Datenbanktreiber und eine grafische Oberfläche.
+**Offen:** reale Laienabnahme auf Zielsystem, 100.000-Dateien-Zieltest und spätere geführte Vorlagenverwaltung für Anzeigen, Ersetzen und Löschen.
 
-**Entwicklungsfortschritt:** **35 %** (stabiler SQLite-MVP).
+**Entwicklungsfortschritt:** **99 %** (0.13.0-alpha.2; technische Zielprüfungen weitgehend abgeschlossen, reale Laienabnahme noch offen).
 
-**Mögliche Upgrades:** CSV-Export und optionale PostgreSQL-Anbindung; Details stehen im [Upgrade-Pool](UPGRADE_POOL.md).
+**Mögliche Upgrades aus dem Upgrade-Pool:** geführte Vorlagenverwaltung, Mehrordner-Zeitreihe, reale Laienabnahme und 100.000-Dateien-Zieltest. Details stehen im [Upgrade-Pool](UPGRADE_POOL.md).
 
-Das DATENBANKTOOL zeigt Aufbau und Kerndaten einer lokalen SQLite-Datenbank, ohne sie zu verändern. Es benötigt Python 3.10 oder neuer und keine zusätzlichen Laufzeitpakete.
+> Sicheres Linux-Werkzeug zum Finden, Prüfen und übersichtlichen Strukturieren großer Dateisammlungen.
 
 ## Installation
 
@@ -19,36 +19,26 @@ python -m pip install -e .
 ## Verwendung
 
 ```bash
-datenbanktool summary beispiel.sqlite
-datenbanktool tables beispiel.sqlite
-datenbanktool --json summary beispiel.sqlite
+datenbanktool start
+datenbanktool index build /pfad/zum/ordner --database index.sqlite3
+datenbanktool index folders index.sqlite3
+datenbanktool index folder-timeline index.sqlite3 Musik --html bericht.html
 ```
 
-`summary` zeigt Dateigröße sowie die Anzahl der Tabellen und Spalten. `tables` zeigt die Spalten jeder selbst angelegten Tabelle. `--json` erzeugt maschinenlesbare Ausgaben; ein Eingabefehler endet mit Statuscode `2`.
-
-## Entwicklung
-
-```bash
-PYTHONPATH=src python -m unittest discover -s tests -v
-```
-
-Die Version wird ausschließlich in `registry.json` gepflegt. Architektur und Qualitätsregeln beschreibt die [Entwicklerdokumentation](ENTWICKLERDOKU.md).
-> Sicheres Linux-Werkzeug zum Finden, Prüfen und übersichtlichen Strukturieren großer Dateisammlungen.
+Die Version wird in `registry.json` gepflegt und vom Paket gelesen. Architektur und Qualitätsregeln beschreibt die [Entwicklerdokumentation](ENTWICKLERDOKU.md).
 
 ## Projektstatus
 
 | Bereich | Stand |
 |---|---|
-| Version | `0.13.0-alpha.1` |
+| Version | `0.13.0-alpha.2` |
 | SQLite-Schema | `3` |
 | Entwicklungsfortschritt | **99 %** |
-| Erledigte Hauptpunkte | **51** |
+| Erledigte Hauptpunkte | **53** |
 | Offene Hauptpunkte | **1** |
 | Automatische Originaldateiänderungen | **Gesperrt** |
 | Externe Laufzeitabhängigkeiten | **0** |
-| Automatisierte Tests | **86/86** unter Python 3.10 und 3.12 |
-| Quick-Abnahme | **600 Dateien · 11/11 bestanden** |
-| Standard-Abnahme | **10.000 Dateien · 11/11 bestanden** |
+| Gezielte Startseiten-Tests | **15/15 bestanden** |
 | Reale Laienabnahme | **Noch offen** |
 
 ## Neu: lokale Zeitreihen-Vorlagen

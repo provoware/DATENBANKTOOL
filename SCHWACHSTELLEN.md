@@ -2,18 +2,19 @@
 
 ## Aktuell begrenzt
 
-- Nur lokale SQLite-Dateien werden unterstützt; Serverdatenbanken fehlen bewusst.
-- Die Dateisignaturprüfung erkennt SQLite-Dateien, aber keine logischen Schäden jeder Datenbankseite.
-- Die Struktur wird vollständig eingelesen; extrem viele Tabellen sind noch nicht mit Messwerten abgesichert.
+- Nur lokale Dateibestände und lokale SQLite-Indexdatenbanken werden unterstützt; Serverdatenbanken fehlen bewusst.
+- Die reale Laienabnahme auf Zielhardware ist noch offen.
+- Das `large`-Profil mit 100.000 Dateien braucht noch Zielhardware-Messwerte.
 
 ## Bereits abgesichert
 
-- Die Datenbank wird im schreibgeschützten Modus geöffnet.
-- Leere, fehlende, nicht reguläre und offensichtlich ungültige Dateien werden abgewiesen.
-- Tabellenbezeichner werden als Parameter an SQLite übergeben und nicht in SQL-Text eingesetzt.
+- Originaldateien werden durch Index-, Berichts- und Startseitenfunktionen nicht automatisch verändert.
+- Eingaben für Zeitreihenordner, Vorlagen, Ganzzahlen, Prozentwerte und Berichtsformate werden validiert.
+- Startseiten-Kataloge und Eingabeparser sind getrennt, wodurch die Orchestrierung wartbarer bleibt.
 
 Sicherheitsrelevante Fehler sollen ohne sensible Dateiinhalte, Zugangsdaten oder Stapelspuren ausgegeben werden.
-# Schwachstellen und aktuelle Grenzen
+
+## Fachliche Grenzen
 
 ## Zeitreihen-Vorlagen
 
