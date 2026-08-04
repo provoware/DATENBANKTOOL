@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "datenbanktool"
-version = "0.10.0a1"
+version = "0.11.0a1"
 description = "Sicheres Linux-Werkzeug zum Prüfen und Strukturieren großer chaotischer Datensammlungen"
 readme = "README.md"
 requires-python = ">=3.10"
