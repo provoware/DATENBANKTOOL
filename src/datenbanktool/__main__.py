@@ -1,3 +1,3 @@
-from datenbanktool.cli import main
+from datenbanktool.entrypoint import main
 
 raise SystemExit(main())
