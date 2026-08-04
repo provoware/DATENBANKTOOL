@@ -1,5 +1,59 @@
 # Changelog
 
+## 0.11.0-alpha.1 – 2026-08-04
+
+### Rein lesende Ordner-Zeitreihe
+
+- Neuer Befehl `datenbanktool index folder-timeline DATENBANK [ORDNER]`.
+- Chronologische Auswertung mehrerer abgeschlossener Scans desselben Stammordners.
+- Rekursive Dateizahl und Gesamtgröße pro Zeitpunkt.
+- Datei- und Größendifferenz zum jeweils vorherigen Scan.
+- Prozentuale Größenänderung mit sauberem Null-Ausgangswert.
+- Zustände: Ausgangswert, gewachsen, kleiner geworden, neu, entfernt,
+  Dateizahl geändert und unverändert.
+- Relative Pfadvalidierung; absolute Pfade und `..` werden abgelehnt.
+- Auswahl über `--from-session-id`, `--to-session-id` und `--limit`.
+- Transparente Kennzeichnung, wenn ältere Zeitpunkte durch das Limit ausgeblendet sind.
+- Mindestens zwei abgeschlossene Scans werden verlangt.
+
+### Zeitreihenberichte
+
+- Atomare JSON-, CSV- und HTML-Berichte.
+- CSV mit UTF-8-BOM und Semikolon für LibreOffice Calc.
+- HTML vollständig offline mit Klartext, Tooltips und ARIA-Beschriftungen.
+- Kein stilles Überschreiben vorhandener Berichte.
+- Maschinenlesbare Felder für Scan-ID, Zeitpunkt, Modus, Dateien, Größen,
+  Differenzen, Prozentwert, Status und Begründung.
+
+### Vollständiger Ordnervergleichsexport
+
+- Neuer Schalter `--all-pages` für `index folder-compare`.
+- JSON, CSV und HTML können sämtliche gefilterten Vergleichszeilen enthalten.
+- Terminalausgabe bleibt paginiert.
+- Vollständige Ergebnismenge wird genau einmal berechnet.
+- `paginate_folder_comparison()` schneidet daraus die sichtbare Terminalseite.
+- `--all-pages` ohne Exportziel wird kontrolliert abgelehnt.
+- Bestehendes Seitenverhalten ohne Schalter bleibt kompatibel.
+
+### Hilfe, Sicherheit und Architektur
+
+- Klassisches Hilfethema `folder-timeline` ergänzt.
+- Vergleichshilfe erklärt den vollständigen Export.
+- Neue Fachmodule `core/folder_timeline.py`, `core/folder_timeline_exports.py`
+  und `cli_folder_timeline.py`.
+- SQLite-Zugriff ausschließlich über `mode=ro` und `PRAGMA query_only=ON`.
+- Originaldatei-Schreibzugriffe bleiben gesperrt.
+- Keine neue Laufzeitabhängigkeit und keine Shell-Auswertung.
+
+### Validiert
+
+- 71 von 71 Tests unter Python 3.10 erfolgreich.
+- Python 3.12, Quick- und Standardabnahme im finalen Versionslauf erneut geprüft.
+- Zeitreihenwerte, Datenbank-Unverändertheit und unsichere Pfade geprüft.
+- JSON-, Calc-CSV- und Offline-HTML-Export geprüft.
+- Vollständiger Vergleichsexport über mehrere Terminalseiten geprüft.
+- Sämtliche bisherigen Funktionen bleiben grün.
+
 ## 0.10.0-alpha.1 – 2026-08-04
 
 ### Ordnerübersicht als CSV
@@ -7,83 +61,25 @@
 - Neuer Parameter `--csv PFAD` für `datenbanktool index folders`.
 - Neuer ausdrücklicher Schalter `--all-pages` für vollständige Exporte.
 - Terminalanzeige bleibt auch bei vollständigem Export paginiert.
-- Ausgabe nennt die tatsächliche Zahl vollständig exportierter Ordner.
 - CSV mit UTF-8-BOM und Semikolon für LibreOffice Calc.
-- Stabile Spalten für Ampel, Begründung, Ordner, Tiefe, direkte und rekursive
-  Dateizahlen, direkte und rekursive Bytegrößen, Namenshinweise und Duplikate.
-- Größte Platzfresser werden als getrennte Pfad-/Byte-Spalten ausgegeben.
 - Atomare Dateifreigabe und Schutz vor stillem Überschreiben.
-- JSON und HTML können ebenfalls mit `--all-pages` vollständig erzeugt werden.
-- `--all-pages` ohne gewählten Bericht wird kontrolliert abgelehnt.
 
 ### Reproduzierbare Großbestandsabnahme
 
 - Neuer Befehl `datenbanktool acceptance`.
 - Profile `quick`, `standard` und `large` mit 600, 10.000 und 100.000 Dateien.
-- Deterministische synthetische Dateigrößen über festen Zufallsstartwert.
-- Testdateien mit verschiedenen Endungen, Leerzeichen, Umlauten und
-  Namenshinweisen.
-- Testdaten werden ausschließlich in einem neuen Arbeitsordner erzeugt.
-- Vorhandene Arbeitsordner werden abgelehnt und niemals bereinigt.
-- Messung von Gesamt- und Phasenlaufzeiten.
-- Messung des Python-Spitzenspeichers mit `tracemalloc`.
-- Zusätzliche Erfassung des Prozess-Maximal-RSS.
-- Vorher-/Nachher-Manifest für Pfad, Dateigröße und Nanosekunden-Änderungszeit.
-- Elf feste Kriterien für Vollständigkeit, Fehlerfreiheit, CSV, Datenunverändertheit,
-  Laufzeit und Speicher.
-- Rückgabecode 1 bei verfehltem fachlichem Abnahmekriterium.
-
-### Abnahmeberichte
-
-Jeder Lauf erzeugt:
-
-- `acceptance-result.json`,
-- `acceptance-report.md`,
-- `NOVICE_ACCEPTANCE_CHECKLIST.md`,
-- `ordneruebersicht.csv`.
-
-Die Laien-Checkliste enthält Aufgaben, Zeitfelder, Verständlichkeitsbewertungen,
-Sicherheitsfragen, Fehlerfall und klare Abnahmekriterien. Sie wird ausdrücklich als
-`pending-real-person` gekennzeichnet, bis eine reale Testperson sie ausfüllt.
-
-### GitHub Actions
-
-- 66 von 66 Tests unter Python 3.10 und 3.12 erfolgreich.
-- Tests jeweils mit `PYTHONWARNINGS=error`.
-- Quick-Abnahme: 600 Dateien, 11/11 Kriterien, 1,086 Sekunden,
-  1.326.097 Byte Python-Spitzenspeicher.
-- Standard-Abnahme: 10.000 Dateien, 11/11 Kriterien, 17,781 Sekunden,
-  13.394.783 Byte Python-Spitzenspeicher.
-- Quick- und Standardberichte werden als getrennte Artefakte 14 Tage archiviert.
-- Das `large`-Profil ist implementiert, aber bewusst nicht Teil jedes normalen CI-Laufs.
-
-### Sicherheit und Architektur
-
-- `CommandPolicy` unterscheidet synthetische Testdaten von Originaldateien.
-- Neue globale Regel G-015 für strikt isolierte Testdaten.
-- Eigene Module `core/folder_csv.py`, `core/acceptance.py` und
-  `cli_acceptance.py`.
-- Keine neue externe Laufzeitabhängigkeit.
-- Keine Shell-Auswertung.
-- Originaldatei-Schreibzugriffe bleiben gesperrt.
-- Bestehende Befehle und Ausgabeformate bleiben kompatibel.
+- Laufzeit-, Speicher- und Quelldatenprüfung mit elf festen Kriterien.
+- JSON-, Markdown-, CSV- und Laien-Checklistenberichte.
+- Quick- und Standardprofile als GitHub-Actions-Artefakte archiviert.
 
 ## 0.9.0-alpha.1 – 2026-08-04
 
-### Rein lesender Ordnervergleich
-
-- Neuer Befehl `datenbanktool index folder-compare DATENBANK`.
-- Vergleich rekursiver Dateizahlen und Gesamtgrößen zwischen zwei abgeschlossenen
-  Sitzungen desselben Stammordners.
-- Zustände für Wachstum, Rückgang, neue, entfernte, geänderte und unveränderte Ordner.
+- Rein lesender Ordnervergleich zwischen zwei abgeschlossenen Scans.
 - Filter, stabile Sortierung, Pagination und JSON-/CSV-/HTML-Berichte.
-- Startseitenpunkt 10 und vollständige Laienhilfe.
-- 59 Tests unter Python 3.10 und 3.12.
 
 ## 0.8.0-alpha.1 – 2026-08-04
 
-- Große `cli.py` in klar abgegrenzte Fachmodule aufgeteilt.
-- `CommandPolicy`, globale Wartungsregeln und Architekturprüfungen eingeführt.
+- Modulare CLI-Fachmodule, `CommandPolicy` und globale Architekturregeln.
 
 ## 0.7.0-alpha.1 – 2026-08-04
 
