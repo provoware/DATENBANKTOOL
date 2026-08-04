@@ -1,110 +1,198 @@
 # Entwicklerdokumentation
 
-## Architekturstand 0.4.0-alpha.1
+## Architekturstand 0.5.0-alpha.1
 
-Der Datenkern besitzt jetzt fünf klar getrennte Bereiche:
+Der Datenkern und die Bedienhilfen sind strikt getrennt:
 
-1. Scanner für direkte rein lesende Prüfung.
-2. Versionierter SQLite-Snapshot-Index.
-3. Inkrementeller Re-Scan und Änderungsvergleich.
-4. Rein lesende Suchschicht.
-5. Berichtsschicht für Dateien und Änderungen.
+1. Scanner und Indexaufbau.
+2. Inkrementeller Snapshotvergleich.
+3. Rein lesende Suche und Berichte.
+4. Rein lesende Ordneraggregation.
+5. Externe Suchvorlagen-Konfiguration.
+6. Zentrale Präsentationsschicht für Farben und Ampeln.
+7. Zentrale Hilfetexte für Zweck und Auswirkung.
+8. Kommandozeilenoberfläche als dünne Integrationsschicht.
 
-## Suchschicht
+Originaldatei-Schreibfunktionen bleiben außerhalb dieser Architektur.
 
-Datei: `src/datenbanktool/core/search.py`
+## Neue Module
 
-### Sicherheitsvertrag
+### `core/folders.py`
 
-- Datenbank wird bei normalen Suchabfragen über SQLite-URI `mode=ro` geöffnet.
-- `PRAGMA query_only=ON` verhindert versehentliche Schreibabfragen.
-- Verbindungen werden mit `contextlib.closing` ausdrücklich geschlossen.
-- Alle Filterwerte werden als SQL-Parameter übergeben.
-- Seitengröße ist auf 200 begrenzt.
-- Jede Sortierung besitzt stabile zusätzliche Sortierfelder.
+- Öffnet SQLite über URI `mode=ro`.
+- Aktiviert `PRAGMA query_only`.
+- Wählt ausschließlich abgeschlossene Sitzungen.
+- Aggregiert jeden Dateipfad auf seinen direkten Ordner und alle Vorfahren.
+- Unterscheidet direkte und rekursive Dateizahlen und Größen.
+- Hält je Ordner nur die konfigurierten größten Dateien im Speicher.
+- Berechnet Warnungs- und Duplikatanzahlen.
+- Liefert stabile Filter-, Sortier- und Seitenergebnisse.
+- Exportiert JSON und eigenständiges HTML atomar.
 
-### Filter
+Die Wurzel eines Snapshots wird intern als `.` dargestellt. Ein Dateipfad wird mit `PurePosixPath` verarbeitet, weil Indexpfade unabhängig vom lokalen Betriebssystem als POSIX-Pfade gespeichert sind.
 
-- Suchtext,
-- Dateikategorien,
-- Mindest- und Maximalgröße,
-- Namenswarnungen,
-- Duplikatmitgliedschaft,
-- konkrete Sitzung.
+### Ampelvertrag
 
-### Pagination
+`TrafficLight` enthält:
 
-`LIMIT` und `OFFSET` werden nur aus bereits validierten Ganzzahlen erzeugt. Die Gesamtzahl wird mit einer getrennten `COUNT(*)`-Abfrage bestimmt.
+- `level`: `green`, `yellow` oder `red`,
+- `label`: verständlicher Status,
+- `reason`: konkrete Begründung.
 
-### Stabile Sortierung
+Die aktuelle Heuristik berücksichtigt:
 
-Jede Hauptsortierung endet mit:
+- Anzahl und Anteil von Namenshinweisen,
+- Anzahl und Anteil von Duplikatmitgliedern,
+- größte Einzeldatei,
+- Konzentration eines Großteils des Ordnerspeichers auf eine Datei.
 
-1. Pfad ohne Beachtung der Groß-/Kleinschreibung,
-2. originalem Pfad,
-3. eindeutiger Datei-ID.
+Wichtig: Die Ampel ist keine Schadens- oder Löschentscheidung. Diese Bedeutung wird in Terminal, README und HTML ausdrücklich beschrieben.
 
-Damit bleibt die Reihenfolge innerhalb eines unveränderten Snapshots stabil.
+### `core/presentation.py`
 
-## Optionaler FTS5-Index
+Zentrale Ausgabe für:
 
-Der FTS5-Index wird nicht automatisch erzeugt. `build_fulltext_index()` benötigt einen ausdrücklichen Aufruf und verwendet `IndexProcessLock`.
+- ANSI-Farben,
+- Ampeltext,
+- Statusfarben,
+- Änderungsarten,
+- Bedienhinweise.
 
-Indizierte Felder:
+Farbmodi:
 
-- `relative_path`,
-- `suffix`,
-- `category`,
-- zusammengefasste Namenswarnungen.
+- `auto`: nur bei geeignetem TTY,
+- `always`: Farben erzwingen,
+- `never`: Farben ausschalten.
 
-Der Index ist sitzungsbezogen. Die normale Suche prüft zuerst, ob für die gewählte Sitzung FTS-Zeilen vorhanden sind. Ohne FTS5 erfolgt ein sicherer Rückfall auf parameterisierte `LIKE`-Abfragen.
+`NO_COLOR` besitzt Vorrang vor `auto` und `always`, außer künftige Anforderungen definieren ausdrücklich eine andere Regel. Maschinenlesbare JSON-Ausgaben dürfen nie durch Präsentationsfunktionen laufen.
 
-## Änderungsberichte
+### `core/presets.py`
 
-Datei: `src/datenbanktool/core/changes.py`
+Suchvorlagen sind bewusst kein SQLite-Schemaobjekt.
 
-### Auswahl
+Standardpfad:
 
-- Standard: neueste abgeschlossene inkrementelle Sitzung.
-- Optional: konkrete Sitzungs-ID.
-- Nur abgeschlossene Re-Scans mit `parent_session_id` sind zulässig.
+```text
+$XDG_CONFIG_HOME/datenbanktool/search-presets.json
+```
 
-### Ausgabe
+Fallback:
 
-- Terminal: paginierte, deutsch beschriftete Zeilen.
-- JSON: strukturierter Bericht mit Zusammenfassung.
-- CSV: UTF-8 mit BOM.
-- HTML: eigenständige lokale Datei mit Browserfiltern.
+```text
+~/.config/datenbanktool/search-presets.json
+```
 
-### Dateisicherheit
+Sicherheitsvertrag:
 
-- Alle Ziele werden vor dem Schreiben geprüft.
-- Temporäre Dateien liegen im Zielordner.
-- Bei Fehlern werden temporäre Dateien entfernt.
-- Bestehende Ziele benötigen `--overwrite-report`.
-- HTML-Inhalte werden vollständig maskiert.
+- Schema-Version in der JSON-Datei.
+- Strikte Validierung unbekannter Filterfelder.
+- Validierung über `SearchFilter.validate()`.
+- Atomisches Schreiben über temporäre Datei und `replace()`.
+- Temporäre Datei mit Modus `0600`.
+- Ersetzen nur mit `replace=True`.
+- Löschen durch separate Funktion; CLI verlangt `--yes`.
+- Namen werden Unicode-fähig und ohne Groß-/Kleinschreibung verglichen.
+
+### `core/help_system.py`
+
+Zentrale Hilfetexte verhindern widersprüchliche Beschreibungen zwischen künftiger GUI, CLI und Dokumentation.
+
+Jedes `HelpTopic` enthält:
+
+- Titel,
+- Zweck,
+- Wirkung,
+- geschriebene Daten,
+- Risiko,
+- geeigneten Anwendungsfall,
+- Beispiel.
+
+Terminal-Hover-Tooltips werden nicht simuliert, weil sie nicht portabel sind. Die robuste Alternative ist sichtbarer Hilfetext plus `datenbanktool explain`.
+
+## CLI-Integration
+
+Globale Optionen:
+
+```text
+--color auto|always|never
+--hints / --no-hints
+```
+
+Neue Befehle:
+
+```text
+datenbanktool explain
+datenbanktool index folders
+datenbanktool index presets list
+datenbanktool index presets show
+datenbanktool index presets save
+datenbanktool index presets delete
+datenbanktool index search --preset NAME
+```
+
+`argparse.RawDescriptionHelpFormatter` erhält mehrzeilige Zweck- und Auswirkungsbeschreibungen. Globale Optionen müssen vor dem Unterbefehl stehen.
+
+## Suchvorlagen-Mergevertrag
+
+Beim Start einer Suche gilt:
+
+1. Ohne Vorlage gelten sichere Standardwerte.
+2. Mit Vorlage werden deren Filter geladen.
+3. Explizit gesetzte CLI-Werte überschreiben die Vorlage.
+4. `page` wird immer pro aktuellem Aufruf bestimmt.
+5. Boolesche Werte verwenden `BooleanOptionalAction`, damit ein Vorlagenwert ausdrücklich ausgeschaltet werden kann.
+6. Datenbank- und Sitzungs-ID werden nicht in der Vorlage gespeichert.
+
+## HTML-Tooltipvertrag
+
+Der Ordnerbericht verwendet:
+
+- `title` für Maus-Hover,
+- `aria-label` für unterstützende Technik,
+- sichtbaren Ampeltext,
+- HTML-Escaping für sämtliche Dateipfade und Gründe,
+- vollständig lokale CSS-Regeln,
+- keine CDN- oder JavaScript-Abhängigkeit.
 
 ## Qualitätsprüfungen
 
 ```bash
 python -m compileall -q src tests
-PYTHONPATH=src PYTHONWARNINGS=error \
-  python -m unittest discover -s tests -v
+PYTHONWARNINGS=error python -m unittest discover -s tests -v
 ```
 
-Neue Testgruppen prüfen:
+Neu abgesicherte Fälle:
 
-- normale Suche ohne Datenbankänderung,
-- Pagination und stabile Reihenfolge,
-- kombinierte Filter,
-- optionalen FTS5-Aufbau,
-- FTS5-Suche und Rückfall,
-- Änderungszählung,
-- Terminalausgabe,
-- JSON-/CSV-/HTML-Export,
+- direkte und rekursive Ordnerwerte,
+- größte Dateien,
+- Ampelstufe mit Begründung,
+- HTML-Tooltip und ARIA-Text,
+- Vorlagen speichern und laden,
 - Überschreibschutz,
-- SQLite-`quick_check`.
+- bestätigtes Löschen,
+- Suchstart über Vorlage,
+- Farbcodes bei erzwungener Farbe,
+- farbfreies JSON,
+- JSON- und HTML-Ordnerexport.
+
+GitHub Actions prüft Python 3.10 und 3.12 mit `PYTHONWARNINGS=error`.
+
+## Bekannte technische Grenzen
+
+- Ordneraggregation ist derzeit eine Python-Streamingaggregation über die Dateizeilen einer Sitzung. Für Millionen Dateien kann später eine materialisierte Statistik sinnvoll werden.
+- Die Top-Dateiliste sortiert je Ordner eine kleine begrenzte Liste; `top_files` ist deshalb auf 10 begrenzt.
+- Suchvorlagen besitzen noch keinen Prozesslock für konkurrierende Schreiber.
+- Ampelschwellen sind derzeit feste, dokumentierte Standardwerte.
+- HTML besitzt Tooltips, die CLI besitzt sichtbare Hilfen statt Mausinteraktion.
+
+## Nächster einfacher Entwicklungsblock
+
+Ein nummeriertes Startmenü entwickeln, das sichere Hauptfunktionen auswählbar macht und vor jedem Start Zweck und Auswirkung zeigt.
+
+## Sichere Zusatzverbesserung
+
+CSV-Export für die Ordnerübersicht ergänzen und mit denselben Filtern wie Terminal, JSON und HTML absichern.
 
 ## Unverändert
 
-`AGENTS.md` bleibt unverändert. Schreibende Operationen an Originaldateien bleiben blockiert.
+`AGENTS.md` wird in dieser Iteration nicht verändert.
