@@ -1,81 +1,84 @@
 # Changelog
 
-## 0.8.0-alpha.1 – 2026-08-04
+## 0.9.0-alpha.1 – 2026-08-04
 
-### Modulare Kommandozeilenarchitektur
+### Rein lesender Ordnervergleich
 
-- Frühere `cli.py` mit 1.409 Zeilen auf einen rund 100-zeiligen Einstieg reduziert.
-- Einmalige Scans nach `cli_scan.py` verschoben.
-- Suche und Suchvorlagen nach `cli_search.py` verschoben.
-- Ordner-, Änderungs- und Dateiberichte nach `cli_reports.py` verschoben.
-- Indexaufbau, Re-Scan, Status, Sitzungen, Backup, Restore und Reparatur nach
-  `cli_index.py` verschoben.
-- Klassischen Erklärungsbefehl nach `cli_help.py` verschoben.
-- Gemeinsame Validierung, Ausgabe und Formatierung in `cli_common.py` zentralisiert.
-- Parser und Handler liegen nun im selben Fachmodul.
-- Bestehende Befehlsnamen und Parameter unverändert erhalten.
+- Neuer Befehl `datenbanktool index folder-compare DATENBANK`.
+- Vergleicht rekursive Dateizahl und Gesamtgröße pro Ordner.
+- Automatische Auswahl des neuesten passenden Scan-Paars.
+- Explizite Auswahl über `--from-session-id` und `--to-session-id`.
+- Nur abgeschlossene Sitzungen desselben Stammordners werden akzeptiert.
+- Die Ausgangssitzung muss älter als die Zielsitzung sein.
+- Zustände: gewachsen, kleiner geworden, neu, nicht mehr vorhanden,
+  Dateizahl geändert und unverändert.
+- Unveränderte Ordner werden standardmäßig ausgeblendet.
+- Filter nach Zustand, Pfadtext, Mindeständerung und Ordnertiefe.
+- Stabile Sortierung nach Pfad, Größenänderung, Prozentwert, Dateidifferenz
+  oder aktueller Größe.
+- Pagination mit begrenzter Seitengröße.
+- Konfigurierbare Warnschwelle für starkes Wachstum.
 
-### Globale Wartungsregeln
+### Ausgabe und Exporte
 
-- Versioniertes Regelmanifest `maintenance_rules.json` ergänzt.
-- Verständliche Projektregeln in `MAINTENANCE_RULES.md` ergänzt.
-- `CommandPolicy` für maschinenlesbare Lese- und Schreibwirkungen eingeführt.
-- Originaldatei-Schreibzugriffe werden durch den CLI-Vertrag technisch abgewiesen.
-- Einheitlicher Dispatch prüft Handler und Rückgabecodes.
-- Größenlimit für `cli.py` auf 150 Zeilen festgelegt.
-- Größenlimit für CLI-Fachmodule auf 500 Zeilen festgelegt.
-- Shell-Auswertung, `eval`, `exec`, `os.system` und zyklische CLI-Importe verboten.
+- Terminalausgabe mit vorheriger und neuer Größe, Dateizahl, Differenz und Prozentwert.
+- Ampelfarbe immer zusammen mit Status und konkreter Begründung.
+- Atomare JSON-, CSV- und HTML-Berichte.
+- CSV mit UTF-8-BOM und Semikolon für LibreOffice Calc.
+- Eigenständiger Offline-HTML-Bericht mit Escaping, Tooltips und ARIA-Beschriftungen.
+- Vorhandene Berichte werden nur mit `--overwrite-report` ersetzt.
+- `--no-terminal` ist nur zusammen mit mindestens einem Export zulässig.
 
-### Automatische Architekturprüfungen
+### Laienhilfe
 
-- Alle öffentlichen Befehle besitzen registrierten Handler und Richtlinie.
-- Zuständigkeit von Scan, Suche, Berichten, Index und Hilfe wird geprüft.
-- Modulgrößen werden aus dem Regelmanifest geprüft.
-- Verbotene Shell- und Ausführungsfunktionen werden über AST-Prüfung erkannt.
-- Originaldatei-Schreibrichtlinien werden abgewiesen.
-- Regelmanifest wird auf Version, Eindeutigkeit und Mindestumfang geprüft.
+- Neuer Startseitenpunkt `10. Ordner vergleichen`.
+- Detailhilfe über `?10`.
+- Schritt-für-Schritt-Anleitung über `g10`.
+- Eigenständige Hilfe über `datenbanktool help folder-compare`.
+- Klassische Hilfe über `datenbanktool explain folder-compare`.
+- Alltagssuche über Begriffe wie Wachstum, gewachsen, kleiner und Speicherverlauf.
+
+### Sicherheit und Codequalität
+
+- SQLite wird im Vergleich mit `mode=ro` und `PRAGMA query_only=ON` geöffnet.
+- Die Datenbank bleibt bei reiner Anzeige bytegenau unverändert.
+- Originaldateien werden nicht erneut gelesen oder verändert.
+- Eigener modularer CLI-Baustein `cli_folder_compare.py`.
+- Vergleichskern und Exportlogik sind getrennt testbar.
+- Öffentlicher Befehl besitzt eine geprüfte `CommandPolicy`.
+- Globale Größen-, Import- und Shell-Verbote bleiben erfüllt.
 
 ### Validiert
 
 - Paketinstallation und Kompilierung unter Python 3.10 und 3.12 erfolgreich.
-- 54 von 54 Tests unter beiden Python-Versionen erfolgreich.
-- Tests mit `PYTHONWARNINGS=error` erfolgreich.
-- Sämtliche bisherigen Scan-, Such-, Berichts-, Index-, Hilfe- und
-  Startseitenprüfungen unverändert grün.
-- Keine neue externe Laufzeitabhängigkeit.
+- 59 von 59 Tests unter beiden Python-Versionen erfolgreich.
+- Tests jeweils mit `PYTHONWARNINGS=error`.
+- Wachstum, Rückgang, neue, entfernte und unveränderte Ordner geprüft.
+- Unterschiedliche Stammordner werden kontrolliert abgelehnt.
+- JSON-, CSV- und HTML-Export geprüft.
+- Startseite, mehrschichtige Hilfe und Architekturvertrag geprüft.
+- Sämtliche bisherigen Scan-, Such-, Berichts-, Index-, Hilfe- und Startseitentests
+  bleiben grün.
+
+## 0.8.0-alpha.1 – 2026-08-04
+
+- Große `cli.py` in klar abgegrenzte Fachmodule aufgeteilt.
+- Öffentliche Befehle und Parameter unverändert erhalten.
+- `CommandPolicy` für deklarierte Seiteneffekte eingeführt.
+- Globale Wartungsregeln als Markdown und JSON angelegt.
+- Architekturprüfungen für Größenlimits, Importgrenzen, Handler und Shell-Verbote.
 
 ## 0.7.0-alpha.1 – 2026-08-04
 
-### Mehrschichtige Laienhilfe
-
-- Soforthilfe direkt in der nummerierten Startseite.
-- Detailhilfe über `?NUMMER`.
-- Schritt-für-Schritt-Anleitung über `gNUMMER`.
-- Feldbezogene Hilfe durch `?` bei Pfad-, Such- und Bestätigungsfragen.
-- Kontextbezogene Fehlerhilfe nach fehlgeschlagenen Fachbefehlen.
+- Mehrschichtige Laienhilfe mit Sofort-, Detail-, Schritt-, Feld- und Fehlerhilfe.
 - Eigenständiger Befehl `datenbanktool help`.
-- Hilfestufen `quick`, `detail` und `guided`.
-- Suche nach Hilfethemen über Alltagsbegriffe mit `--find`.
-- JSON-Ausgabe des Hilfekatalogs.
-
-### Codequalität
-
-- Hilfedaten in `core/layered_help.py` zentralisiert.
-- Startseitenlogik nach `core/guided_home.py` ausgelagert.
-- Alter Importpfad `core/terminal_home.py` bleibt als schmale Kompatibilitätsschicht.
-- Eigenständige Argumentauswertung in `help_command.py`.
-- Keine Shell- oder Subprozessausführung durch die Hilfe.
-
-### Validiert
-
-- 48 von 48 Tests unter Python 3.10 und 3.12 erfolgreich.
+- Suche nach Hilfethemen über Alltagsbegriffe.
 
 ## 0.6.0-alpha.1 – 2026-08-04
 
 - Geführte Terminal-Startseite.
 - Sichere Argumentlisten ohne Shell-Auswertung.
 - Bestätigungsschutz für Indexaufbau, Re-Scan und Sicherung.
-- Einheitlicher interaktiver Programmeinstieg.
 
 ## 0.5.0-alpha.1 – 2026-08-04
 
