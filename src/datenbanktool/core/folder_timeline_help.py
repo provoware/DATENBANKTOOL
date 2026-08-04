@@ -43,7 +43,7 @@ FOLDER_TIMELINE_TOPIC = HelpTopic(
         "Minimum, Maximum und Gesamtänderung sind plausibel."
     ),
     problems=(
-        "Mindestens zwei Scans erforderlich: denselben Stammordner erneut prüfen und abschließen.",
+        "Es werden mindestens zwei Scans benötigt: denselben Stammordner erneut prüfen und abschließen.",
         "Keine passenden Sitzungen: Scan-IDs und gemeinsamen Stammordner kontrollieren.",
         "Ungültiger Ordnerpfad: führenden Schrägstrich und '..' entfernen.",
         "Ordner bleibt bei null: Schreibweise und Groß-/Kleinschreibung im Scan prüfen.",
