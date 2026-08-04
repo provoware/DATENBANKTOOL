@@ -1,93 +1,110 @@
 # Entwicklerdokumentation
 
-## Architektur
+## Architekturstand 0.4.0-alpha.1
 
-1. Rein lesender Scanner.
+Der Datenkern besitzt jetzt fünf klar getrennte Bereiche:
+
+1. Scanner für direkte rein lesende Prüfung.
 2. Versionierter SQLite-Snapshot-Index.
-3. Inkrementeller Vergleich zwischen abgeschlossenen Sitzungen.
-4. Lesende Berichts- und künftig Suchschicht.
-5. Spätere Planungsengine für Dateiänderungen.
-6. Spätere Transaktions- und Wiederherstellungsengine.
-7. Oberfläche ohne direkten Dateisystem-Schreibzugriff.
+3. Inkrementeller Re-Scan und Änderungsvergleich.
+4. Rein lesende Suchschicht.
+5. Berichtsschicht für Dateien und Änderungen.
 
-## SQLite-Schema 3
+## Suchschicht
 
-### Neue Strukturen
+Datei: `src/datenbanktool/core/search.py`
 
-- `scan_sessions.parent_session_id`: Baseline eines Re-Scans.
-- `scan_sessions.scan_mode`: `full` oder `incremental`.
-- `scan_sessions.incremental_stage`: interner, fortsetzbarer Re-Scan-Schritt.
-- `files.source_file_id`: Verbindung zur Baseline-Datei.
-- `file_identity`: Geräte-ID, Inode und Änderungszeit in Nanosekunden.
-- `file_changes`: normalisierte Änderungsereignisse.
-- `progress_events`: persistente Fortschritts- und Diagnoseereignisse.
+### Sicherheitsvertrag
 
-Die historische `phase`-Check-Constraint wird nicht erweitert. Neue Re-Scan-Unterphasen liegen deshalb bewusst in `incremental_stage`. Dadurch bleibt die Migration vorhandener Schema-2-Datenbanken kompatibel.
+- Datenbank wird bei normalen Suchabfragen über SQLite-URI `mode=ro` geöffnet.
+- `PRAGMA query_only=ON` verhindert versehentliche Schreibabfragen.
+- Verbindungen werden mit `contextlib.closing` ausdrücklich geschlossen.
+- Alle Filterwerte werden als SQL-Parameter übergeben.
+- Seitengröße ist auf 200 begrenzt.
+- Jede Sortierung besitzt stabile zusätzliche Sortierfelder.
 
-## Re-Scan-Ablauf
+### Filter
 
-1. Prozesslock erwerben.
-2. Schema migrieren.
-3. abgeschlossene Baseline bestimmen.
-4. kompatiblen Fingerabdruck erzeugen.
-5. neue oder unterbrochene Re-Scan-Sitzung öffnen.
-6. Dateibaum deterministisch durchlaufen.
-7. gleiche Pfade vergleichen und Hashwerte unveränderter Dateien übernehmen.
-8. eindeutige Inode-Verschiebungen erkennen.
-9. optional eindeutige Hash-Verschiebungen erkennen.
-10. nicht zugeordnete Baseline-Dateien als entfernt markieren.
-11. nur fehlende Hash-Kandidaten verarbeiten.
-12. Duplikatgruppen neu aufbauen.
-13. Sitzung vollständig abschließen.
+- Suchtext,
+- Dateikategorien,
+- Mindest- und Maximalgröße,
+- Namenswarnungen,
+- Duplikatmitgliedschaft,
+- konkrete Sitzung.
 
-## Lockvertrag
+### Pagination
 
-`IndexProcessLock` verwendet `<datenbank>.lock` und `fcntl.flock`.
+`LIMIT` und `OFFSET` werden nur aus bereits validierten Ganzzahlen erzeugt. Die Gesamtzahl wird mit einer getrennten `COUNT(*)`-Abfrage bestimmt.
 
-- Der Lock muss vor jeder schreibenden Indexaktion erworben werden.
-- Das bloße Vorhandensein der Lockdatei bedeutet keine Sperre; entscheidend ist der Kernel-Lock.
-- Metadaten in der Datei dienen nur der Diagnose.
-- Callbacks oder Fortschrittsausgabe dürfen einen Indexlauf nicht beschädigen.
+### Stabile Sortierung
 
-## Backupvertrag
+Jede Hauptsortierung endet mit:
 
-- Sicherungsziel vorab prüfen.
-- niemals still überschreiben.
-- SQLite-Backup-API statt Dateikopie verwenden.
-- temporäre Sicherung mit `quick_check` prüfen.
-- erst danach atomar sichtbar machen.
+1. Pfad ohne Beachtung der Groß-/Kleinschreibung,
+2. originalem Pfad,
+3. eindeutiger Datei-ID.
 
-## Restorevertrag
+Damit bleibt die Reihenfolge innerhalb eines unveränderten Snapshots stabil.
 
-- Sicherung vorab vollständig prüfen.
-- neuere unbekannte Schemaversion ablehnen.
-- standardmäßig Rückfallsicherung erzeugen.
-- Wiederherstellung zuerst in temporärer Datenbank aufbauen.
-- Ziel atomar ersetzen und erneut prüfen.
-- bei Fehler Rückfallsicherung einspielen.
+## Optionaler FTS5-Index
 
-## Fortschrittsereignisse
+Der FTS5-Index wird nicht automatisch erzeugt. `build_fulltext_index()` benötigt einen ausdrücklichen Aufruf und verwendet `IndexProcessLock`.
 
-`ProgressEvent` enthält:
+Indizierte Felder:
 
-- Phase
-- Ereignisart
-- verständliche Nachricht
-- aktuellen und optional gesamten Wert
-- Sitzung
-- strukturierte Zusatzdaten
+- `relative_path`,
+- `suffix`,
+- `category`,
+- zusammengefasste Namenswarnungen.
 
-Ereignisse werden in SQLite gespeichert und optional als Text oder JSONL ausgegeben.
+Der Index ist sitzungsbezogen. Die normale Suche prüft zuerst, ob für die gewählte Sitzung FTS-Zeilen vorhanden sind. Ohne FTS5 erfolgt ein sicherer Rückfall auf parameterisierte `LIKE`-Abfragen.
 
-## Prüfungen
+## Änderungsberichte
+
+Datei: `src/datenbanktool/core/changes.py`
+
+### Auswahl
+
+- Standard: neueste abgeschlossene inkrementelle Sitzung.
+- Optional: konkrete Sitzungs-ID.
+- Nur abgeschlossene Re-Scans mit `parent_session_id` sind zulässig.
+
+### Ausgabe
+
+- Terminal: paginierte, deutsch beschriftete Zeilen.
+- JSON: strukturierter Bericht mit Zusammenfassung.
+- CSV: UTF-8 mit BOM.
+- HTML: eigenständige lokale Datei mit Browserfiltern.
+
+### Dateisicherheit
+
+- Alle Ziele werden vor dem Schreiben geprüft.
+- Temporäre Dateien liegen im Zielordner.
+- Bei Fehlern werden temporäre Dateien entfernt.
+- Bestehende Ziele benötigen `--overwrite-report`.
+- HTML-Inhalte werden vollständig maskiert.
+
+## Qualitätsprüfungen
 
 ```bash
 python -m compileall -q src tests
-PYTHONPATH=src PYTHONWARNINGS=error python -m unittest discover -s tests -v
+PYTHONPATH=src PYTHONWARNINGS=error \
+  python -m unittest discover -s tests -v
 ```
 
-Aktueller Stand: 19 Tests.
+Neue Testgruppen prüfen:
 
-## Nächster technischer Schritt
+- normale Suche ohne Datenbankänderung,
+- Pagination und stabile Reihenfolge,
+- kombinierte Filter,
+- optionalen FTS5-Aufbau,
+- FTS5-Suche und Rückfall,
+- Änderungszählung,
+- Terminalausgabe,
+- JSON-/CSV-/HTML-Export,
+- Überschreibschutz,
+- SQLite-`quick_check`.
 
-Eine lesende SQLite-Suchschicht mit Pagination, stabiler Sortierung, kombinierten Filtern und FTS5 entwickeln. Danach können GUI und mobile Bedienung auf eine belastbare API aufsetzen.
+## Unverändert
+
+`AGENTS.md` bleibt unverändert. Schreibende Operationen an Originaldateien bleiben blockiert.
