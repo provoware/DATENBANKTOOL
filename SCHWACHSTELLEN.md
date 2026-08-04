@@ -1,37 +1,36 @@
 # Schwachstellen und aktuelle Grenzen
 
-## Mehrschichtige Laienhilfe
+## Modulare CLI-Architektur
 
-1. Die Hilfe arbeitet mit gepflegten Themen und Stichwörtern, nicht mit einer semantischen KI-Suche.
-2. Alltagssuche findet Begriffe wie „Platzfresser“, kennt aber nicht jede denkbare Umschreibung.
-3. Feldhilfe erklärt Eingaben, kann einen unbekannten Pfad aber nicht automatisch erraten.
-4. Fehlerhilfe nennt sichere Prüfstellen, führt jedoch absichtlich keine automatische Reparatur aus.
-5. Die Hilfetexte müssen bei neuen Funktionen zentral ergänzt und durch Tests abgesichert werden.
-6. Der ältere Befehl `datenbanktool explain` bleibt aus Kompatibilitätsgründen bestehen; die vollständig mehrschichtige Hilfe liegt unter `datenbanktool help`.
+1. Die frühere zentrale `cli.py` ist beseitigt; die Fachmodule liegen jedoch nahe am festgelegten Höchstwert von 500 Zeilen. Besonders `cli_search.py` und `cli_index.py` müssen bei größeren Erweiterungen erneut geteilt werden.
+2. Die Architekturtests prüfen Importgrenzen und gefährliche Aufrufe statisch. Sie ersetzen keine vollständige manuelle Sicherheitsprüfung neuer Fachlogik.
+3. `CommandPolicy` beschreibt mögliche Seiteneffekte eines Befehls. Bei optionalen Schreibfunktionen wie FTS-Aufbau ist die Richtlinie bewusst konservativ und meldet grundsätzlich einen möglichen Indexschreibzugriff.
+4. Die CLI-Fachmodule verwenden weiterhin `argparse.Namespace`. Streng typisierte Befehlsmodelle könnten später zusätzliche statische Sicherheit liefern.
+5. Der alte Befehl `datenbanktool explain` und die neue Hilfe `datenbanktool help` bleiben aus Kompatibilitätsgründen parallel bestehen.
 
-## Terminalbedienung
+## Globale Wartungsregeln
 
-7. Die Oberfläche besitzt noch keine grafischen Dateiauswahlfenster.
-8. Ordner- und Datenbankpfade werden als Text eingegeben oder eingefügt.
-9. Zuletzt verwendete Pfade gelten nur innerhalb der aktuellen Startseiten-Sitzung.
-10. `q` bricht den aktuellen Schritt ab; versehentliche Eingaben werden nicht als Pfad übernommen.
-11. In Skripten öffnet sich die Startseite absichtlich nicht automatisch.
+6. Das Regelmanifest wird automatisch auf Struktur und Kernlimits geprüft, aber nicht jede textliche Regel kann vollständig maschinell erzwungen werden.
+7. Dokumentationssynchronität benötigt weiterhin eine bewusste Iterationsprüfung.
+8. Die Zeilengrenze verhindert neue Monolithen, sagt aber allein nichts über fachliche Komplexität einer Funktion aus.
+9. Neue Laufzeitabhängigkeiten sind nicht technisch unmöglich, müssen aber laut Regelwerk ausdrücklich begründet und im Projektregister dokumentiert werden.
 
-## Codequalität
+## Terminalbedienung und Hilfe
 
-12. `cli.py` enthält weiterhin viele Parser- und Ausführungsfunktionen in einer großen Datei.
-13. Die neue Hilfe wurde bewusst außerhalb von `cli.py` umgesetzt, die restliche Befehlslogik muss aber noch modularisiert werden.
-14. `terminal_home.py` ist jetzt nur noch eine Kompatibilitätsschicht; neue Entwicklung findet in `guided_home.py` statt.
-15. Der Hilfekatalog ist zentral, aber derzeit deutschsprachig und noch nicht für Übersetzungen strukturiert.
+10. Die Oberfläche besitzt noch keine grafischen Dateiauswahlfenster.
+11. Ordner- und Datenbankpfade werden als Text eingegeben oder eingefügt.
+12. Alltagssuche arbeitet mit gepflegten Stichwörtern und nicht mit semantischer KI.
+13. Fehlerhilfe nennt sichere Prüfstellen, führt aber absichtlich keine automatische Reparatur aus.
+14. Hilfetexte sind derzeit deutschsprachig.
 
 ## Fachliche Grenzen
 
-16. Die Ordnerübersicht besitzt JSON und HTML, aber noch keinen CSV-Export.
-17. Ordnerwachstum zwischen zwei Scans wird noch nicht direkt zusammengefasst.
-18. FTS5 durchsucht Metadaten, nicht automatisch den Inhalt aller Dateien.
-19. Schreibende Originaldateioperationen bleiben gesperrt.
-20. Vor einem stabilen Release fehlen Last- und Bedienabnahmen mit sehr großen realen Beständen.
+15. Die Ordnerübersicht besitzt JSON und HTML, aber noch keinen CSV-Export.
+16. Ordnerwachstum zwischen zwei abgeschlossenen Scans wird noch nicht direkt zusammengefasst.
+17. FTS5 durchsucht Metadaten und nicht automatisch den Inhalt aller Dateien.
+18. Schreibende Originaldateioperationen bleiben gesperrt.
+19. Vor einem stabilen Release fehlen Last- und Bedienabnahmen mit sehr großen realen Beständen.
 
 ## Sicherheitsfazit
 
-Keine bekannte Grenze rechtfertigt automatische Originaldateiänderungen. Die Hilfe erklärt Wirkungen, bestätigt schreibende Indexaktionen und bleibt selbst vollständig datenänderungsfrei.
+Die Modularisierung reduziert Änderungsrisiko und verhindert neue unkontrollierte CLI-Monolithen. Keine bekannte Grenze rechtfertigt automatische Originaldateiänderungen. `CommandPolicy.validate()` weist solche Richtlinien weiterhin technisch ab.
