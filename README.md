@@ -6,21 +6,48 @@
 
 | Bereich | Stand |
 |---|---|
-| Version | `0.12.0-alpha.1` |
+| Version | `0.13.0-alpha.1` |
 | SQLite-Schema | `3` |
 | Entwicklungsfortschritt | **99 %** |
-| Erledigte Hauptpunkte | **49** |
+| Erledigte Hauptpunkte | **51** |
 | Offene Hauptpunkte | **1** |
 | Automatische Originaldateiänderungen | **Gesperrt** |
 | Externe Laufzeitabhängigkeiten | **0** |
-| Automatisierte Tests | **77/77** unter Python 3.10 und 3.12 |
+| Automatisierte Tests | **86/86** unter Python 3.10 und 3.12 |
 | Quick-Abnahme | **600 Dateien · 11/11 bestanden** |
 | Standard-Abnahme | **10.000 Dateien · 11/11 bestanden** |
 | Reale Laienabnahme | **Noch offen** |
 
-## Neu: geführte Ordner-Zeitreihe
+## Neu: lokale Zeitreihen-Vorlagen
 
-Die Ordner-Zeitreihe ist jetzt als eigener Punkt in der geführten Startseite verfügbar:
+Häufig geprüfte relative Ordnerpfade können unter einem verständlichen Namen gespeichert
+werden. Eine Vorlage enthält bewusst **keinen Datenbankpfad**, keine Scan-Ergebnisse und
+keine Originaldateien.
+
+```bash
+datenbanktool index timeline-presets save Musik Musik/Archiv \
+  --description "Wöchentliche Größenprüfung"
+```
+
+Verwalten:
+
+```bash
+datenbanktool index timeline-presets list
+datenbanktool index timeline-presets show Musik
+datenbanktool index timeline-presets delete Musik --yes
+```
+
+Sicherheitsvertrag:
+
+- Ordnerpfade sind relativ; absolute Pfade und `..` werden abgelehnt.
+- Namen besitzen 1 bis 64 Zeichen, Beschreibungen höchstens 240 Zeichen.
+- Gleichnamige Vorlagen werden ohne `--replace` nicht überschrieben.
+- Löschen benötigt `--yes`.
+- Die JSON-Konfiguration wird atomar mit Dateiberechtigung `0600` geschrieben.
+- Standardpfad: `$XDG_CONFIG_HOME/datenbanktool/timeline-presets.json` beziehungsweise
+  `~/.config/datenbanktool/timeline-presets.json`.
+
+## Direkte Auswahl auf der Startseite
 
 ```bash
 datenbanktool start
@@ -28,105 +55,84 @@ datenbanktool start
 
 ```text
 11. Ordner-Zeitreihe
+12. Zeitreihen-Vorlage speichern
 ```
 
-Der Assistent fragt nacheinander ab:
+Punkt 11 zeigt vorhandene Vorlagen nummeriert mit Name, Ordner und Beschreibung. Eine
+Vorlage kann per Nummer oder exaktem Namen gewählt werden. Der Ordner bleibt vor dem
+Start sichtbar und kann bewusst angepasst werden. Punkt 12 schreibt erst nach sichtbarer
+Befehlsprüfung und ausdrücklicher Bestätigung eine neue Vorlage.
 
-1. Indexdatenbank,
-2. relativen Ordnerpfad oder `.`,
-3. optionale älteste und neueste Scan-ID,
-4. höchstens 2 bis 500 Zeitpunkte,
-5. optional JSON, CSV oder HTML,
-6. neuen Zielpfad für den Bericht.
-
-Jede Eingabe besitzt eine Feldhilfe über `?`. Zahlenbereiche werden vor dem Start
-geprüft. Der geplante Befehl wird sichtbar angezeigt und ausschließlich als sichere
-Argumentliste gestartet – ohne Shell-Auswertung.
-
-### Mehrschichtige Hilfe
+Hilfen:
 
 ```text
-?11   ausführliche Erklärung
-g11   Schritt-für-Schritt-Anleitung
+?11 / g11   Zeitreihe erklären oder Schritt für Schritt führen
+?12 / g12   Vorlagenspeicherung erklären oder Schritt für Schritt führen
+?           aktuelles Eingabefeld erklären
 ```
 
-Direkt aufrufbar:
+## Neu: begründete Trendgrenzen
+
+Zeitreihen können optional rein lesende Prozentgrenzen für positives Wachstum erhalten:
 
 ```bash
-datenbanktool help folder-timeline --level detail
-datenbanktool help folder-timeline --level guided
-datenbanktool help --find Speicherentwicklung
-```
-
-Bei einem Fehler nennt die Startseite konkrete Ursachen und Lösungen, etwa fehlende
-zweite Scans, unpassende Sitzungen, unsichere Ordnerpfade oder vorhandene Berichte.
-
-## Neu: barrierefreie Offline-Trendgrafiken
-
-Der HTML-Zeitreihenbericht enthält jetzt zwei vollständig lokale SVG-Liniendiagramme:
-
-- **Größenverlauf** des Ordners einschließlich Unterordnern,
-- **Dateizahlverlauf** einschließlich Unterordnern.
-
-```bash
-datenbanktool index folder-timeline index.sqlite3 Musik \
+datenbanktool index folder-timeline index.sqlite3 \
+  --preset Musik \
+  --warn-size-growth-percent 25 \
+  --warn-file-growth-percent 50 \
   --html musik-verlauf.html
 ```
 
-Eigenschaften:
+Berechnung:
+
+- Vergleich mit dem unmittelbar vorherigen **sichtbaren** Scan.
+- Nur positives Wachstum kann eine Warnschwelle erreichen.
+- Bei einem Ausgangswert von null bleibt der Prozentwert leer; es wird nicht durch null
+  geteilt und keine künstliche Prozentzahl erzeugt.
+- Zulässig sind endliche Werte von 0 bis 1.000.000 Prozent.
+
+Ein Treffer erscheint als:
+
+```text
+ROT – Trendgrenze erreicht
+```
+
+Daneben stehen immer Messwert, konfigurierte Warnschwelle und Begründung. Zusätzlich
+wird ausdrücklich erklärt: Die Warnung ist ein rein lesender Hinweis und **keine
+Schadens-, Lösch- oder Aufräumentscheidung**.
+
+## Terminal, JSON, CSV und Offline-HTML
+
+Die neuen Werte erscheinen konsistent in allen Ausgaben:
+
+- Terminal: aktive Grenzen, Trefferzahl, Datei- und Größenänderung in Prozent.
+- JSON: konfigurierte Grenzen, Dateiprozent, Trefferstatus und Begründungen.
+- CSV: getrennte Spalten für Verlauf, Warnstatus, Rohwerte und Warnschwellen.
+- HTML: sichtbare Warnzusammenfassung, vollständige Begründungstabelle und markierte
+  SVG-Datenpunkte mit dem Klartext `Warnung`.
+
+Der HTML-Bericht bleibt vollständig lokal:
 
 - kein JavaScript,
 - keine externen Bilder, Schriften, Bibliotheken oder Internetadressen,
-- `figure`, `figcaption`, SVG-`title` und SVG-`desc`,
-- sichtbare Achsen-, Scan- und Wertbeschriftungen,
-- jeder Datenpunkt mit Tastaturfokus und genauer `aria-label`-Beschreibung,
-- textliche Zusammenfassung von Minimum, Maximum und Nettoänderung,
-- vollständige Wertetabelle direkt unter den Diagrammen,
+- zwei getrennte SVG-Diagramme für Größe und Dateizahl,
+- `figure`, `figcaption`, SVG-`title`, `desc` und `aria-labelledby`,
+- fokussierbare Datenpunkte mit genauer ARIA-Beschreibung,
+- vollständige Wertetabelle unter den Diagrammen,
 - Farben niemals als alleinige Information.
 
-Bei langen Zeitreihen werden sichtbare Achsenbeschriftungen reduziert, während jeder
-Datenpunkt und jede Tabellenzeile vollständig erhalten bleibt.
-
-## Direkter Zeitreihenbefehl
+## Zeitreihe ohne Vorlage
 
 ```bash
-datenbanktool index folder-timeline index.sqlite3 Musik
-```
-
-Ohne Ordnerangabe wird der gesamte Stammordner `.` ausgewertet:
-
-```bash
-datenbanktool index folder-timeline index.sqlite3
-```
-
-Die Ausgabe enthält pro Scan Scan-ID, UTC-Zeitpunkt, Scan-Modus, rekursive Dateizahl,
-Gesamtgröße, Differenzen, Prozentwert, Zustand und verständliche Begründung.
-
-```bash
-datenbanktool index folder-timeline index.sqlite3 Musik \
+datenbanktool index folder-timeline index.sqlite3 Musik/Archiv \
   --from-session-id 3 \
   --to-session-id 12 \
   --limit 100 \
-  --json musik-verlauf.json \
-  --csv musik-verlauf.csv \
-  --html musik-verlauf.html
+  --csv musik-verlauf.csv
 ```
 
-CSV verwendet UTF-8-BOM und Semikolon für LibreOffice Calc. Vorhandene Ziele werden
-nur mit `--overwrite-report` ersetzt.
-
-## Vollständiger Ordnervergleichsexport
-
-```bash
-datenbanktool index folder-compare index.sqlite3 \
-  --page-size 25 \
-  --csv ordnervergleich.csv \
-  --all-pages
-```
-
-`--all-pages` exportiert sämtliche gefilterten und sortierten JSON-, CSV- oder
-HTML-Zeilen. Das Terminal bleibt paginiert, und die vollständige Ergebnismenge wird
-nur einmal berechnet.
+Ohne Ordner oder Vorlage wird `.` verwendet und damit der gesamte gespeicherte
+Stammordner ausgewertet.
 
 ## Reproduzierbare Großbestandsabnahme
 
@@ -141,79 +147,69 @@ datenbanktool acceptance --profile standard --workspace ./abnahme-standard
 | `standard` | 10.000 | 250 | 600 s | 1.024 MiB |
 | `large` | 100.000 | 1.000 | 3.600 s | 4.096 MiB |
 
-## 0.12-Funktionsreferenz
+## 0.13-Funktionsreferenz
 
-GitHub Actions auf Ubuntu 24.04 und Python 3.12, Commit
-`b27e678259474ae459f08751ba0b386cccb653a3`:
+GitHub Actions Run `30927676213` auf Ubuntu 24.04, Funktionscommit
+`8ded929533f806c739a7139b47d16379a788cfb0`:
 
 | Profil | Dateien | Kriterien | Laufzeit | Python-Spitzenspeicher |
 |---|---:|---:|---:|---:|
-| Quick | 600 | 11/11 | 1,015 s | 1.325.982 Byte |
-| Standard | 10.000 | 11/11 | 16,116 s | 13.398.883 Byte |
+| Quick | 600 | 11/11 | 1,129 s | 1.324.226 Byte |
+| Standard | 10.000 | 11/11 | 18,150 s | 13.398.233 Byte |
 
-Die automatisierten Tests liefen mit `PYTHONWARNINGS=error`. Die Werte sind eine
-reproduzierbare CI-Referenz und keine Garantie für andere Hardware.
+Zusätzlich bestanden 86/86 Tests unter Python 3.10 und Python 3.12 mit
+`PYTHONWARNINGS=error`. Die Messwerte sind CI-Referenzen und keine Garantie für andere
+Hardware.
 
 ## Sicherheit
 
-- Zeitreihe, Diagramme und Hilfen verändern weder SQLite noch Originaldateien.
-- Zeitreihen-SQLite wird mit `mode=ro` und `PRAGMA query_only=ON` geöffnet.
-- Absolute Ordnerpfade und `..` werden abgelehnt.
+- Zeitreihe und Trendgrenzen öffnen SQLite ausschließlich lesend.
+- Vorlagen speichern keine Datenbankpfade und lesen keine Originaldateien.
 - Geführte Befehle werden als Argumentlisten und niemals über eine Shell gestartet.
-- HTML enthält kein JavaScript und keine externen Ressourcen.
-- Berichte werden atomar geschrieben und nicht still überschrieben.
+- Vorlagen und Berichte werden atomar geschrieben und nicht still überschrieben.
+- Warnungen verändern keine Daten und lösen keine Folgeaktion aus.
 - Jeder öffentliche CLI-Befehl besitzt eine geprüfte `CommandPolicy`.
-- Automatisches Löschen, Verschieben und Umbenennen bleibt gesperrt.
+- Automatisches Löschen, Verschieben und Umbenennen von Originaldateien bleibt gesperrt.
 
 ## Modulare Struktur
 
 | Modul | Zuständigkeit |
 |---|---|
-| `core/folder_timeline.py` | Sitzungsauswahl, rekursive Messwerte und Zustände |
-| `core/folder_timeline_help.py` | Detail-, Schritt-, Feld- und Fehlerhilfe |
-| `core/folder_timeline_charts.py` | lokale, barrierefreie SVG-Trendgrafiken |
-| `core/folder_timeline_exports.py` | atomare JSON-, CSV- und HTML-Ausgabe |
-| `core/guided_home.py` | Startseitenpunkt 11 und validierter Dialog |
-| `cli_folder_timeline.py` | direkter Parser und Terminaldarstellung |
-
-## Prüfungen
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install -e .
-python -m compileall -q src tests
-PYTHONWARNINGS=error python -m unittest discover -s tests -v
-```
+| `core/timeline_presets.py` | Validierung, atomare lokale Vorlagen und Modus 0600 |
+| `cli_timeline_presets.py` | list/show/save/delete und Seiteneffektvertrag |
+| `core/folder_timeline.py` | Prozentwerte, Trendgrenzen und begründete Ampeln |
+| `core/guided_home.py` | Vorlagenauswahl, Speicherung und Schwellenfelder |
+| `core/folder_timeline_exports.py` | JSON-, CSV- und HTML-Warninformationen |
+| `core/folder_timeline_charts.py` | sichtbare und zugängliche Warnmarken im SVG |
 
 ## Aktuelle Grenzen
 
 - Die reale Laienabnahme ist noch nicht durchgeführt.
 - Das `large`-Profil wurde noch nicht auf Zielhardware ausgeführt.
-- Leere Ordner ohne Dateien erscheinen nicht im aktuellen Dateisnapshot-Schema.
-- Elternordner enthalten rekursive Unterordnerwerte.
-- Diagrammpunkte sind nach Scan-Reihenfolge gleichmäßig verteilt, nicht nach realem
-  Zeitabstand.
-- Bei 500 Punkten entstehen entsprechend viele fokussierbare SVG-Punkte; die Tabelle
-  bleibt die kompakteste vollständige Alternative.
-- Zeitreihen zeigen derzeit jeweils einen relativen Ordner.
-- Die Oberfläche bleibt terminalbasiert.
+- Die Startseite kann Vorlagen speichern und auswählen; geführtes Anzeigen, Ersetzen und
+  Löschen ist noch nicht als eigenes Untermenü vorhanden.
+- Vorlagen speichern bewusst nur den Ordner, nicht Warnschwellen oder Berichtspfade.
+- Prozentwerte sind bei vorherigem Wert null nicht berechenbar.
+- Warnschwellen betrachten Übergänge, keine langfristige statistische Anomalie.
+- Je Zeitreihe wird weiterhin ein relativer Ordner dargestellt.
+- Diagramme positionieren Punkte nach Scan-Reihenfolge, nicht proportional zum
+  tatsächlichen Zeitabstand.
 
 ## Mögliche weitere Upgrades
 
-- Häufig verwendete Zeitreihenordner als validierte lokale Vorlagen speichern.
-- Optionale textlich erklärte Warnschwellen für starkes Wachstum ergänzen.
-- Mehrere ausgewählte Ordner gemeinsam als Trends darstellen.
+- Geführtes Vorlagen-Untermenü für Anzeigen, Ersetzen und Löschen.
+- Mehrere ausgewählte Ordner gemeinsam als getrennte Trends darstellen.
+- Diagrammpunkte optional nach realem Scan-Zeitabstand positionieren.
 - Reale Laienabnahme und 100.000-Dateien-Zieltest durchführen.
 - Später eine grafische Oberfläche mit Pfadauswahldialogen ergänzen.
 
 ## Direkt folgender technischer Entwicklungsschritt
 
-**Zeitreihen-Vorlagen:** Häufig geprüfte relative Ordnerpfade lokal, validiert und
-überschreibgeschützt speichern und direkt in der geführten Startseite auswählbar machen.
+**Geführte Vorlagenverwaltung:** Zeitreihen-Vorlagen auf der Startseite zusätzlich
+anzeigen, bewusst ersetzen und nach Namensprüfung bestätigt löschen können.
 
 ## Alternative Verbesserung mit hohem Nutzen und geringem Risiko
 
-**Trendgrenzen:** Optionale rein lesende Warnschwellen für starkes Größen- oder
-Dateiwachstum in Terminal und HTML ergänzen – immer mit Klartext und Begründung.
+**Mehrordner-Zeitreihe:** Mehrere ausgewählte relative Ordner rein lesend in einem
+Bericht darstellen – mit getrennten Linien, eindeutiger Legende und ausdrücklichem
+Hinweis, dass rekursive Eltern- und Kindwerte nicht addiert werden dürfen.
