@@ -1,65 +1,64 @@
 # Schwachstellen und aktuelle Grenzen
 
-## Ordner-CSV
+## Ordner-Zeitreihe
 
-1. Ohne `--all-pages` enthält ein Bericht weiterhin nur die gewählte Seite. Das ist
-   rückwärtskompatibel, muss aber bewusst beachtet werden.
-2. Elternordner enthalten die Summen ihrer Unterordner. Tabellenzeilen dürfen daher
-   nicht addiert werden, sonst werden Dateien mehrfach gezählt.
-3. Leere Ordner ohne Dateien können nicht erscheinen, weil das aktuelle Schema
-   Dateieinträge und keine eigenständige Verzeichnisliste speichert.
-4. Die Anzahl der Platzfresser-Spalten richtet sich nach `--top-files`. Unterschiedlich
-   konfigurierte Exporte können deshalb unterschiedlich viele Spalten besitzen.
-5. Rohgrößen werden in Byte ausgegeben. Für MiB oder GiB muss LibreOffice eine Formel
-   oder Zellformatierung verwenden.
-6. CSV speichert keine Farben. Ampelstufe, Status und Begründung stehen deshalb als
-   getrennte Textspalten bereit.
+1. Die Zeitreihe benötigt mindestens zwei abgeschlossene Scans desselben
+   Stammordners. Ein einzelner Erstscan liefert bewusst keinen Verlauf.
+2. Der Ordnerpfad ist relativ zum gespeicherten Stammordner. Absolute Pfade und `..`
+   werden aus Sicherheitsgründen abgelehnt.
+3. Elternordner enthalten die rekursiven Werte ihrer Unterordner. Mehrere
+   Ordnerzeitreihen dürfen daher nicht ungeprüft addiert werden.
+4. Leere Ordner ohne Dateien erscheinen nicht, weil das aktuelle Schema Dateien und
+   keine eigenständigen Verzeichniszeilen speichert.
+5. `--limit` zeigt bei großen Historien nur die neuesten 2 bis 500 Zeitpunkte. Die
+   Verkürzung wird sichtbar gemeldet, ältere Punkte müssen mit einer passenden
+   Ausgangssitzung gezielt eingegrenzt werden.
+6. Bei einem neuen Ordner ohne vorherige Größe ist keine normale prozentuale Änderung
+   berechenbar; das Feld bleibt leer beziehungsweise wird mit „–“ dargestellt.
+7. Die Zeitstempel stammen aus den gespeicherten Scan-Sitzungen und nicht aus den
+   Änderungszeiten einzelner Dateien.
+8. Der HTML-Bericht zeigt derzeit eine barrierefreie Tabelle, aber noch keine
+   eingebettete Liniengrafik.
+9. Der direkte CLI-Befehl ist vorhanden und klassisch erklärt, aber noch nicht als
+   eigener Punkt in der geführten Startseite eingebunden.
+10. Es wird jeweils ein relativer Ordner ausgewertet. Mehrere parallele Ordnerlinien
+    sind noch nicht vorhanden.
 
-## Automatische Großbestandsabnahme
+## Vollständiger Ordnervergleichsexport
 
-7. Die erzeugten Dateien sind synthetisch. Sie decken viele Namen, Endungen und Größen
-   ab, aber nicht sämtliche Eigenschaften realer Datenbestände.
-8. Sparse-Dateien sparen physischen Speicher und testen Metadaten- und Indexleistung.
-   Sie simulieren nicht vollständig die Leselast real gefüllter Mediendateien.
-9. `tracemalloc` misst Python-Speicher, nicht jede native SQLite- oder Betriebssystem-
-   Allokation. Deshalb wird zusätzlich Prozess-Maximal-RSS protokolliert, aber nur der
-   Python-Wert besitzt derzeit eine harte Profilgrenze.
-10. Laufzeitwerte hängen von Dateisystem, CPU, Datenträger, Cache und CI-Auslastung ab.
-    Die Referenzwerte sind keine Garantie für andere Systeme.
-11. Das `large`-Profil mit 100.000 Dateien ist implementiert, aber noch nicht auf der
-    vorgesehenen Zielhardware ausgeführt.
-12. Die Abnahme erzeugt viele Dateisystemeinträge. Vor `standard` oder `large` müssen
-    ausreichend freie Inodes und Speicher vorhanden sein.
-13. Ein fehlgeschlagener Lauf löscht seinen Arbeitsordner nicht automatisch. Das ist
-    absichtlich sicher, erfordert aber eine spätere manuelle Prüfung und Bereinigung.
-14. Die Abnahme nutzt einen neuen Arbeitsordner und lehnt Wiederverwendung vollständig
-    ab. Ein Fortsetzen abgebrochener Abnahmen ist noch nicht vorgesehen.
-15. Die CI archiviert Berichte 14 Tage; danach können die Artefakte ablaufen.
+11. Ohne `--all-pages` bleibt das bisherige Verhalten erhalten: Berichte enthalten nur
+    die gewählte Seite.
+12. `--all-pages` benötigt mindestens ein JSON-, CSV- oder HTML-Ziel und ist damit
+    absichtlich sichtbar.
+13. Bei sehr vielen gefilterten Ordnern liegt die vollständige sortierte Zeilenmenge
+    während des Exports im Arbeitsspeicher. Die Dateidaten werden dennoch nur einmal
+    aggregiert.
+14. Eltern- und Kindzeilen enthalten überlappende rekursive Werte und dürfen nicht
+    addiert werden.
+15. CSV speichert Status und Begründung als Text, aber keine sichtbaren Farben.
 
-## Reale Laienabnahme
+## Großbestands- und Laienabnahme
 
-16. Eine echte Laienabnahme wurde noch nicht durchgeführt.
-17. Die generierte Checkliste standardisiert Aufgaben und Kriterien, ersetzt aber weder
-    Beobachtung noch Rückfragen einer realen Testperson.
-18. Die Checkliste ist deutschsprachig und bislang nicht als interaktiver Assistent
-    umgesetzt.
-19. Nutzerzeiten und Bewertungen werden manuell eingetragen und noch nicht automatisch
-    in ein Ergebnis-JSON übernommen.
+16. Synthetische Sparse-Dateien bilden Metadaten- und Indexleistung gut ab, aber nicht
+    die vollständige Leselast großer real gefüllter Mediendateien.
+17. Das `large`-Profil mit 100.000 Dateien wurde noch nicht auf der vorgesehenen
+    Zielhardware ausgeführt.
+18. Eine echte Laienabnahme wurde noch nicht durchgeführt. Die Checkliste ersetzt
+    keine reale Beobachtung und Rückfragen.
+19. `tracemalloc` misst Python-Speicher; nativer SQLite- und Betriebssystemspeicher
+    wird zusätzlich protokolliert, besitzt aber noch keine harte Plattformgrenze.
+20. GitHub-Actions-Artefakte laufen nach der festgelegten Aufbewahrungsdauer ab.
 
-## Ordnervergleich und Bedienung
+## Bedienung und Plattform
 
-20. Der Ordnervergleich wertet genau zwei Sitzungen aus; eine Zeitreihe fehlt.
-21. Vergleichsexporte enthalten die aktuelle Seite und besitzen noch keinen eigenen
-    `--all-pages`-Schalter.
-22. Die Oberfläche bleibt terminalbasiert und nutzt noch keine grafischen Pfaddialoge.
-23. Hilfetexte sind deutschsprachig; die Stichwortsuche ist deterministisch und nicht
-    semantisch.
-24. Schreibende Originaldateioperationen bleiben gesperrt.
+21. Die Oberfläche bleibt terminalbasiert und besitzt keine grafischen Pfaddialoge.
+22. Hilfetexte sind deutschsprachig; die Stichwortsuche ist deterministisch.
+23. Automatische Lösch-, Verschiebe- und Umbenennungsfunktionen bleiben gesperrt.
 
 ## Sicherheitsfazit
 
-CSV-Export und Abnahme verändern keine gescannten Originaldateien. Testdaten entstehen
-nur in einem neuen Arbeitsordner; ein vorhandener Pfad wird abgelehnt. Ein
-Vorher-/Nachher-Manifest prüft die erzeugten Quelldaten. Berichte werden atomar und
-überschreibgeschützt geschrieben. Keine bekannte Grenze rechtfertigt das Freischalten
-automatischer Lösch-, Verschiebe- oder Umbenennungsfunktionen.
+Zeitreihe und Ordnervergleich öffnen SQLite ausschließlich lesend. Originaldateien
+werden nicht erneut geöffnet oder verändert. Unterschiedliche Stammordner werden nicht
+vermischt, relative Ordnerpfade werden strikt validiert, und Berichte werden atomar
+sowie überschreibgeschützt geschrieben. Keine bekannte Grenze rechtfertigt das
+Freischalten automatischer Originaldateioperationen.
