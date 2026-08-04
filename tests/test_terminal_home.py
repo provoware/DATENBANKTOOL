@@ -30,6 +30,13 @@ class TerminalHomeTests(unittest.TestCase):
         keys = [action.key for action in menu_actions()]
         self.assertEqual(len(keys), len(set(keys)))
 
+    def test_timeline_is_own_menu_action(self) -> None:
+        actions = {action.key: action for action in menu_actions()}
+        self.assertIn("11", actions)
+        self.assertEqual(actions["11"].help_topic, "folder-timeline")
+        self.assertEqual(actions["11"].builder_name, "folder_timeline")
+        self.assertFalse(actions["11"].confirmation_required)
+
     def test_invalid_selection_returns_to_menu(self) -> None:
         home, output, error, calls = self.home("99\n0\n")
         self.assertEqual(home.run(), 0)
@@ -47,6 +54,52 @@ class TerminalHomeTests(unittest.TestCase):
         )
         self.assertIn("'urlaub bilder'", output.getvalue())
         self.assertNotIn("\033[", output.getvalue())
+
+    def test_timeline_is_dispatched_with_validated_fields_and_html(self) -> None:
+        home, output, error, calls = self.home(
+            "11\n/tmp/index.sqlite3\nMusik/Archiv\n3\n12\n250\nhtml\n"
+            "/tmp/musik-verlauf.html\n0\n"
+        )
+        self.assertEqual(home.run(), 0)
+        self.assertEqual(
+            calls[0],
+            [
+                "index",
+                "folder-timeline",
+                "/tmp/index.sqlite3",
+                "Musik/Archiv",
+                "--from-session-id",
+                "3",
+                "--to-session-id",
+                "12",
+                "--limit",
+                "250",
+                "--html",
+                "/tmp/musik-verlauf.html",
+            ],
+        )
+        self.assertIn("Ordner-Zeitreihe", output.getvalue())
+        self.assertIn("--html /tmp/musik-verlauf.html", output.getvalue())
+        self.assertEqual(error.getvalue(), "")
+
+    def test_timeline_field_help_and_number_validation(self) -> None:
+        home, output, error, calls = self.home(
+            "11\n/tmp/index.sqlite3\n?\n.\n\n\n1\n500\n\n0\n"
+        )
+        self.assertEqual(home.run(), 0)
+        self.assertEqual(
+            calls[0],
+            [
+                "index",
+                "folder-timeline",
+                "/tmp/index.sqlite3",
+                ".",
+                "--limit",
+                "500",
+            ],
+        )
+        self.assertIn("Absolute Pfade", output.getvalue())
+        self.assertIn("zwischen 2 und 500", error.getvalue())
 
     def test_write_action_requires_confirmation(self) -> None:
         home, output, error, calls = self.home(
