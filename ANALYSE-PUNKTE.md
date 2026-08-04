@@ -8,7 +8,7 @@ Stand: Version 0.1.0
 | Fehlerfreiheit | SQLite-Fehler waren nicht behandelt | Einheitlicher `DatabaseError` und Exitcode 2 |
 | Inkonsistenzen | Zuvor gab es keine definierte Ausgabe | Stabile Text- und JSON-Strukturen eingeführt |
 | Redundanzen | Pfadprüfung könnte je Befehl doppelt entstehen | Zentral in `validate_database` gebündelt |
-| Vereinheitlichung | Kein verbindlicher Versionsort vorhanden | `registry.json` ist alleinige Quelle |
+| Vereinheitlichung | Kein verbindlicher Versionsort vorhanden | `project_registry.json` ist alleinige Quelle |
 | Wartbarkeit | Kein Quellcodeaufbau vorhanden | CLI, Kernlogik, Konfiguration und Tests getrennt |
 | Komplexität | Zusätzliche Treiber würden den MVP überladen | Bewusst auf SQLite und Standardbibliothek begrenzt |
 | Prüfungsqualität | Keine Prüfungen vorhanden | Erfolgs-, Validierungs- und JSON-Fehlerfälle getestet |
@@ -18,6 +18,7 @@ Stand: Version 0.1.0
 | Stabilität | Schreibzugriff wäre ein Datenrisiko | SQLite-Verbindung erzwingt `mode=ro` |
 | Laienfreundlichkeit | Fachbegriff „SQLite“ bleibt nötig | README erklärt Zweck und Beispiele knapp |
 | Abhängigkeiten | Externe Pakete erhöhen Pflegeaufwand | Keine Laufzeitabhängigkeiten |
+| Inkonsistenzen | Alter README-MVP-Block widersprach dem aktuellen 0.13-Status | Startstatus, offene Hauptpunkte und aktuelle Einstiegspunkte konsolidiert |
 
 ## Nächste Analyse
 

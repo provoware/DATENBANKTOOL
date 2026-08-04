@@ -2,6 +2,14 @@
 
 Alle wichtigen Änderungen werden hier dokumentiert. Das Projekt verwendet semantische Versionierung.
 
+## Dokumentation – 2026-08-04
+
+- README-Startbereich auf einen einzigen aktuellen Projektstatus konsolidiert.
+- Veraltete MVP-Beispiele durch aktuelle Einstiege `start`, `help` und `index ...`
+  ersetzt.
+- Offenen Hauptpunkt zwischen README, TODO, Upgrade-Pool und Projektregistry
+  abgeglichen.
+
 ## [0.1.0] - 2026-08-04
 
 ### Hinzugefügt
