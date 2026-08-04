@@ -1,35 +1,29 @@
 # Schwachstellen und aktuelle Grenzen
 
-## Aktuell bekannte Grenzen
+## Aktuelle Grenzen der Suche
 
-1. Der Re-Scan muss den Verzeichnisbaum weiterhin vollständig durchlaufen; er spart hauptsächlich Datenbank- und Hasharbeit.
-2. Verschiebungen werden nur eindeutig klassifiziert. Mehrdeutige Hardlinks oder identische Mehrfachkopien bleiben getrennte Neu-/Entfernt-Fälle.
-3. Hash-basierte Verschiebungserkennung funktioniert nur, wenn die Baseline bereits einen SHA-256-Wert besitzt.
-4. Ein Inhalt kann theoretisch bei gleicher Größe, identischer Zeit und identischer Inode unbemerkt bleiben, wenn ein externes Werkzeug Metadaten gezielt zurücksetzt.
-5. Der `fcntl.flock`-Lock ist Linux-spezifisch und schützt nur Prozesse, die denselben Lockvertrag respektieren.
-6. Externe SQLite-Werkzeuge können die Datenbank weiterhin außerhalb des Tool-Locks verändern.
-7. Restore ersetzt die aktive Datenbank atomar für neue Öffnungen; bereits fremd geöffnete Leser können kurzfristig den alten Dateiknoten sehen.
-8. Sitzungen werden noch nicht automatisch archiviert oder bereinigt.
-9. Fortschrittsereignisse haben beim Verzeichnisscan keine verlässliche Gesamtsumme.
-10. FTS5-Suche, Ordneraggregate und GUI fehlen noch.
-11. Schreibende Originaldateioperationen bleiben vollständig gesperrt.
-12. Ruff, MyPy, Bandit, pip-audit und Coverage sind noch kein verpflichtendes Gate.
+1. FTS5 durchsucht derzeit Dateinamen, Pfade, Endungen, Typen und Warncodes – nicht den Inhalt aller Dateien.
+2. Die normale SQLite-`LIKE`-Suche ist bei sehr großen Beständen langsamer als FTS5.
+3. FTS5 ist von der verwendeten Python-/SQLite-Buildoption abhängig.
+4. Ein FTS5-Index gehört immer zu einer konkreten Scan-Sitzung und muss für neue Sitzungen neu aufgebaut werden.
+5. Pro Seite sind absichtlich höchstens 200 Treffer erlaubt.
+6. Unicode-Groß-/Kleinschreibung der normalen SQLite-Suche ist nicht in allen Sprachen vollständig.
+7. Suchergebnisse besitzen noch keine grafischen Vorschauen.
+8. Ordnergrößen werden noch nicht zusammengefasst.
 
-## Sicherheitsbewertung
+## Aktuelle Grenzen der Änderungsberichte
 
-- Originaldateien werden weiterhin nur gelesen.
-- Keine Datei wird automatisch gelöscht, verschoben oder umbenannt.
-- Backup und Restore prüfen SQLite vor der Übernahme.
-- Vor Restore wird standardmäßig eine Sicherheitskopie des Zielindexes erstellt.
-- Vorhandene Sicherungen und Berichte werden nicht still überschrieben.
-- Re-Scan-Sitzungen verändern frühere Snapshots nicht.
+1. Ein Änderungsbericht benötigt einen abgeschlossenen Re-Scan mit Baseline.
+2. HTML-Berichte mit sehr vielen Änderungen können groß werden.
+3. Details werden technisch als JSON gespeichert und teilweise noch nicht in Alltagssprache übersetzt.
+4. Berichte zeigen erkannte Änderungen, führen aber keine Dateiaktion aus.
 
-## Kritisch vor schreibenden Dateioperationen
+## Weiterhin kritisch vor Dateiänderungen
 
-1. Transaktionsjournal.
-2. Vorher-Nachher-Planmanifest.
-3. Kollisions- und Rechteprüfung.
-4. Speicherplatzprüfung.
-5. Quarantäne statt Direktlöschung.
-6. Idempotente Wiederaufnahme.
-7. Automatisierte Undo- und Recoverytests.
+- keine vollständige Planungsengine,
+- keine Kollisionsprüfung,
+- kein Undo-Manifest für Dateioperationen,
+- keine Quarantäne,
+- keine getestete Wiederherstellung halbfertiger Dateioperationen.
+
+Deshalb bleiben Verschieben, Umbenennen und Löschen weiterhin gesperrt.
