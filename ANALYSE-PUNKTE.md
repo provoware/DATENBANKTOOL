@@ -18,6 +18,7 @@ Stand: Projektversion 0.13.0-alpha.1 / Paketversion 0.13.0a1
 | Stabilität | Schreibzugriff wäre ein Datenrisiko | SQLite-Verbindung erzwingt `mode=ro` |
 | Laienfreundlichkeit | Fachbegriff „SQLite“ bleibt nötig | README erklärt Zweck und Beispiele knapp |
 | Abhängigkeiten | Externe Pakete erhöhen Pflegeaufwand | Keine Laufzeitabhängigkeiten |
+| Inkonsistenzen | Alter README-MVP-Block widersprach dem aktuellen 0.13-Status | Startstatus, offene Hauptpunkte und aktuelle Einstiegspunkte konsolidiert |
 
 ## Nächste Analyse
 

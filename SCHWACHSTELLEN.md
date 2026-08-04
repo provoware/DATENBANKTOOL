@@ -6,6 +6,8 @@
 - Nur lokale SQLite-Dateien werden unterstützt; Serverdatenbanken fehlen bewusst.
 - Die Dateisignaturprüfung erkennt SQLite-Dateien, aber keine logischen Schäden jeder Datenbankseite.
 - Die Struktur wird vollständig eingelesen; extrem viele Tabellen sind noch nicht mit Messwerten abgesichert.
+- Status- und Upgrade-Angaben müssen bei künftigen Änderungen weiterhin zwischen
+  README, TODO, Upgrade-Pool und Projektregistry synchron gehalten werden.
 
 ## Bereits abgesichert
 

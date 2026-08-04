@@ -1,5 +1,22 @@
 # DATENBANKTOOL
 
+> Sicheres Linux-Werkzeug zum Finden, Prüfen und übersichtlichen Strukturieren großer Dateisammlungen.
+
+## Projektstatus
+
+| Bereich | Stand |
+|---|---|
+| Aktuelle Version | `0.13.0-alpha.1` |
+| Entwicklungsfortschritt | **99 %** |
+| Erledigte Hauptpunkte | **51** – Scanner, SQLite-Index, Re-Scan, Suche, Berichte, Ordnervergleich, Zeitreihe, Vorlagen, Trendgrenzen, Hilfe und Abnahmeprofile |
+| Offene Hauptpunkte | **1** – reale Laienabnahme auf einem Zielsystem durchführen |
+| Nächste Upgrades aus `UPGRADE_POOL.md` | Geführte Vorlagenverwaltung, Mehrordner-Zeitreihe, reale Laienabnahme, 100.000-Dateien-Zieltest |
+| SQLite-Schema | `3` |
+| Automatische Originaldateiänderungen | **Gesperrt** |
+| Externe Laufzeitabhängigkeiten | **0** |
+| Automatisierte Tests | **86/86** unter Python 3.10 und 3.12 |
+| Quick-Abnahme | **600 Dateien · 11/11 bestanden** |
+| Standard-Abnahme | **10.000 Dateien · 11/11 bestanden** |
 **Erledigt:** schreibgeschützte SQLite-Analyse, Zeitreihen-/Vorlagenfunktionen, verbindlicher Registry-Versionsvertrag und Drift-Test.
 
 **Offen:** reale Laienabnahme, 100.000-Dateien-Zieltest, geführte Vorlagenverwaltung und grafische Oberfläche.
@@ -8,7 +25,7 @@
 
 **Mögliche Upgrades:** geführte Vorlagenverwaltung und Mehrordner-Zeitreihe; Details stehen im [Upgrade-Pool](UPGRADE_POOL.md).
 
-Das DATENBANKTOOL zeigt Aufbau und Kerndaten einer lokalen SQLite-Datenbank, ohne sie zu verändern. Es benötigt Python 3.10 oder neuer und keine zusätzlichen Laufzeitpakete.
+Das DATENBANKTOOL arbeitet standardmäßig rein lesend. Es erstellt einen lokalen, versionierten SQLite-Index und zeigt Dateibestände, Änderungen, Suchen, Ordnerberichte, Zeitreihen und sichere Exportberichte, ohne Originaldateien zu verändern. Es benötigt Python 3.10 oder neuer und keine zusätzlichen Laufzeitpakete.
 
 ## Installation
 
@@ -18,13 +35,16 @@ python -m pip install -e .
 
 ## Verwendung
 
+Aktuelle Einstiegspunkte:
+
 ```bash
-datenbanktool summary beispiel.sqlite
-datenbanktool tables beispiel.sqlite
-datenbanktool --json summary beispiel.sqlite
+datenbanktool start
+datenbanktool help
+datenbanktool index build ~/Daten --database index.sqlite3
+datenbanktool index status index.sqlite3
 ```
 
-`summary` zeigt Dateigröße sowie die Anzahl der Tabellen und Spalten. `tables` zeigt die Spalten jeder selbst angelegten Tabelle. `--json` erzeugt maschinenlesbare Ausgaben; ein Eingabefehler endet mit Statuscode `2`.
+`start` öffnet die geführte Terminal-Bedienung. `help` erklärt Themen in einfacher Sprache. `index build` erstellt einen lokalen Index für einen Ordner. `index status` zeigt den Zustand eines vorhandenen Index. Weitere aktuelle Indexbefehle sind unter anderem `search`, `folders`, `changes`, `folder-compare`, `folder-timeline`, `presets` und `timeline-presets`. Eingabefehler enden mit Statuscode `2`.
 
 ## Entwicklung
 

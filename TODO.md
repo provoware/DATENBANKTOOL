@@ -1,21 +1,24 @@
 # TODO
 
-## Offene Punkte
+## Offene Hauptpunkte
 
-- [ ] CSV-Export mit expliziter Zielpfadprüfung ergänzen.
-- [ ] Große Datenbanken mit Messwerten testen und ein sinnvolles Zeitlimit festlegen.
-- [ ] Paket-Build in einer kontinuierlichen Integration prüfen.
+- [ ] Reale Laienabnahme auf einem Zielsystem durchführen und die erzeugte
+  `NOVICE_ACCEPTANCE_CHECKLIST.md` durch eine unerfahrene Testperson ausfüllen lassen.
 
-## Erledigte Punkte
+## Erledigte Hauptpunkte
 
-- [x] SQLite-Dateien schreibgeschützt öffnen und validieren.
-- [x] Strukturübersicht als Text und JSON ausgeben.
-- [x] Kernlogik und Fehlerausgaben automatisch testen.
+- [x] 51 Hauptpunkte bis Version `0.13.0-alpha.1` umgesetzt, darunter Scanner,
+  SQLite-Index, Re-Scan, Suche, Berichte, Ordnervergleich, Zeitreihe, Vorlagen,
+  Trendgrenzen, Hilfesystem und Abnahmeprofile.
 
 ## Erinnerungsliste für spätere Maßnahmen
 
-1. Erst nach geklärtem Bedarf weitere Datenbanktreiber auswählen.
-2. Vor einer GUI die barrierefreie Bedienung und Tastaturnavigation spezifizieren.
+1. Geführte Vorlagenverwaltung weiter ausbauen.
+2. Mehrere Ordner in einem gemeinsamen, klar getrennten Zeitreihenbericht anzeigen.
+3. `large`-Profil mit 100.000 Dateien auf geeigneter Zielhardware ausführen.
+4. Erst nach geklärtem Bedarf weitere Datenbanktreiber auswählen.
+5. Vor einer GUI die barrierefreie Bedienung und Tastaturnavigation spezifizieren.
+
 ## In dieser Iteration erledigt
 
 1. [x] Eigenständige Zeitreihen-Vorlagendomäne entwickeln.
