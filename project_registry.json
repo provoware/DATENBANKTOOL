@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "project": "DATENBANKTOOL",
-  "version": "0.8.0-alpha.1",
-  "phase": "modular-cli-and-global-maintenance-rules",
-  "development_progress_percent": 93,
-  "completed_main_items": 42,
-  "open_main_items": 3,
+  "version": "0.9.0-alpha.1",
+  "phase": "read-only-folder-comparison",
+  "development_progress_percent": 96,
+  "completed_main_items": 43,
+  "open_main_items": 2,
   "runtime": {
     "python": ">=3.10",
     "external_runtime_dependencies": []
@@ -20,7 +20,8 @@
     "backup_restore": true,
     "read_only_search": true,
     "optional_fts5_metadata_index": true,
-    "read_only_folder_statistics": true
+    "read_only_folder_statistics": true,
+    "read_only_folder_comparison": true
   },
   "safety_defaults": {
     "filesystem_mode": "read-only",
@@ -30,6 +31,9 @@
     "restore_safety_backup": true,
     "search_modifies_database": false,
     "folder_analysis_modifies_database": false,
+    "folder_comparison_modifies_database": false,
+    "folder_comparison_requires_same_root": true,
+    "comparison_reports_overwrite": false,
     "fts_build_requires_explicit_flag": true,
     "colours_are_never_the_only_signal": true,
     "preset_delete_requires_confirmation": true,
@@ -63,6 +67,10 @@
     "change_reports": "alpha",
     "folder_statistics": "alpha",
     "folder_traffic_lights": "alpha",
+    "folder_comparison": "alpha",
+    "folder_growth_classification": "alpha",
+    "folder_comparison_exports": "alpha",
+    "folder_comparison_help": "alpha",
     "search_presets": "alpha",
     "accessible_colours": "alpha",
     "html_tooltips": "alpha",
@@ -92,8 +100,8 @@
     "cyclic_cli_imports_allowed": false
   },
   "validation": {
-    "python_3_10_tests": 54,
-    "python_3_12_tests": 54,
+    "python_3_10_tests": 59,
+    "python_3_12_tests": 59,
     "warnings_as_errors": true,
     "compileall": true,
     "architecture_tests": 6
