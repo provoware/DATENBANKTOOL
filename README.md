@@ -17,6 +17,13 @@
 | Automatisierte Tests | **86/86** unter Python 3.10 und 3.12 |
 | Quick-Abnahme | **600 Dateien · 11/11 bestanden** |
 | Standard-Abnahme | **10.000 Dateien · 11/11 bestanden** |
+**Erledigt:** schreibgeschützte SQLite-Analyse, Zeitreihen-/Vorlagenfunktionen, verbindlicher Registry-Versionsvertrag und Drift-Test.
+
+**Offen:** reale Laienabnahme, 100.000-Dateien-Zieltest, geführte Vorlagenverwaltung und grafische Oberfläche.
+
+**Entwicklungsfortschritt:** **99 %** (Alpha-Funktionsstand mit abgesicherter Versionierung).
+
+**Mögliche Upgrades:** geführte Vorlagenverwaltung und Mehrordner-Zeitreihe; Details stehen im [Upgrade-Pool](UPGRADE_POOL.md).
 
 Das DATENBANKTOOL arbeitet standardmäßig rein lesend. Es erstellt einen lokalen, versionierten SQLite-Index und zeigt Dateibestände, Änderungen, Suchen, Ordnerberichte, Zeitreihen und sichere Exportberichte, ohne Originaldateien zu verändern. Es benötigt Python 3.10 oder neuer und keine zusätzlichen Laufzeitpakete.
 
@@ -45,7 +52,25 @@ datenbanktool index status index.sqlite3
 PYTHONPATH=src python -m unittest discover -s tests -v
 ```
 
-Die Version wird ausschließlich in `project_registry.json` gepflegt. Architektur und Qualitätsregeln beschreibt die [Entwicklerdokumentation](ENTWICKLERDOKU.md).
+Die technische Paketversion wird als PEP 440 in `registry.json` gepflegt (`0.13.0a1`). Die menschenlesbare Projektversion lautet `0.13.0-alpha.1`. Architektur und Qualitätsregeln beschreibt die [Entwicklerdokumentation](ENTWICKLERDOKU.md).
+> Sicheres Linux-Werkzeug zum Finden, Prüfen und übersichtlichen Strukturieren großer Dateisammlungen.
+
+## Projektstatus
+
+| Bereich | Stand |
+|---|---|
+| Projektversion | `0.13.0-alpha.1` |
+| Paketversion | `0.13.0a1` |
+| SQLite-Schema | `3` |
+| Entwicklungsfortschritt | **99 %** |
+| Erledigte Hauptpunkte | **52** |
+| Offene Hauptpunkte | **1** |
+| Automatische Originaldateiänderungen | **Gesperrt** |
+| Externe Laufzeitabhängigkeiten | **0** |
+| Automatisierte Tests | **87/87** unter Python 3.10 und 3.12 |
+| Quick-Abnahme | **600 Dateien · 11/11 bestanden** |
+| Standard-Abnahme | **10.000 Dateien · 11/11 bestanden** |
+| Reale Laienabnahme | **Noch offen** |
 
 ## Neu: lokale Zeitreihen-Vorlagen
 

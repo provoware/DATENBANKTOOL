@@ -20,6 +20,13 @@ Alle wichtigen Änderungen werden hier dokumentiert. Das Projekt verwendet seman
 - Versionsregistry, Paketkonfiguration und automatische Tests.
 ## 0.13.0-alpha.1 – 2026-08-04
 
+### Versionierungsvertrag
+
+- PEP-440-Paketversion `0.13.0a1` als technische Schreibweise festgelegt.
+- Menschenlesbare Projektversion `0.13.0-alpha.1` in Registry, Projektregistry und Dokumentation beibehalten.
+- Harte zweite `__version__`-Zuweisung entfernt; die Paketversion kommt aus `registry.json` oder der dokumentierten Alpha-Umrechnung.
+- Drift-Test für CLI-Version, Registry, Projektregistry, Paketmetadaten und Dokumentation ergänzt.
+
 ### Zeitreihen-Vorlagen
 
 - Neuer Befehl `index timeline-presets` mit `list`, `show`, `save` und `delete`.

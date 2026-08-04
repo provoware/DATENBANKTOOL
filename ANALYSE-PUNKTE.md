@@ -1,6 +1,6 @@
 # Analyse-Punkte
 
-Stand: Version 0.1.0
+Stand: Projektversion 0.13.0-alpha.1 / Paketversion 0.13.0a1
 
 | Bereich | Befund | Maßnahme / Status |
 | --- | --- | --- |
@@ -8,7 +8,7 @@ Stand: Version 0.1.0
 | Fehlerfreiheit | SQLite-Fehler waren nicht behandelt | Einheitlicher `DatabaseError` und Exitcode 2 |
 | Inkonsistenzen | Zuvor gab es keine definierte Ausgabe | Stabile Text- und JSON-Strukturen eingeführt |
 | Redundanzen | Pfadprüfung könnte je Befehl doppelt entstehen | Zentral in `validate_database` gebündelt |
-| Vereinheitlichung | Kein verbindlicher Versionsort vorhanden | `project_registry.json` ist alleinige Quelle |
+| Vereinheitlichung | Zwei Versionsschreibweisen können driften | `registry.json` führt PEP-440-Version und Anzeigeversion; Drift-Test gleicht CLI, Doku und Projektregistry ab |
 | Wartbarkeit | Kein Quellcodeaufbau vorhanden | CLI, Kernlogik, Konfiguration und Tests getrennt |
 | Komplexität | Zusätzliche Treiber würden den MVP überladen | Bewusst auf SQLite und Standardbibliothek begrenzt |
 | Prüfungsqualität | Keine Prüfungen vorhanden | Erfolgs-, Validierungs- und JSON-Fehlerfälle getestet |
@@ -120,8 +120,8 @@ Die neuen Tests decken ab:
 
 Gesamtstand:
 
-- 86 Tests unter Python 3.10,
-- 86 Tests unter Python 3.12,
+- 87 Tests unter Python 3.10,
+- 87 Tests unter Python 3.12,
 - Warnungen als Fehler,
 - Quick-Abnahme 11/11,
 - Standard-Abnahme 11/11.
@@ -144,10 +144,11 @@ Run `30927676213`, Funktionscommit
 4. Reale Laienabnahme auf Kubuntu durchführen.
 5. `large`-Profil auf Zielhardware vermessen.
 6. Später grafische Pfadauswahldialoge ergänzen.
+7. Bei der nächsten Release-Erhöhung zuerst `registry.json`, `project_registry.json` und `pyproject.toml` gemeinsam aktualisieren.
 
 ## Fazit
 
-Beide Aufträge sind vollständig umgesetzt und automatisch abgesichert. Vorlagen
+Die Versionierung ist jetzt zusätzlich gegen Drift abgesichert. Beide vorherigen Fachaufträge bleiben vollständig umgesetzt und automatisch abgesichert. Vorlagen
 reduzieren wiederholte Eingaben, ohne sensible oder unnötige Pfade zu speichern.
 Trendgrenzen erhöhen die Sichtbarkeit auffälligen Wachstums, bleiben aber strikt
 rein lesend und frei von automatischen Entscheidungen. Offen bleibt bewusst nur die

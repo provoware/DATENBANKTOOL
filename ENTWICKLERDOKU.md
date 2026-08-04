@@ -2,7 +2,7 @@
 
 ## Aufbau
 
-- `project_registry.json`: verbindlicher Name, Version und Projektstatus.
+- `registry.json`: verbindlicher Name, PEP-440-Paketversion und menschenlesbare Projektversion.
 - `src/datenbanktool/core.py`: validierte, ausgabefreie SQLite-Logik.
 - `src/datenbanktool/cli.py`: Argumente, Text-/JSON-Ausgabe und Exitcodes.
 - `tests/test_cli.py`: fokussierte Integrations- und Logiktests.
@@ -18,16 +18,14 @@ Die Kernlogik öffnet Datenbanken ausschließlich über eine SQLite-URI mit `mod
 
 ## Versionierung und Prüfung
 
-Semantische Versionierung wird verwendet: inkompatible Änderung = Hauptversion, neue kompatible Funktion = Nebenversion, Fehlerkorrektur = Patchversion. Nur `project_registry.json` wird manuell geändert; das Paket liest den Wert daraus.
-
-Der öffentliche Status muss zusätzlich mit `project_registry.json`, `README.md`,
-`TODO.md` und `UPGRADE_POOL.md` abgeglichen bleiben. Oben in der README stehen nur ein
-aktueller Statusblock, die offenen Hauptpunkte und aktuelle CLI-Einstiege.
+Semantische Versionierung wird verwendet: inkompatible Änderung = Hauptversion, neue kompatible Funktion = Nebenversion, Fehlerkorrektur = Patchversion. Technisch verbindlich für Paketmetadaten und `datenbanktool.__version__` ist die PEP-440-Schreibweise `0.13.0a1`. Menschenlesbar wird dieselbe Projektversion als `0.13.0-alpha.1` dokumentiert. `registry.json` führt beide Werte; falls `version` fehlt, ist die einzige dokumentierte Umrechnung `-alpha.` zu `a`.
 
 Vor einem Commit:
 
 ```bash
+python -m json.tool registry.json >/dev/null
 python -m json.tool project_registry.json >/dev/null
+PYTHONPATH=src python -m unittest tests.test_version_registry -v
 PYTHONPATH=src python -m unittest discover -s tests -v
 PYTHONPATH=src python -m datenbanktool --help
 ```
@@ -258,8 +256,8 @@ Geprüft werden unter anderem:
 
 Run `30927676213`, Commit `8ded929533f806c739a7139b47d16379a788cfb0`:
 
-- 86/86 Tests unter Python 3.10,
-- 86/86 Tests unter Python 3.12,
+- 87/87 Tests unter Python 3.10,
+- 87/87 Tests unter Python 3.12,
 - `PYTHONWARNINGS=error`,
 - Quick: 600 Dateien, 11/11, 1,129 s, 1.324.226 Byte Python-Peak,
 - Standard: 10.000 Dateien, 11/11, 18,150 s, 13.398.233 Byte Python-Peak.
@@ -291,4 +289,4 @@ klarer Nicht-Addierbarkeitswarnung darstellen.
 ## Unverändert
 
 `AGENTS.md` wird nicht verändert. Externe Laufzeitabhängigkeiten bleiben bei null.
-Automatische Schreibzugriffe auf gescannte Originaldateien bleiben gesperrt.
+Automatische Schreibzugriffe auf gescannte Originaldateien bleiben gesperrt. Der neue Versionstest schützt CLI, Registry, Projektregistry, Paketmetadaten und Dokumentation gegen Drift.

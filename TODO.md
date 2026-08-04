@@ -54,6 +54,7 @@
 31. [x] 86/86 Tests unter Python 3.10 und 3.12 erfolgreich ausführen.
 32. [x] Quick- und Standard-Abnahme mit jeweils 11/11 Kriterien ausführen.
 33. [x] Version und Pflichtdokumentation auf 0.13.0-alpha.1 synchronisieren.
+34. [x] PEP-440-Paketversion 0.13.0a1 verbindlich in Registry und Drift-Test absichern.
 
 ## Noch offen
 
@@ -67,7 +68,7 @@
 
 ## Direkt folgender technischer Entwicklungsschritt
 
-Geführte Vorlagenverwaltung entwickeln: Zeitreihen-Vorlagen auf der Startseite
+Nächster logischer Schritt: Geführte Vorlagenverwaltung entwickeln: Zeitreihen-Vorlagen auf der Startseite
 zusätzlich anzeigen, bewusst ersetzen und nach Namensprüfung bestätigt löschen können.
 
 ## Alternative Verbesserung mit hohem Nutzen und geringem Risiko
