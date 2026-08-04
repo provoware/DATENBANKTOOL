@@ -19,6 +19,16 @@ class HelpTopic:
 
 
 _TOPICS = {
+    "start": HelpTopic(
+        "start",
+        "Geführte Terminal-Startseite",
+        "Zeigt die wichtigsten Funktionen als nummerierte, erklärte Auswahl.",
+        "Fragt benötigte Pfade und Suchwerte schrittweise ab, zeigt den geplanten Befehl und startet ihn ohne Shell-Auswertung.",
+        "Die Startseite selbst schreibt nichts. Schreibende Index- oder Sicherungsaktionen benötigen eine zusätzliche Bestätigung.",
+        "Gering – jede Aktion zeigt vorher klar, ob nur gelesen oder eine Index-/Sicherungsdatei geschrieben wird.",
+        "Wenn DATENBANKTOOL ohne Kenntnis einzelner Befehle bedient werden soll.",
+        "datenbanktool start",
+    ),
     "folders": HelpTopic(
         "folders",
         "Ordnerübersicht",
