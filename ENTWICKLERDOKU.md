@@ -1,8 +1,8 @@
 # Entwicklerdokumentation
 
-## Architekturstand 0.5.0-alpha.1
+## Architekturstand 0.6.0-alpha.1
 
-Der Datenkern und die Bedienhilfen sind strikt getrennt:
+Der Datenkern, die Präsentation und der Programmeinstieg sind getrennt:
 
 1. Scanner und Indexaufbau.
 2. Inkrementeller Snapshotvergleich.
@@ -11,42 +11,147 @@ Der Datenkern und die Bedienhilfen sind strikt getrennt:
 5. Externe Suchvorlagen-Konfiguration.
 6. Zentrale Präsentationsschicht für Farben und Ampeln.
 7. Zentrale Hilfetexte für Zweck und Auswirkung.
-8. Kommandozeilenoberfläche als dünne Integrationsschicht.
+8. Bestehende argparse-CLI mit Fachhandlern.
+9. Neuer schmaler Programmeinstieg.
+10. Neue geführte Terminal-Startseite.
 
 Originaldatei-Schreibfunktionen bleiben außerhalb dieser Architektur.
 
-## Neue Module
+## Neuer Programmeinstieg
+
+### `entrypoint.py`
+
+Der installierte Konsolenbefehl verweist jetzt auf:
+
+```text
+datenbanktool.entrypoint:main
+```
+
+Der Einstieg besitzt nur drei Aufgaben:
+
+1. `datenbanktool start` an die geführte Startseite weiterleiten.
+2. Einen leeren interaktiven Aufruf ebenfalls an die Startseite weiterleiten.
+3. Alle anderen Argumente unverändert an `datenbanktool.cli.main()` übergeben.
+
+Nicht-interaktive Aufrufe ohne Argumente öffnen kein Menü. Sie geben einen kurzen Nutzungshinweis aus und kehren zurück. Damit entstehen in Pipelines, Tests und umgeleiteten Ein-/Ausgaben keine unbeabsichtigten Warteschleifen.
+
+Auch `python -m datenbanktool` verwendet den neuen Einstiegspunkt.
+
+## Geführte Startseite
+
+### `core/terminal_home.py`
+
+Das Modul enthält keine Scanner-, SQLite- oder Berichtslogik. Es baut ausschließlich sichere Argumentlisten für bereits vorhandene CLI-Befehle.
+
+Zentrale Typen:
+
+- `MenuAction`: unveränderliche Beschreibung einer auswählbaren Funktion.
+- `HomeSession`: merkt Datenbank- und Ordnerpfad innerhalb einer laufenden Menüsitzung.
+- `TerminalHome`: rendert Menü, validiert Eingaben und ruft den injizierten `command_runner` auf.
+- `InputClosed`: kontrolliertes Ende bei geschlossenem Eingabestrom.
+- `UserCancelled`: Rückkehr zum Hauptmenü bei `q` oder `abbrechen`.
+
+### Menükatalog
+
+Der Katalog ist ein unveränderliches Tupel. Jeder Eintrag besitzt:
+
+- eindeutige Nummer,
+- Titel,
+- kurze Beschreibung,
+- Ampelstufe,
+- Wirkungsbezeichnung,
+- konkrete Wirkungsbegründung,
+- internen Buildernamen,
+- Kennzeichen für zusätzliche Bestätigung.
+
+Beim Erzeugen einer `TerminalHome`-Instanz werden doppelte Auswahlnummern erkannt.
+
+### Aktuelle Aktionen
+
+```text
+1 Suche
+2 Ordnerübersicht
+3 Änderungen
+4 Indexstatus
+5 Indexaufbau
+6 Re-Scan
+7 Sicherung
+8 Suchvorlagen
+9 Hilfe
+0 Beenden
+```
+
+Restore und Reparatur sind absichtlich nicht Teil des einfachen Hauptmenüs. Sie besitzen stärkere Auswirkungen auf die Indexdatenbank und bleiben über direkte Befehle sowie `datenbanktool explain` verfügbar.
+
+## Sicherheitsvertrag der Startseite
+
+### Keine Shell-Auswertung
+
+Die Startseite verwendet weder `subprocess` noch `shell=True`. Sie erzeugt zum Beispiel:
+
+```python
+["index", "search", "/pfad/mit leerzeichen/index.sqlite3", "urlaub bilder"]
+```
+
+Diese Liste wird direkt an `cli.main()` übergeben. Der angezeigte Text wird nur mit `shlex.join()` formatiert und niemals ausgeführt.
+
+Folgen:
+
+- Leerzeichen bleiben Teil eines Arguments.
+- Shell-Metazeichen erzeugen keinen zweiten Befehl.
+- Kein unnötiger Unterprozess.
+- Bestehende Parser- und Validierungsregeln bleiben verbindlich.
+
+### Bestätigungsschutz
+
+Folgende Aktionen benötigen nach der Befehlsvorschau eine zusätzliche Ja/Nein-Bestätigung:
+
+- Index neu aufbauen,
+- Re-Scan starten,
+- Sicherung erstellen.
+
+Lesende Funktionen starten ohne zweite Bestätigung. Dadurch bleibt die Bedienung schnell und die Wirkung trotzdem transparent.
+
+### Abbruchverhalten
+
+- `q`, `quit`, `abbrechen`, `zurück` und `zurueck` brechen den aktuellen Dialog ab.
+- Ungültige Menünummern zeigen einen Fehler und wiederholen das Menü.
+- Ein geschlossener Eingabestrom beendet die Startseite mit Rückgabecode 0.
+- `KeyboardInterrupt` beendet sie kontrolliert mit Rückgabecode 130.
+- Ein Fachbefehl mit Rückgabecode ungleich 0 führt nicht zum Absturz der Startseite.
+
+## Testbarkeit
+
+`TerminalHome` erhält vier Abhängigkeiten von außen:
+
+- `command_runner`,
+- `input_stream`,
+- `output_stream`,
+- `error_stream`.
+
+Dadurch können Menüabläufe vollständig mit `StringIO` und einem aufzeichnenden Stub getestet werden. Die Tests erzeugen keine echte Indexdatenbank und führen keine Dateioperationen aus.
+
+Neu geprüfte Fälle:
+
+1. eindeutige Menünummern,
+2. ungültige Auswahl,
+3. sichere Suche mit Leerzeichen in Pfad und Suchtext,
+4. Abbruch einer schreibenden Aktion,
+5. bestätigter Indexaufbau,
+6. geschlossener Eingabestrom,
+7. nicht-interaktiver Leerstart ohne Blockierung,
+8. ausdrücklicher Start und sofortiges Beenden.
+
+Der vollständige Stand besteht 39 Tests unter Python 3.10 und Python 3.12 mit `PYTHONWARNINGS=error`.
+
+## Bestehende Module
 
 ### `core/folders.py`
 
 - Öffnet SQLite über URI `mode=ro`.
 - Aktiviert `PRAGMA query_only`.
-- Wählt ausschließlich abgeschlossene Sitzungen.
-- Aggregiert jeden Dateipfad auf seinen direkten Ordner und alle Vorfahren.
-- Unterscheidet direkte und rekursive Dateizahlen und Größen.
-- Hält je Ordner nur die konfigurierten größten Dateien im Speicher.
-- Berechnet Warnungs- und Duplikatanzahlen.
-- Liefert stabile Filter-, Sortier- und Seitenergebnisse.
-- Exportiert JSON und eigenständiges HTML atomar.
-
-Die Wurzel eines Snapshots wird intern als `.` dargestellt. Ein Dateipfad wird mit `PurePosixPath` verarbeitet, weil Indexpfade unabhängig vom lokalen Betriebssystem als POSIX-Pfade gespeichert sind.
-
-### Ampelvertrag
-
-`TrafficLight` enthält:
-
-- `level`: `green`, `yellow` oder `red`,
-- `label`: verständlicher Status,
-- `reason`: konkrete Begründung.
-
-Die aktuelle Heuristik berücksichtigt:
-
-- Anzahl und Anteil von Namenshinweisen,
-- Anzahl und Anteil von Duplikatmitgliedern,
-- größte Einzeldatei,
-- Konzentration eines Großteils des Ordnerspeichers auf eine Datei.
-
-Wichtig: Die Ampel ist keine Schadens- oder Löschentscheidung. Diese Bedeutung wird in Terminal, README und HTML ausdrücklich beschrieben.
+- Aggregiert direkte und rekursive Ordnerwerte.
+- Liefert größte Dateien, Ampelwerte, Seiten und JSON-/HTML-Export.
 
 ### `core/presentation.py`
 
@@ -60,42 +165,21 @@ Zentrale Ausgabe für:
 
 Farbmodi:
 
-- `auto`: nur bei geeignetem TTY,
-- `always`: Farben erzwingen,
-- `never`: Farben ausschalten.
+- `auto`,
+- `always`,
+- `never`.
 
-`NO_COLOR` besitzt Vorrang vor `auto` und `always`, außer künftige Anforderungen definieren ausdrücklich eine andere Regel. Maschinenlesbare JSON-Ausgaben dürfen nie durch Präsentationsfunktionen laufen.
+Farben sind nie das einzige Signal.
 
 ### `core/presets.py`
 
-Suchvorlagen sind bewusst kein SQLite-Schemaobjekt.
-
-Standardpfad:
-
-```text
-$XDG_CONFIG_HOME/datenbanktool/search-presets.json
-```
-
-Fallback:
-
-```text
-~/.config/datenbanktool/search-presets.json
-```
-
-Sicherheitsvertrag:
-
-- Schema-Version in der JSON-Datei.
-- Strikte Validierung unbekannter Filterfelder.
-- Validierung über `SearchFilter.validate()`.
-- Atomisches Schreiben über temporäre Datei und `replace()`.
-- Temporäre Datei mit Modus `0600`.
-- Ersetzen nur mit `replace=True`.
-- Löschen durch separate Funktion; CLI verlangt `--yes`.
-- Namen werden Unicode-fähig und ohne Groß-/Kleinschreibung verglichen.
+- versionierte JSON-Struktur,
+- strikte Filtervalidierung,
+- atomisches Schreiben,
+- Ersetzen nur mit ausdrücklicher Freigabe,
+- bestätigtes Löschen in der CLI.
 
 ### `core/help_system.py`
-
-Zentrale Hilfetexte verhindern widersprüchliche Beschreibungen zwischen künftiger GUI, CLI und Dokumentation.
 
 Jedes `HelpTopic` enthält:
 
@@ -107,52 +191,29 @@ Jedes `HelpTopic` enthält:
 - geeigneten Anwendungsfall,
 - Beispiel.
 
-Terminal-Hover-Tooltips werden nicht simuliert, weil sie nicht portabel sind. Die robuste Alternative ist sichtbarer Hilfetext plus `datenbanktool explain`.
+Neu hinzugekommen ist das Thema `start`.
 
-## CLI-Integration
+## Codequalitätsentscheidung
 
-Globale Optionen:
+Die Startseite wurde nicht in die bereits große `cli.py` integriert. Dadurch:
+
+- wächst die zentrale Parserdatei nicht weiter,
+- kann interaktive Logik unabhängig getestet werden,
+- bleiben bestehende Handler unverändert,
+- bleibt der Programmeinstieg klein,
+- können künftige GUI- oder TUI-Oberflächen denselben Fachkern verwenden.
+
+Offen bleibt die schrittweise Zerlegung von `cli.py` nach Befehlsgruppen. Vorgeschlagene Zielmodule:
 
 ```text
---color auto|always|never
---hints / --no-hints
+commands/scan_commands.py
+commands/search_commands.py
+commands/report_commands.py
+commands/admin_commands.py
+commands/preset_commands.py
 ```
 
-Neue Befehle:
-
-```text
-datenbanktool explain
-datenbanktool index folders
-datenbanktool index presets list
-datenbanktool index presets show
-datenbanktool index presets save
-datenbanktool index presets delete
-datenbanktool index search --preset NAME
-```
-
-`argparse.RawDescriptionHelpFormatter` erhält mehrzeilige Zweck- und Auswirkungsbeschreibungen. Globale Optionen müssen vor dem Unterbefehl stehen.
-
-## Suchvorlagen-Mergevertrag
-
-Beim Start einer Suche gilt:
-
-1. Ohne Vorlage gelten sichere Standardwerte.
-2. Mit Vorlage werden deren Filter geladen.
-3. Explizit gesetzte CLI-Werte überschreiben die Vorlage.
-4. `page` wird immer pro aktuellem Aufruf bestimmt.
-5. Boolesche Werte verwenden `BooleanOptionalAction`, damit ein Vorlagenwert ausdrücklich ausgeschaltet werden kann.
-6. Datenbank- und Sitzungs-ID werden nicht in der Vorlage gespeichert.
-
-## HTML-Tooltipvertrag
-
-Der Ordnerbericht verwendet:
-
-- `title` für Maus-Hover,
-- `aria-label` für unterstützende Technik,
-- sichtbaren Ampeltext,
-- HTML-Escaping für sämtliche Dateipfade und Gründe,
-- vollständig lokale CSS-Regeln,
-- keine CDN- oder JavaScript-Abhängigkeit.
+Eine zentrale Handlerregistrierung sollte anschließend Unterbefehle, Hilfetexte und Rückgabecodes zusammenführen.
 
 ## Qualitätsprüfungen
 
@@ -161,33 +222,28 @@ python -m compileall -q src tests
 PYTHONWARNINGS=error python -m unittest discover -s tests -v
 ```
 
-Neu abgesicherte Fälle:
+GitHub Actions prüft:
 
-- direkte und rekursive Ordnerwerte,
-- größte Dateien,
-- Ampelstufe mit Begründung,
-- HTML-Tooltip und ARIA-Text,
-- Vorlagen speichern und laden,
-- Überschreibschutz,
-- bestätigtes Löschen,
-- Suchstart über Vorlage,
-- Farbcodes bei erzwungener Farbe,
-- farbfreies JSON,
-- JSON- und HTML-Ordnerexport.
+- Python 3.10,
+- Python 3.12,
+- installierbares Editable-Paket,
+- vollständige Kompilierung,
+- 39 automatisierte Tests.
 
-GitHub Actions prüft Python 3.10 und 3.12 mit `PYTHONWARNINGS=error`.
+Ruff und MyPy sind konfiguriert, aber noch nicht Teil des verpflichtenden Workflows. Dies bleibt ein nächster Codequalitätsblock.
 
 ## Bekannte technische Grenzen
 
-- Ordneraggregation ist derzeit eine Python-Streamingaggregation über die Dateizeilen einer Sitzung. Für Millionen Dateien kann später eine materialisierte Statistik sinnvoll werden.
-- Die Top-Dateiliste sortiert je Ordner eine kleine begrenzte Liste; `top_files` ist deshalb auf 10 begrenzt.
-- Suchvorlagen besitzen noch keinen Prozesslock für konkurrierende Schreiber.
-- Ampelschwellen sind derzeit feste, dokumentierte Standardwerte.
-- HTML besitzt Tooltips, die CLI besitzt sichtbare Hilfen statt Mausinteraktion.
+- `cli.py` ist weiterhin groß.
+- Menü und CLI sind über stabile Argumentnamen gekoppelt; Änderungen benötigen Regressionstests.
+- Pfadfavoriten werden noch nicht dauerhaft gespeichert.
+- Die Startseite bietet keine nativen Dateiauswahldialoge.
+- Ordnerexport besitzt noch kein CSV-Format.
+- Reale Bedienabnahmen in verschiedenen Terminalgrößen und Themes stehen noch aus.
 
 ## Nächster einfacher Entwicklungsblock
 
-Ein nummeriertes Startmenü entwickeln, das sichere Hauptfunktionen auswählbar macht und vor jedem Start Zweck und Auswirkung zeigt.
+Die große `cli.py` schrittweise in kleinere Befehlsmodule aufteilen und dabei Rückgabecodes, Fehlermeldungen und Handlerregistrierung vereinheitlichen.
 
 ## Sichere Zusatzverbesserung
 
