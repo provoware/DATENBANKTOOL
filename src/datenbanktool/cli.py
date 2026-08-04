@@ -10,6 +10,7 @@ from datenbanktool.cli_acceptance import register_acceptance_parser
 from datenbanktool.cli_common import parser
 from datenbanktool.cli_contract import dispatch
 from datenbanktool.cli_folder_compare import register_folder_compare_parser
+from datenbanktool.cli_folder_timeline import register_folder_timeline_parser
 from datenbanktool.cli_help import register_explain_parser
 from datenbanktool.cli_index import register_admin_parsers, register_scan_index_parsers
 from datenbanktool.cli_reports import (
@@ -72,6 +73,7 @@ def build_parser() -> argparse.ArgumentParser:
     register_search_parser(index_subparsers)
     register_index_report_parsers(index_subparsers)
     register_folder_compare_parser(index_subparsers)
+    register_folder_timeline_parser(index_subparsers)
     register_preset_parsers(index_subparsers)
     register_admin_parsers(index_subparsers)
 
