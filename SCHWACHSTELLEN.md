@@ -1,29 +1,35 @@
 # Schwachstellen und aktuelle Grenzen
 
-## Aktuelle Grenzen der Suche
+## Ordnerübersicht
 
-1. FTS5 durchsucht derzeit Dateinamen, Pfade, Endungen, Typen und Warncodes – nicht den Inhalt aller Dateien.
-2. Die normale SQLite-`LIKE`-Suche ist bei sehr großen Beständen langsamer als FTS5.
-3. FTS5 ist von der verwendeten Python-/SQLite-Buildoption abhängig.
-4. Ein FTS5-Index gehört immer zu einer konkreten Scan-Sitzung und muss für neue Sitzungen neu aufgebaut werden.
-5. Pro Seite sind absichtlich höchstens 200 Treffer erlaubt.
-6. Unicode-Groß-/Kleinschreibung der normalen SQLite-Suche ist nicht in allen Sprachen vollständig.
-7. Suchergebnisse besitzen noch keine grafischen Vorschauen.
-8. Ordnergrößen werden noch nicht zusammengefasst.
+1. Die Ampel ist eine Priorisierungshilfe und keine Feststellung, dass Dateien beschädigt sind.
+2. Ein kleiner Ordner mit nur einer auffälligen Datei kann wegen des hohen Anteils Rot erhalten. Die Begründung wird deshalb immer angezeigt.
+3. Unterordner werden für Gesamtwerte absichtlich mehrfach in ihren Elternordnern mitgerechnet. Summen verschiedener Zeilen dürfen daher nicht einfach addiert werden.
+4. Die Ordnerübersicht besitzt derzeit JSON- und HTML-Export, aber noch keinen CSV-Export.
+5. Sehr tiefe Ordnerstrukturen können viele Ergebniszeilen erzeugen; `--max-depth` und Seiten begrenzen die Anzeige.
 
-## Aktuelle Grenzen der Änderungsberichte
+## Farben und Hilfen
 
-1. Ein Änderungsbericht benötigt einen abgeschlossenen Re-Scan mit Baseline.
-2. HTML-Berichte mit sehr vielen Änderungen können groß werden.
-3. Details werden technisch als JSON gespeichert und teilweise noch nicht in Alltagssprache übersetzt.
-4. Berichte zeigen erkannte Änderungen, führen aber keine Dateiaktion aus.
+6. Farben unterscheiden sich je nach Terminal und Farbprofil.
+7. Terminalprogramme bieten keine verlässlichen Maus-Hover-Tooltips. Dort ersetzen Klartexthinweise und `datenbanktool explain` diese Funktion.
+8. Farben dürfen nie allein interpretiert werden; deshalb bleiben Farbnamen, Status und Begründung zwingend sichtbar.
+9. `--color always` erzeugt bewusst ANSI-Codes und sollte nicht für maschinenlesbare Textweitergabe verwendet werden. JSON-Ausgaben bleiben davon ausgenommen.
 
-## Weiterhin kritisch vor Dateiänderungen
+## Suchvorlagen
 
-- keine vollständige Planungsengine,
-- keine Kollisionsprüfung,
-- kein Undo-Manifest für Dateioperationen,
-- keine Quarantäne,
-- keine getestete Wiederherstellung halbfertiger Dateioperationen.
+10. Vorlagen gelten derzeit lokal für einen Benutzer und werden noch nicht automatisch zwischen Rechnern übertragen.
+11. Die Konfigurationsdatei ist JSON. Manuelle fehlerhafte Änderungen werden erkannt, aber noch nicht automatisch repariert.
+12. Vorlagen speichern Filter, nicht die gewählte Datenbank. Dadurch bleiben sie portabel, benötigen beim Start aber weiterhin einen Indexpfad.
+13. Gleichzeitiges Schreiben derselben Vorlagendatei durch mehrere Prozesse besitzt noch keinen eigenen Prozesslock; atomarer Dateiaustausch verhindert jedoch halbe Dateien.
 
-Deshalb bleiben Verschieben, Umbenennen und Löschen weiterhin gesperrt.
+## Allgemeine Projektgrenzen
+
+14. Es gibt noch keine grafische Oberfläche mit Schaltflächen und nativen Tooltips.
+15. Schreibende Originaldateioperationen sind weiterhin bewusst gesperrt.
+16. Medieninhalte werden noch nicht als Vorschau angezeigt.
+17. FTS5 durchsucht Metadaten, nicht automatisch den vollständigen Inhalt aller Dateien.
+18. Der Entwicklungsstand ist Alpha und benötigt vor einem stabilen Release zusätzliche Last-, Bedien- und reale Datenträgertests.
+
+## Sicherheitsfazit
+
+Keine bekannte Grenze rechtfertigt das Freischalten automatischer Dateiänderungen. Analyse, Suche, Ordnerübersicht, Ampeln und Vorlagen bleiben von Originaldatei-Schreibzugriffen getrennt.
