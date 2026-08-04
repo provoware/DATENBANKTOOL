@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "project": "DATENBANKTOOL",
-  "version": "0.10.0-alpha.1",
-  "phase": "folder-csv-and-reproducible-acceptance",
+  "version": "0.11.0-alpha.1",
+  "phase": "folder-timeline-and-complete-comparison-exports",
   "development_progress_percent": 99,
-  "completed_main_items": 45,
+  "completed_main_items": 47,
   "open_main_items": 1,
   "runtime": {
     "python": ">=3.10",
@@ -21,7 +21,8 @@
     "read_only_search": true,
     "optional_fts5_metadata_index": true,
     "read_only_folder_statistics": true,
-    "read_only_folder_comparison": true
+    "read_only_folder_comparison": true,
+    "read_only_folder_timeline": true
   },
   "safety_defaults": {
     "filesystem_mode": "read-only",
@@ -34,7 +35,13 @@
     "folder_csv_modifies_database": false,
     "folder_comparison_modifies_database": false,
     "folder_comparison_requires_same_root": true,
-    "comparison_reports_overwrite": false,
+    "folder_comparison_all_pages_requires_export": true,
+    "folder_timeline_modifies_database": false,
+    "folder_timeline_reads_original_files": false,
+    "folder_timeline_requires_same_root": true,
+    "folder_timeline_rejects_parent_navigation": true,
+    "folder_timeline_minimum_sessions": 2,
+    "reports_overwrite": false,
     "acceptance_writes_only_new_workspace": true,
     "acceptance_reuses_existing_workspace": false,
     "acceptance_modifies_personal_files": false,
@@ -78,7 +85,12 @@
     "folder_comparison": "alpha",
     "folder_growth_classification": "alpha",
     "folder_comparison_exports": "alpha",
+    "all_page_folder_comparison_exports": "alpha",
     "folder_comparison_help": "alpha",
+    "folder_timeline": "alpha",
+    "folder_timeline_exports": "alpha",
+    "folder_timeline_classic_help": "alpha",
+    "folder_timeline_guided_help": "planned",
     "acceptance_profiles": "alpha",
     "synthetic_large_dataset": "alpha",
     "performance_thresholds": "alpha",
@@ -102,6 +114,7 @@
     "modular_cli_reports": "alpha",
     "modular_cli_index": "alpha",
     "modular_cli_acceptance": "alpha",
+    "modular_cli_folder_timeline": "alpha",
     "command_policy_contract": "alpha",
     "global_maintenance_rules": "enforced",
     "architecture_guardrails": "enforced",
@@ -111,16 +124,19 @@
   "architecture_limits": {
     "cli_entry_max_lines": 150,
     "cli_module_max_lines": 500,
+    "folder_timeline_max_points": 500,
     "shell_execution_allowed": false,
     "cyclic_cli_imports_allowed": false
   },
   "validation": {
-    "python_3_10_tests": 66,
-    "python_3_12_tests": 66,
+    "python_3_10_tests": 71,
+    "python_3_12_tests": 71,
     "warnings_as_errors": true,
     "compileall": true,
     "architecture_tests": 6,
-    "quick_acceptance": {
+    "folder_timeline_tests": 3,
+    "complete_comparison_export_tests": 2,
+    "quick_acceptance_baseline": {
       "reference_commit": "1ebc892d83642d42516da76919cec0c69c036b32",
       "file_count": 600,
       "checks_passed": 11,
@@ -129,7 +145,7 @@
       "peak_python_memory_bytes": 1326097,
       "artifact_id": 8895038828
     },
-    "standard_acceptance": {
+    "standard_acceptance_baseline": {
       "reference_commit": "1ebc892d83642d42516da76919cec0c69c036b32",
       "file_count": 10000,
       "checks_passed": 11,
