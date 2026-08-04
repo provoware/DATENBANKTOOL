@@ -37,14 +37,7 @@ In der Startseite `?` vor die Funktionsnummer setzen:
 ?7   Details zur Sicherung
 ```
 
-Die Detailhilfe nennt:
-
-- Zweck,
-- tatsächliche Schreibwirkung,
-- Risiko,
-- Voraussetzungen,
-- Erfolgskontrolle,
-- Beispielbefehl.
+Die Detailhilfe nennt Zweck, tatsächliche Schreibwirkung, Risiko, Voraussetzungen, Erfolgskontrolle und Beispielbefehl.
 
 ### Ebene 3: Schritt-für-Schritt-Hilfe
 
@@ -123,8 +116,6 @@ h  Hilfezentrum
 0  Beenden
 ```
 
-Zusätzliche Eingaben:
-
 | Eingabe | Wirkung |
 |---|---|
 | `?NUMMER` | ausführliche Hilfe zur Funktion |
@@ -145,39 +136,23 @@ Farben stehen nie allein. Farbnamen, Statuswort und Begründung bleiben immer si
 
 ## Wichtige Direktbefehle
 
-### Index aufbauen
-
 ```bash
+# Index aufbauen
 datenbanktool index build ~/Daten --database index.sqlite3
-```
 
-### Erneut prüfen
-
-```bash
+# Erneut prüfen
 datenbanktool index rescan ~/Daten --database index.sqlite3
-```
 
-### Dateien suchen
-
-```bash
+# Dateien suchen
 datenbanktool index search index.sqlite3 urlaub
-```
 
-### Ordnerübersicht
-
-```bash
+# Ordnerübersicht
 datenbanktool index folders index.sqlite3
-```
 
-### Änderungen anzeigen
-
-```bash
+# Änderungen anzeigen
 datenbanktool index changes index.sqlite3
-```
 
-### Index sichern
-
-```bash
+# Index sichern
 datenbanktool index backup index.sqlite3 --output backup.sqlite3
 ```
 
