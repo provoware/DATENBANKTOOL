@@ -39,6 +39,16 @@ _TOPICS = {
         "Wenn Speicherfresser, unübersichtliche Ordner oder Häufungen von Namensproblemen gefunden werden sollen.",
         "datenbanktool index folders index.sqlite3 --max-depth 2",
     ),
+    "folder-compare": HelpTopic(
+        "folder-compare",
+        "Ordnervergleich",
+        "Zeigt, welche Ordner zwischen zwei abgeschlossenen Scans gewachsen oder kleiner geworden sind.",
+        "Vergleicht Dateizahl und rekursive Gesamtgröße pro Ordner. Ohne Sitzungsnummern wird automatisch das neueste passende Scan-Paar desselben Stammordners gewählt.",
+        "Keine Änderung an Index oder Originaldateien. Nur ausdrücklich gewählte JSON-, CSV- oder HTML-Berichte werden erstellt.",
+        "Sehr gering – reine Auswertung.",
+        "Wenn Speicherwachstum, Rückgang, neue oder nicht mehr vorhandene Ordner nachvollzogen werden sollen.",
+        "datenbanktool index folder-compare index.sqlite3",
+    ),
     "search": HelpTopic(
         "search",
         "Dateisuche",
