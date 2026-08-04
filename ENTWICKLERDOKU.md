@@ -5,33 +5,41 @@
 Startseitenpunkt 12 bündelt die Zeitreihen-Vorlagenverwaltung. Die geführte Logik nutzt die bestehende Vorlagendomäne für Lesen und Namensprüfung und übergibt Schreibaktionen weiter an die vorhandenen CLI-Befehle. Löschen verlangt eine exakte Namenswiederholung und eine Ja/Nein-Bestätigung; Vorlagen speichern weiterhin keine Datenbankpfade.
 
 ## Aufbau
+Stand: Version 0.13.0-alpha.1
 
-- `registry.json`: verbindlicher Name und Version.
+- `registry.json`: verbindlicher Name, PEP-440-Paketversion und menschenlesbare Projektversion.
 - `src/datenbanktool/core.py`: validierte, ausgabefreie SQLite-Logik.
 - `src/datenbanktool/cli.py`: Argumente, Text-/JSON-Ausgabe und Exitcodes.
 - `tests/test_cli.py`: fokussierte Integrations- und Logiktests.
 
-Die Kernlogik öffnet Datenbanken ausschließlich über eine SQLite-URI mit `mode=ro`. Benutzerwerte werden nicht in SQL-Text eingesetzt. Neue Ausgabeformen sollen Daten aus `core.py` formatieren, statt Datenbankzugriffe zu duplizieren.
+- `project_registry.json`: fachlicher Projektstand, Module, Sicherheitsvertrag und Prüfungsreferenzen.
+- `registry.json`: Paketname und aktuelle Paketversion.
+- `src/datenbanktool/`: modulare CLI-, Kernlogik-, Hilfe-, Export- und Testdatenlogik.
+- `tests/`: fokussierte Unit-, Integrations-, Architektur- und Abnahmetests.
 
 ## Schnittstellenvertrag
 
 - Erfolgreiche Befehle liefern Exitcode `0`.
 - Validierungs- und Datenbankfehler liefern Exitcode `2`.
-- Im JSON-Modus ist ein Fehler ein Objekt mit dem Schlüssel `error`.
-- `list_tables` liefert Tabellen und Spalten alphabetisch beziehungsweise in Spaltenreihenfolge.
+- Schreibende Originaldateioperationen bleiben gesperrt.
+- Konfigurationsschreibzugriffe müssen ausdrücklich deklariert und bestätigt sein.
+- JSON-Ausgaben bleiben maschinenlesbar und enthalten Fehler als klare Felder.
 
 ## Versionierung und Prüfung
 
-Semantische Versionierung wird verwendet: inkompatible Änderung = Hauptversion, neue kompatible Funktion = Nebenversion, Fehlerkorrektur = Patchversion. Nur `registry.json` wird manuell geändert; das Paket liest den Wert daraus.
+Semantische Versionierung wird verwendet: inkompatible Änderung = Hauptversion, neue kompatible Funktion = Nebenversion, Fehlerkorrektur = Patchversion. Technisch verbindlich für Paketmetadaten und `datenbanktool.__version__` ist die PEP-440-Schreibweise `0.13.0a1`. Menschenlesbar wird dieselbe Projektversion als `0.13.0-alpha.1` dokumentiert. `registry.json` führt beide Werte; falls `version` fehlt, ist die einzige dokumentierte Umrechnung `-alpha.` zu `a`.
 
-Vor einem Commit:
+Vor einem Commit mit Codeänderung:
 
 ```bash
 python -m json.tool registry.json >/dev/null
+python -m json.tool project_registry.json >/dev/null
+PYTHONPATH=src python -m unittest tests.test_version_registry -v
 PYTHONPATH=src python -m unittest discover -s tests -v
 PYTHONPATH=src python -m datenbanktool --help
 ```
-## Architekturstand 0.13.0-alpha.1
+
+## Architekturstand 0.13.0-alpha.2
 
 Diese Iteration ergänzt zwei getrennte Fachverträge:
 
@@ -47,7 +55,9 @@ Gezielt erweiterte Module:
 
 - `core/folder_timeline.py` – Datei- und Größenprozente sowie Schwellenklassifikation,
 - `cli_folder_timeline.py` – `--preset` und Warnschwellenoptionen,
-- `core/guided_home.py` – Vorlagenauswahl, Punkt 12 und Schwellenfelder,
+- `core/guided_home.py` – orchestrierende Startseitenklasse für I/O, Hilfe und Befehlsaufbau,
+- `core/guided_home_catalog.py` – Menüaktionen und Feldhilfen,
+- `core/guided_home_input.py` – Parser für Ganzzahlen, Prozentwerte und Berichtsformate,
 - `core/folder_timeline_exports.py` – Warnfelder in JSON, CSV und HTML,
 - `core/folder_timeline_charts.py` – sichtbare und zugängliche SVG-Warnmarken,
 - `core/folder_timeline_help.py` – gemeinsame Vorlagen- und Schwellenhilfe.
@@ -258,8 +268,8 @@ Geprüft werden unter anderem:
 
 Run `30927676213`, Commit `8ded929533f806c739a7139b47d16379a788cfb0`:
 
-- 86/86 Tests unter Python 3.10,
-- 86/86 Tests unter Python 3.12,
+- 87/87 Tests unter Python 3.10,
+- 87/87 Tests unter Python 3.12,
 - `PYTHONWARNINGS=error`,
 - Quick: 600 Dateien, 11/11, 1,129 s, 1.324.226 Byte Python-Peak,
 - Standard: 10.000 Dateien, 11/11, 18,150 s, 13.398.233 Byte Python-Peak.
@@ -292,3 +302,7 @@ klarer Nicht-Addierbarkeitswarnung darstellen.
 
 `AGENTS.md` wird nicht verändert. Externe Laufzeitabhängigkeiten bleiben bei null.
 Automatische Schreibzugriffe auf gescannte Originaldateien bleiben gesperrt.
+
+## Wartungsnotiz 0.13.0-alpha.2
+
+Der CLI-Dateikopf darf nur einen Modul-Docstring und danach `from __future__ import annotations` enthalten. Historische CLI-Stubs dürfen nicht vor diesem Import stehen. Parser für die geführte Startseite sollen rein bleiben und ohne Streams testbar sein; Eingabe- und Ausgabeschleifen verbleiben in `TerminalHome`.

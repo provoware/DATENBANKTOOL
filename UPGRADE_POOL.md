@@ -7,12 +7,23 @@
 
 | Priorität | Upgrade | Nutzen | Voraussetzung |
 | --- | --- | --- | --- |
-| Hoch | CSV-Export | Ergebnisse einfach weitergeben | sichere Zielpfad- und Überschreibprüfung |
+| Hoch | Geführte Vorlagenverwaltung | Vorlagen ohne direkte CLI verwalten | Anzeigen, Ersetzen und Löschen laienfreundlich spezifizieren |
 | Mittel | PostgreSQL-Anbindung | Serverdatenbanken analysieren | Treiber- und Geheimnisverwaltung festlegen |
 | Mittel | Schema-Vergleich | Änderungen zwischen zwei Ständen erkennen | stabiles neutrales Schemamodell |
 | Niedrig | Barrierefreie GUI | Nutzung ohne Kommandozeile | Bedienkonzept und GUI-Technik auswählen |
 
 Upgrades werden erst umgesetzt, wenn Eingaben, Ausgaben und Fehlerfälle spezifiziert sind.
+Stand: Version 0.13.0-alpha.1
+
+Upgrades werden erst umgesetzt, wenn Eingaben, Ausgaben, Fehlerfälle und der passende Registry-Eintrag spezifiziert sind.
+
+## Einheitlich offene Punkte
+
+1. reale Laienabnahme,
+2. `large`-Profil auf Zielhardware,
+3. geführte Vorlagenverwaltung,
+4. Mehrordner-Zeitreihe.
+
 ## Einfach verständliche nächste Verbesserungen
 
 1. **Geführte Vorlagenverwaltung** – Vorlagen auf der Startseite anzeigen, bewusst
@@ -54,3 +65,5 @@ Upgrades werden erst umgesetzt, wenn Eingaben, Ausgaben und Fehlerfälle spezifi
 - Trennung von Verlaufsklassifikation und Warnstatus.
 - Reproduzierbare Abnahmeprofile mit 600, 10.000 und 100.000 Dateien.
 - 0.13-Funktionsprüfung mit 86 Tests je Python-Version sowie Quick und Standard 11/11.
+- Startseiten-Kataloge und Eingabeparser in kleine Wartungsmodule getrennt.
+- CLI-Importkopf bereinigt und Parser-Fehlerfälle gezielt getestet.

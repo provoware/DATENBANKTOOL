@@ -5,6 +5,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Sequence, TextIO
 
+from datenbanktool.core.guided_home_catalog import FIELD_HELP, ACTIONS, MenuAction
+from datenbanktool.core.guided_home_input import (
+    InputParseError,
+    parse_optional_integer,
+    parse_optional_percent,
+    parse_report_format,
+)
 from datenbanktool.core.folder_timeline_help import (
     timeline_error_help,
     timeline_preset_error_help,
@@ -31,14 +38,6 @@ class InputClosed(Exception):
 
 class UserCancelled(Exception):
     """Raised when the user cancels the current guided action."""
-
-
-@dataclass(frozen=True, slots=True)
-class MenuAction:
-    key: str
-    help_topic: str
-    builder_name: str
-    confirmation_required: bool = False
 
 
 @dataclass(slots=True)
@@ -167,7 +166,7 @@ def _error_help(topic_name: str, exit_code: int) -> tuple[str, ...]:
 
 def menu_actions() -> tuple[MenuAction, ...]:
     """Return the immutable, ordered home-screen action catalogue."""
-    return _ACTIONS
+    return ACTIONS
 
 
 class TerminalHome:
@@ -190,10 +189,10 @@ class TerminalHome:
         self.color_mode = color_mode
         self.timeline_preset_path = timeline_preset_path
         self.session = HomeSession()
-        keys = [action.key for action in _ACTIONS]
+        keys = [action.key for action in ACTIONS]
         if len(keys) != len(set(keys)):
             raise RuntimeError("Menü enthält doppelte Auswahlnummern")
-        for action in _ACTIONS:
+        for action in ACTIONS:
             _get_topic(action.help_topic)
 
     def _write(self, text: str = "", *, error: bool = False) -> None:
@@ -267,19 +266,15 @@ class TerminalHome:
             if not value:
                 return default
             try:
-                number = int(value)
-            except ValueError:
-                self._write("Bitte eine ganze Zahl eingeben.", error=True)
-                continue
-            if number < minimum or (maximum is not None and number > maximum):
-                range_text = (
-                    f"zwischen {minimum} und {maximum}"
-                    if maximum is not None
-                    else f"ab {minimum}"
+                return parse_optional_integer(
+                    value,
+                    minimum=minimum,
+                    maximum=maximum,
+                    default=default,
                 )
-                self._write(f"Bitte eine Zahl {range_text} eingeben.", error=True)
+            except InputParseError as error:
+                self._write(str(error), error=True)
                 continue
-            return number
 
     def _optional_float(
         self,
@@ -297,40 +292,21 @@ class TerminalHome:
             if not value:
                 return None
             try:
-                number = float(value.replace(",", "."))
-            except ValueError:
-                self._write("Bitte eine Zahl eingeben.", error=True)
+                return parse_optional_percent(value, minimum=minimum, maximum=maximum)
+            except InputParseError as error:
+                self._write(str(error), error=True)
                 continue
-            if number != number or number in {float("inf"), float("-inf")}:
-                self._write("Bitte eine endliche Zahl eingeben.", error=True)
-                continue
-            if not minimum <= number <= maximum:
-                self._write(
-                    f"Bitte eine Zahl zwischen {minimum:g} und {maximum:g} eingeben.",
-                    error=True,
-                )
-                continue
-            return number
 
     def _report_format(self) -> str:
-        aliases = {
-            "": "none",
-            "kein": "none",
-            "keiner": "none",
-            "ohne": "none",
-            "none": "none",
-            "json": "json",
-            "csv": "csv",
-            "html": "html",
-        }
         while True:
             value = self._read(
                 "Optionaler Bericht [kein/json/csv/html, Standard kein, ? Hilfe]: ",
-                help_text=_FIELD_HELP["timeline_report"],
-            ).casefold()
-            if value in aliases:
-                return aliases[value]
-            self._write("Bitte kein, json, csv oder html eingeben.", error=True)
+                help_text=FIELD_HELP["timeline_report"],
+            )
+            try:
+                return parse_report_format(value)
+            except InputParseError as error:
+                self._write(str(error), error=True)
 
     def _yes_no(
         self,
@@ -357,7 +333,7 @@ class TerminalHome:
         value = self._required(
             "Pfad zur Indexdatenbank",
             self.session.last_database,
-            help_text=_FIELD_HELP["database"],
+            help_text=FIELD_HELP["database"],
         )
         self.session.last_database = value
         return value
@@ -366,7 +342,7 @@ class TerminalHome:
         value = self._required(
             "Zu prüfender Ordner",
             self.session.last_root,
-            help_text=_FIELD_HELP["root"],
+            help_text=FIELD_HELP["root"],
         )
         self.session.last_root = value
         return value
@@ -375,11 +351,11 @@ class TerminalHome:
         command = ["index", "search", self._database()]
         text = self._optional(
             "Suchwort oder mehrere Wörter",
-            help_text=_FIELD_HELP["search_text"],
+            help_text=FIELD_HELP["search_text"],
         )
         preset = self._optional(
             "Name einer gespeicherten Suchvorlage",
-            help_text=_FIELD_HELP["preset"],
+            help_text=FIELD_HELP["preset"],
         )
         if text:
             command.append(text)
@@ -406,7 +382,7 @@ class TerminalHome:
         ]
         if self._yes_no(
             "Exakte Duplikate über Prüfsummen erkennen?",
-            help_text=_FIELD_HELP["hash_duplicates"],
+            help_text=FIELD_HELP["hash_duplicates"],
         ):
             command.append("--hash-duplicates")
         return command
@@ -424,7 +400,7 @@ class TerminalHome:
         command = ["index", "backup", self._database()]
         output = self._optional(
             "Zielpfad der Sicherung; leer erzeugt automatisch einen Namen",
-            help_text=_FIELD_HELP["backup_output"],
+            help_text=FIELD_HELP["backup_output"],
         )
         if output:
             command.extend(("--output", output))
@@ -456,7 +432,7 @@ class TerminalHome:
         while True:
             value = self._optional(
                 "Vorlage als Nummer oder Name; leer für manuell",
-                help_text=_FIELD_HELP["timeline_preset_choice"],
+                help_text=FIELD_HELP["timeline_preset_choice"],
             )
             if not value:
                 return None
@@ -485,7 +461,7 @@ class TerminalHome:
         folder = self._required(
             "Relativer Ordner im Scan",
             default_folder,
-            help_text=_FIELD_HELP["timeline_folder"],
+            help_text=FIELD_HELP["timeline_folder"],
         )
         self.session.last_timeline_folder = folder
         command = ["index", "folder-timeline", database]
@@ -497,30 +473,30 @@ class TerminalHome:
             command.append(folder)
         from_session = self._optional_integer(
             "Älteste Scan-ID",
-            help_text=_FIELD_HELP["timeline_from_session"],
+            help_text=FIELD_HELP["timeline_from_session"],
             minimum=1,
         )
         to_session = self._optional_integer(
             "Neueste Scan-ID",
-            help_text=_FIELD_HELP["timeline_to_session"],
+            help_text=FIELD_HELP["timeline_to_session"],
             minimum=1,
         )
         limit = self._optional_integer(
             "Höchste Zahl der Zeitpunkte",
-            help_text=_FIELD_HELP["timeline_limit"],
+            help_text=FIELD_HELP["timeline_limit"],
             minimum=2,
             maximum=500,
             default=100,
         )
         size_threshold = self._optional_float(
             "Warnschwelle Größenwachstum in Prozent",
-            help_text=_FIELD_HELP["timeline_size_threshold"],
+            help_text=FIELD_HELP["timeline_size_threshold"],
             minimum=0,
             maximum=1_000_000,
         )
         file_threshold = self._optional_float(
             "Warnschwelle Dateizahlwachstum in Prozent",
-            help_text=_FIELD_HELP["timeline_file_threshold"],
+            help_text=FIELD_HELP["timeline_file_threshold"],
             minimum=0,
             maximum=1_000_000,
         )
@@ -538,7 +514,7 @@ class TerminalHome:
         if report_format != "none":
             report_path = self._required(
                 f"Zielpfad für {report_format.upper()}",
-                help_text=_FIELD_HELP["timeline_report_path"],
+                help_text=FIELD_HELP["timeline_report_path"],
             )
             command.extend((f"--{report_format}", report_path))
         return command
@@ -546,16 +522,16 @@ class TerminalHome:
     def _build_timeline_preset_save(self) -> list[str]:
         name = self._required(
             "Name der neuen Zeitreihen-Vorlage",
-            help_text=_FIELD_HELP["timeline_preset_name"],
+            help_text=FIELD_HELP["timeline_preset_name"],
         )
         folder = self._required(
             "Relativer Ordner für die Vorlage",
             self.session.last_timeline_folder,
-            help_text=_FIELD_HELP["timeline_folder"],
+            help_text=FIELD_HELP["timeline_folder"],
         )
         description = self._optional(
             "Kurze Beschreibung",
-            help_text=_FIELD_HELP["timeline_preset_description"],
+            help_text=FIELD_HELP["timeline_preset_description"],
         )
         command = ["index", "timeline-presets", "save", name, folder]
         if description:
@@ -755,7 +731,7 @@ class TerminalHome:
         self._write("Nummer wählen. h = Hilfe, ?NUMMER = Details, gNUMMER = Anleitung.")
         self._write("q bricht den aktuellen Schritt ab, 0 beendet das Tool.")
         self._write("=" * 72)
-        for action in _ACTIONS:
+        for action in ACTIONS:
             topic = _get_topic(action.help_topic)
             if action.confirmation_required:
                 light = TrafficLight("yellow", "Bestätigung nötig", topic.writes)
@@ -775,7 +751,7 @@ class TerminalHome:
         self._write("0. Beenden")
 
     def run(self) -> int:
-        actions = {action.key: action for action in _ACTIONS}
+        actions = {action.key: action for action in ACTIONS}
         while True:
             self._render()
             try:
@@ -798,7 +774,7 @@ class TerminalHome:
                 self._write("  " + shlex.join(["datenbanktool", *command]))
                 if action.confirmation_required and not self._yes_no(
                     "Diesen Schritt jetzt starten?",
-                    help_text=_FIELD_HELP["confirmation"],
+                    help_text=FIELD_HELP["confirmation"],
                 ):
                     self._write("Nicht ausgeführt. Zurück zur Startseite.")
                     continue

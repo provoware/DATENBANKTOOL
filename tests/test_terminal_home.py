@@ -5,6 +5,12 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
 
+from datenbanktool.core.guided_home_input import (
+    InputParseError,
+    parse_optional_integer,
+    parse_optional_percent,
+    parse_report_format,
+)
 from datenbanktool.core.terminal_home import TerminalHome, menu_actions
 from datenbanktool.core.timeline_presets import save_timeline_preset
 from datenbanktool.entrypoint import main as entrypoint_main
@@ -42,6 +48,24 @@ class TerminalHomeTests(unittest.TestCase):
         self.assertEqual(actions["12"].help_topic, "timeline-presets")
         self.assertEqual(actions["12"].builder_name, "timeline_presets_manage")
         self.assertTrue(actions["12"].confirmation_required)
+
+    def test_guided_home_input_parsers_keep_existing_values(self) -> None:
+        self.assertEqual(parse_optional_integer("500", minimum=2, maximum=500), 500)
+        self.assertEqual(parse_optional_integer("", minimum=2, default=100), 100)
+        self.assertEqual(
+            parse_optional_percent("25,5", minimum=0, maximum=1_000_000),
+            25.5,
+        )
+        self.assertEqual(parse_report_format("HTML"), "html")
+        self.assertEqual(parse_report_format(""), "none")
+
+    def test_guided_home_input_parsers_reject_invalid_values(self) -> None:
+        with self.assertRaisesRegex(InputParseError, "ganze Zahl"):
+            parse_optional_integer("abc", minimum=1)
+        with self.assertRaisesRegex(InputParseError, "endliche Zahl"):
+            parse_optional_percent("inf", minimum=0, maximum=1_000_000)
+        with self.assertRaisesRegex(InputParseError, "kein, json, csv oder html"):
+            parse_report_format("pdf")
 
     def test_invalid_selection_returns_to_menu(self) -> None:
         home, output, error, calls = self.home("99\n0\n")
