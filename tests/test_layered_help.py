@@ -57,6 +57,15 @@ class LayeredHelpTests(unittest.TestCase):
         self.assertEqual(calls, [])
         self.assertIn("Schritt für Schritt", output.getvalue())
 
+    def test_timeline_detail_and_guided_selection_are_connected(self) -> None:
+        home, output, error, calls = self.home("?11\ng11\n0\n")
+        self.assertEqual(home.run(), 0)
+        self.assertEqual(calls, [])
+        self.assertIn("Ordner-Zeitreihe", output.getvalue())
+        self.assertIn("Absolute Pfade", output.getvalue())
+        self.assertIn("Schritt für Schritt", output.getvalue())
+        self.assertEqual(error.getvalue(), "")
+
     def test_question_mark_explains_current_field(self) -> None:
         home, output, error, calls = self.home(
             "1\n?\n/tmp/index.sqlite3\n\n\n0\n"
@@ -75,6 +84,27 @@ class LayeredHelpTests(unittest.TestCase):
         self.assertIn("Fehlerhilfe", error.getvalue())
         self.assertIn("--level guided", error.getvalue())
 
+    def test_failed_timeline_shows_specific_error_help(self) -> None:
+        home, output, error, calls = self.home(
+            "11\n/tmp/index.sqlite3\n.\n\n\n\n\n0\n",
+            result=2,
+        )
+        self.assertEqual(home.run(), 0)
+        self.assertEqual(
+            calls[0],
+            [
+                "index",
+                "folder-timeline",
+                "/tmp/index.sqlite3",
+                ".",
+                "--limit",
+                "100",
+            ],
+        )
+        self.assertIn("Ordner-Zeitreihe wurde mit Fehlercode 2", error.getvalue())
+        self.assertIn("mindestens zwei", error.getvalue())
+        self.assertIn("folder-timeline --level guided", error.getvalue())
+
     def test_standalone_guided_help_command(self) -> None:
         output = StringIO()
         error = StringIO()
@@ -86,6 +116,29 @@ class LayeredHelpTests(unittest.TestCase):
         self.assertEqual(result, 0)
         self.assertIn("Schritt für Schritt", output.getvalue())
         self.assertEqual(error.getvalue(), "")
+
+    def test_standalone_timeline_help_and_search(self) -> None:
+        output = StringIO()
+        error = StringIO()
+        result = run_help_command(
+            ["folder-timeline", "--level", "guided"],
+            output_stream=output,
+            error_stream=error,
+        )
+        self.assertEqual(result, 0)
+        self.assertIn("Ordner-Zeitreihe", output.getvalue())
+        self.assertIn("Schritt für Schritt", output.getvalue())
+        self.assertIn("Trendgrafiken", output.getvalue())
+        self.assertEqual(error.getvalue(), "")
+
+        found = StringIO()
+        result = run_help_command(
+            ["--find", "Speicherentwicklung"],
+            output_stream=found,
+            error_stream=StringIO(),
+        )
+        self.assertEqual(result, 0)
+        self.assertIn("folder-timeline", found.getvalue())
 
     def test_standalone_help_finds_topic(self) -> None:
         output = StringIO()
