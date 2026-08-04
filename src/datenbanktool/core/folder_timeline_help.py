@@ -28,7 +28,7 @@ FOLDER_TIMELINE_TOPIC = HelpTopic(
         "Der Ordnerpfad ist relativ zum gescannten Stammordner; '.' bedeutet alles.",
         "Eine gespeicherte Zeitreihen-Vorlage kann den relativen Ordner liefern.",
         "Absolute Pfade und '..' werden aus Sicherheitsgründen abgelehnt.",
-        "Trendgrenzen vergleichen nur positives Wachstum mit dem vorherigen sichtbaren Scan.",
+        "Optionale Warnschwellen dienen als Trendgrenzen und vergleichen nur positives Wachstum mit dem vorherigen sichtbaren Scan.",
         "Elternordner enthalten bewusst alle Dateien ihrer Unterordner.",
     ),
     steps=(
@@ -37,10 +37,10 @@ FOLDER_TIMELINE_TOPIC = HelpTopic(
         "Relativen Ordnerpfad prüfen oder '.' für den gesamten Scan verwenden.",
         "Optional älteste und neueste Scan-ID festlegen.",
         "Anzahl der Zeitpunkte zwischen 2 und 500 wählen.",
-        "Optional Prozentgrenzen für Größen- und Dateizahlwachstum eingeben.",
+        "Optional Warnschwellen für Größen- und Dateizahlwachstum eingeben.",
         "Optional JSON, CSV oder HTML samt neuem Berichtspfad auswählen.",
         "Geplanten Befehl prüfen und die chronologische Ausgabe lesen.",
-        "Bei ROT immer Messwert, Schwelle und Klartextbegründung gemeinsam lesen.",
+        "Bei ROT immer Messwert, Warnschwelle und Klartextbegründung gemeinsam lesen.",
         "Bei HTML zusätzlich lokale Trendgrafiken und vollständige Wertetabelle prüfen.",
     ),
     success=(
@@ -52,7 +52,7 @@ FOLDER_TIMELINE_TOPIC = HelpTopic(
         "Vorlage fehlt: Namen mit 'timeline-presets list' prüfen.",
         "Keine passenden Sitzungen: Scan-IDs und gemeinsamen Stammordner kontrollieren.",
         "Ungültiger Ordnerpfad: führenden Schrägstrich und '..' entfernen.",
-        "Ungültige Trendgrenze: endliche Zahl zwischen 0 und 1000000 Prozent verwenden.",
+        "Ungültige Warnschwelle: endliche Zahl zwischen 0 und 1000000 Prozent verwenden.",
         "Ordner bleibt bei null: Schreibweise und Groß-/Kleinschreibung im Scan prüfen.",
         "Bericht existiert bereits: neuen Namen wählen oder bewusst --overwrite-report nutzen.",
         "Zu viele Zeitpunkte: Grenze auf höchstens 500 reduzieren.",
@@ -92,14 +92,14 @@ TIMELINE_PRESETS_TOPIC = HelpTopic(
         "Dateiberechtigung 600."
     ),
     risk=(
-        "Gering; vorhandene Namen werden nicht still ersetzt und Löschen benötigt "
-        "eine ausdrückliche Bestätigung."
+        "Gering; vorhandene Namen werden nicht still überschrieben und Löschen "
+        "benötigt eine ausdrückliche Bestätigung."
     ),
     use_when="Wenn derselbe relative Ordner regelmäßig als Zeitreihe geprüft wird.",
     before=(
         "Gespeichert wird nur ein relativer Ordner oder '.'.",
         "Absolute Pfade und '..' sind unzulässig.",
-        "Ein vorhandener Name bleibt ohne --replace unverändert.",
+        "Ein vorhandener Name bleibt ohne --replace unverändert und wird nicht überschrieben.",
     ),
     steps=(
         "Vorlagenname mit höchstens 64 Zeichen wählen.",
