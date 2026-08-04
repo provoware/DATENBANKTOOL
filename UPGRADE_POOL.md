@@ -2,66 +2,52 @@
 
 ## Hoher Nutzen, geringes Risiko
 
-1. Scanberichte zusätzlich als CSV und statisches HTML exportieren.
-2. Lesbare Größenangaben neben exakten Bytewerten anzeigen.
-3. Filter für Kategorie, Endung, Größe, Datum und Namenswarnungen ergänzen.
-4. Scanprofile als JSON speichern und laden.
-5. Fehlerbericht nach Ursache und betroffenen Ordnern gruppieren.
-6. Große Dateien und Duplikatgruppen separat exportieren.
-7. Ausschlussmuster für Cache-, Papierkorb- und Buildordner anbieten.
-8. Fortschrittsereignisse aus dem Scanner an die spätere Oberfläche melden.
+1. Inkrementellen Re-Scan auf Basis von Pfad, Größe und Änderungszeit ergänzen.
+2. `index sessions` zur Anzeige aller Sitzungen ergänzen.
+3. `index backup` und `index restore` als getrennte Kommandos ergänzen.
+4. gespeicherte Berichtsfilter als JSON-Profile einführen.
+5. CSV-Trennzeichen und Excel-kompatible Profile auswählbar machen.
+6. HTML-Berichte nach Größe automatisch in mehrere Seiten teilen.
+7. Statistikbericht nach Kategorie, Größenklasse und Warncode ergänzen.
+8. Suchkommando für den SQLite-Index ergänzen.
+9. Fortschrittsausgabe als JSON Lines für spätere GUI-Anbindung ergänzen.
+10. Logdatei mit rotierender Größenbegrenzung ergänzen.
 
-## Medienfunktionen
+## Mittlerer Aufwand
 
-9. ffprobe-Analyse für Dauer, Codec, Auflösung und technische Fehler.
-10. MediaInfo als optionale zweite Prüfinstanz.
-11. Audio-Fingerprints für gleiche Aufnahmen in verschiedenen Formaten.
-12. Perceptual Hashes für ähnliche Bilder und Videoframes.
-13. Wellenform-Cache für schnelle Audiovorschau.
-14. Kontaktbögen und Vorschaubilder für Videoarchive.
-15. Metadatenvergleich und kontrollierte Metadatenbereinigung.
-16. Erkennung fehlender Begleitdateien, Untertitel und Cover.
+11. FTS5 für Dateinamen und Pfade.
+12. Freigegebene Textinhalte mit Datenschutzprofil indizieren.
+13. Dateiidentität über Gerät und Inode speichern.
+14. externe Datenträger über stabile Kennung wiedererkennen.
+15. Änderungsabgleich zwischen zwei Sitzungen darstellen.
+16. verwaiste und entfernte Dateien markieren.
+17. Hashcache sitzungsübergreifend wiederverwenden.
+18. BLAKE3 optional für schnelle Vorprüfung evaluieren; SHA-256 bleibt Beweiswert.
+19. PySide6-Such- und Filteroberfläche.
+20. Auftragspause und Fortsetzung über UI.
 
-## Ordnung und Wiederfindbarkeit
+## Medienfokus
 
-17. Regelbaukasten mit verständlichen Beispielen.
-18. Projekt-, Künstler-, Datum- und Medientyp-Profile.
-19. Vorschläge aus bestehenden Ordnerstrukturen ableiten.
-20. Benennungsprofile mit Transliteration, Nummerierung und Datumsformaten.
-21. Tags in einer lokalen Datenbank speichern, ohne Originaldateien zu verändern.
-22. Virtuelle Sammlungen und Favoriten unabhängig vom Speicherort.
-23. Beziehungen zwischen Rohdatei, Export, Projekt und Vorschau darstellen.
-24. Suchverlauf und gespeicherte Suchansichten.
+21. ffprobe-Metadaten.
+22. Audio-Wellenform und Vorhörfunktion.
+23. Video-Vorschaubild und technische Prüfung.
+24. Bildabmessungen und EXIF-Metadaten.
+25. PDF- und Textvorschau in abgesichertem Modus.
+26. Audio-Fingerprints.
+27. perceptual Hash für Bilder.
+28. beschädigte Container erkennen.
+29. falsche Dateiendungen erkennen.
+30. Begleitdateien, Untertitel und Playlists gruppieren.
 
-## Sicherheit und Wiederherstellung
+## Später, erst nach Sicherheitskern
 
-25. A/B-Journal für Dateioperationen.
-26. Vorher-Nachher-Hash bei kritischen Kopiervorgängen.
-27. Trockenlauf als verpflichtender erster Durchgang.
-28. Wiederherstellungsassistent nach Stromausfall oder Datenträgerverlust.
-29. Quarantäne mit Ablaufdatum und Größenlimit.
-30. Manipulationssichere Auftragsprotokolle.
-31. Prüfpunkte vor und nach jeder Stapeloperation.
-32. Exportierbares Undo-Paket.
-
-## Oberfläche
-
-33. Touchfähiges Schnellmodus-Center.
-34. Kachel-, Listen- und Detailansicht.
-35. Drei Farbthemen plus hoher Kontrast.
-36. Große Schrift und skalierbare Bereiche ohne verschwindende Elemente.
-37. Dashboard für Speicherbelegung, Dateitypen, Risiken und Fortschritt.
-38. Einfache Sprache mit optional einblendbaren technischen Details.
-39. Kontextbezogene Hilfe und Sicherheitsampel.
-40. Mobile Linux-Profile für kleine Displays und Tablets.
-
-## Spätere Expertenfunktionen
-
-41. Reguläre Ausdrücke mit sicherem Testbereich.
-42. Plugin-Schnittstelle nur für rein lesende Analyse-Erweiterungen.
-43. Inhaltsindizierung ausgewählter Textformate.
-44. Git-Status und Projektzustand für Codearchive.
-45. Datenbankvergleich zwischen mehreren Datenträgern.
-46. Offline-Katalog für aktuell nicht angeschlossene Datenträger.
-47. Verzeichnis-Snapshots und zeitliche Veränderungen.
-48. Regelbasierte Automatisierung mit Freigabeschritten.
+31. unveränderliche Umbenennungspläne.
+32. Vorher-Nachher-Vorschau.
+33. Kollisionsprüfung.
+34. transaktionales Dateioperationsjournal.
+35. Undo-Manifest.
+36. Quarantäne statt Direktlöschung.
+37. Wiederaufnahme halbfertiger Dateioperationen.
+38. Wiederherstellungstest vor Freigabe.
+39. Geräteübergreifende Kopierprüfung.
+40. Stable-Release-Gate für schreibende Funktionen.
