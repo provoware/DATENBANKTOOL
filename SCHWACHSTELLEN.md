@@ -1,71 +1,77 @@
 # Schwachstellen und aktuelle Grenzen
 
-## Ordner-Zeitreihe
+## Geführte Ordner-Zeitreihe
 
 1. Die Zeitreihe benötigt mindestens zwei abgeschlossene Scans desselben
    Stammordners. Ein einzelner Erstscan liefert bewusst keinen Verlauf.
 2. Der Ordnerpfad ist relativ zum gespeicherten Stammordner. Absolute Pfade und `..`
    werden aus Sicherheitsgründen abgelehnt.
-3. Elternordner enthalten die rekursiven Werte ihrer Unterordner. Mehrere
-   Ordnerzeitreihen dürfen daher nicht ungeprüft addiert werden.
-4. Leere Ordner ohne Dateien erscheinen nicht, weil das aktuelle Schema Dateien und
-   keine eigenständigen Verzeichniszeilen speichert.
-5. `--limit` zeigt bei großen Historien nur die neuesten 2 bis 500 Zeitpunkte. Die
-   Verkürzung wird sichtbar gemeldet, ältere Punkte müssen mit einer passenden
-   Ausgangssitzung gezielt eingegrenzt werden.
-6. Bei einem neuen Ordner ohne vorherige Größe ist keine normale prozentuale Änderung
-   berechenbar; das Feld bleibt leer beziehungsweise wird mit „–“ dargestellt.
-7. Die Zeitstempel stammen aus den gespeicherten Scan-Sitzungen und nicht aus den
-   Änderungszeiten einzelner Dateien.
-8. Der HTML-Bericht zeigt derzeit eine barrierefreie Tabelle, aber noch keine
-   eingebettete Liniengrafik.
-9. Der direkte CLI-Befehl ist vorhanden und klassisch erklärt, aber noch nicht als
-   eigener Punkt in der geführten Startseite eingebunden.
-10. Es wird jeweils ein relativer Ordner ausgewertet. Mehrere parallele Ordnerlinien
-    sind noch nicht vorhanden.
+3. Die geführte Startseite kann Pfade erklären und Argumente validieren, aber keine
+   grafische Dateiauswahl bereitstellen.
+4. Scan-IDs sind optional. Wer sie ausdrücklich eingibt, muss weiterhin passende
+   abgeschlossene Sitzungen desselben Stammordners wählen.
+5. Der Dialog bietet pro Lauf ein Exportformat. Mehrere Formate gleichzeitig bleiben
+   über den direkten CLI-Befehl möglich.
+6. Vorhandene Berichte werden nicht still überschrieben. Die geführte Oberfläche bietet
+   absichtlich keinen schnellen Überschreibschalter; ein neuer Dateiname ist sicherer.
+7. Die Hilfe ist deutschsprachig und nutzt eine deterministische Stichwortsuche statt
+   einer semantischen Suchmaschine.
 
-## Vollständiger Ordnervergleichsexport
+## SVG-Trendgrafiken
 
-11. Ohne `--all-pages` bleibt das bisherige Verhalten erhalten: Berichte enthalten nur
-    die gewählte Seite.
-12. `--all-pages` benötigt mindestens ein JSON-, CSV- oder HTML-Ziel und ist damit
-    absichtlich sichtbar.
-13. Bei sehr vielen gefilterten Ordnern liegt die vollständige sortierte Zeilenmenge
-    während des Exports im Arbeitsspeicher. Die Dateidaten werden dennoch nur einmal
-    aggregiert.
-14. Eltern- und Kindzeilen enthalten überlappende rekursive Werte und dürfen nicht
-    addiert werden.
-15. CSV speichert Status und Begründung als Text, aber keine sichtbaren Farben.
+8. Diagrammpunkte werden gleichmäßig nach Scan-Reihenfolge verteilt. Unterschiedlich
+   lange reale Zeitabstände zwischen Scans sind deshalb nicht proportional sichtbar.
+9. Bei mehr als zwölf Punkten werden nur ausgewählte sichtbare Scan- und Wertelabels
+   gezeigt. Jeder Punkt bleibt per Tastatur und ARIA beschrieben; alle Werte stehen
+   zusätzlich vollständig in der Tabelle.
+10. Bei der Höchstgrenze von 500 Zeitpunkten enthält jedes Diagramm 500 fokussierbare
+    Datenpunkte. Das ist vollständig, kann für reine Tastaturnutzung aber umfangreich
+    sein.
+11. Die Diagramme verwenden eine automatisch aus den sichtbaren Werten gebildete
+    y-Achse. Verschiedene Berichte besitzen daher nicht zwingend dieselbe Skala.
+12. Größe und Dateizahl werden bewusst in getrennten Diagrammen dargestellt. Eine
+    gemeinsame Doppelachse wäre kompakter, aber deutlich schwerer verständlich.
+13. SVG wird von aktuellen Browsern direkt unterstützt. Sehr alte HTML-Programme
+    können die Grafik ignorieren; die vollständige Tabelle bleibt dennoch lesbar.
+14. Die Diagramme zeigen derzeit jeweils einen relativen Ordner. Mehrere parallele
+    Ordnerlinien sind noch nicht vorhanden.
+
+## Ordner-Zeitreihe allgemein
+
+15. Elternordner enthalten die rekursiven Werte ihrer Unterordner. Mehrere
+    Ordnerzeitreihen dürfen daher nicht ungeprüft addiert werden.
+16. Leere Ordner ohne Dateien erscheinen nicht, weil das aktuelle Schema Dateien und
+    keine eigenständigen Verzeichniszeilen speichert.
+17. `--limit` zeigt bei großen Historien nur die neuesten 2 bis 500 Zeitpunkte. Die
+    Verkürzung wird sichtbar gemeldet.
+18. Bei einem neuen Ordner ohne vorherige Größe ist kein normaler Prozentwert
+    berechenbar; das Feld bleibt leer beziehungsweise wird mit „–“ dargestellt.
+19. Zeitstempel stammen aus den Scan-Sitzungen und nicht aus Änderungszeiten einzelner
+    Dateien.
 
 ## Großbestands- und Laienabnahme
 
-16. Synthetische Sparse-Dateien bilden Metadaten- und Indexleistung gut ab, aber nicht
+20. Synthetische Sparse-Dateien bilden Metadaten- und Indexleistung gut ab, aber nicht
     die vollständige Leselast großer real gefüllter Mediendateien.
-17. Das `large`-Profil mit 100.000 Dateien wurde noch nicht auf der vorgesehenen
+21. Das `large`-Profil mit 100.000 Dateien wurde noch nicht auf der vorgesehenen
     Zielhardware ausgeführt.
-18. Eine echte Laienabnahme wurde noch nicht durchgeführt. Die Checkliste ersetzt
+22. Eine echte Laienabnahme wurde noch nicht durchgeführt. Die Checkliste ersetzt
     keine reale Beobachtung und Rückfragen.
-19. `tracemalloc` misst Python-Speicher; nativer SQLite- und Betriebssystemspeicher
-    wird zusätzlich protokolliert, besitzt aber noch keine harte Plattformgrenze.
-20. GitHub-Actions-Artefakte laufen nach der festgelegten Aufbewahrungsdauer ab.
+23. `tracemalloc` misst Python-Speicher; nativer SQLite- und Betriebssystemspeicher
+    besitzt noch keine harte plattformübergreifende Grenze.
+24. GitHub-Actions-Artefakte laufen nach der festgelegten Aufbewahrungsdauer ab.
 
-## Finale technische Referenz
+## 0.12-Funktionsreferenz
 
-- 71/71 Tests unter Python 3.10 und Python 3.12.
-- Quick: 600 Dateien, 11/11 Kriterien, 1,131 Sekunden.
-- Standard: 10.000 Dateien, 11/11 Kriterien, 18,072 Sekunden.
+- 77/77 Tests unter Python 3.10 und Python 3.12.
+- Quick: 600 Dateien, 11/11 Kriterien, 1,015 Sekunden.
+- Standard: 10.000 Dateien, 11/11 Kriterien, 16,116 Sekunden.
 - Diese CI-Werte sind Referenzen und keine Zusage für andere Hardware.
-
-## Bedienung und Plattform
-
-21. Die Oberfläche bleibt terminalbasiert und besitzt keine grafischen Pfaddialoge.
-22. Hilfetexte sind deutschsprachig; die Stichwortsuche ist deterministisch.
-23. Automatische Lösch-, Verschiebe- und Umbenennungsfunktionen bleiben gesperrt.
 
 ## Sicherheitsfazit
 
-Zeitreihe und Ordnervergleich öffnen SQLite ausschließlich lesend. Originaldateien
-werden nicht erneut geöffnet oder verändert. Unterschiedliche Stammordner werden nicht
-vermischt, relative Ordnerpfade werden strikt validiert, und Berichte werden atomar
-sowie überschreibgeschützt geschrieben. Keine bekannte Grenze rechtfertigt das
-Freischalten automatischer Originaldateioperationen.
+Geführte Zeitreihe, Hilfe und SVG-Berichte verändern weder SQLite noch Originaldateien.
+Der Dialog erzeugt ausschließlich sichere Argumentlisten. HTML bleibt skriptfrei und
+vollständig lokal. Pfade, Zahlenbereiche und Berichtsauswahl werden vor dem Start
+validiert; Berichte werden atomar und überschreibgeschützt geschrieben. Keine bekannte
+Grenze rechtfertigt das Freischalten automatischer Originaldateioperationen.
