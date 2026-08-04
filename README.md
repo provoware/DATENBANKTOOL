@@ -6,18 +6,63 @@
 
 | Bereich | Stand |
 |---|---|
-| Version | `0.7.0-alpha.1` |
+| Version | `0.8.0-alpha.1` |
 | SQLite-Schema | `3` |
-| Entwicklungsfortschritt | **91 %** |
-| Erledigte Hauptpunkte | **40** |
-| Offene Hauptpunkte | **4** |
+| Entwicklungsfortschritt | **93 %** |
+| Erledigte Hauptpunkte | **42** |
+| Offene Hauptpunkte | **3** |
 | Automatische Originaldateiänderungen | **Gesperrt** |
 | Externe Laufzeitabhängigkeiten | **0** |
-| Automatisierte Tests | **48/48** unter Python 3.10 und 3.12 |
+| Automatisierte Tests | **54/54** unter Python 3.10 und 3.12 |
 
-## Neu: mehrschichtige Laienhilfe
+## Neu: modularer und dauerhaft abgesicherter CLI-Aufbau
 
-DATENBANKTOOL erklärt Funktionen jetzt in mehreren Tiefen. Der Nutzer entscheidet selbst, wie viele Informationen benötigt werden.
+Der frühere zentrale Befehlsblock mit 1.409 Zeilen wurde ohne sichtbare
+Befehlsänderungen in klar abgegrenzte Fachmodule aufgeteilt.
+
+| Modul | Zuständigkeit |
+|---|---|
+| `cli.py` | nur Zusammensetzung, Dispatch und zentrale Fehlergrenze |
+| `cli_scan.py` | einmalige Scans |
+| `cli_search.py` | Suche und Suchvorlagen |
+| `cli_reports.py` | Ordner-, Änderungs- und Dateiberichte |
+| `cli_index.py` | Indexaufbau, Re-Scan, Status, Sitzungen, Backup, Restore und Reparatur |
+| `cli_help.py` | klassischer Erklärungsbefehl |
+| `cli_common.py` | gemeinsame Eingabeprüfung, Ausgabe und Formatierung |
+| `cli_contract.py` | Handlervertrag und deklarierte Seiteneffekte |
+
+`cli.py` besitzt jetzt nur noch rund 100 Zeilen. Alle bisherigen Befehle und
+Parameter bleiben unverändert.
+
+## Globale Wartungsregeln
+
+Die projektweiten Regeln stehen verständlich in:
+
+```text
+MAINTENANCE_RULES.md
+```
+
+Die maschinenlesbare und versionierte Fassung steht in:
+
+```text
+maintenance_rules.json
+```
+
+Automatische Architekturtests erzwingen unter anderem:
+
+- `cli.py` höchstens 150 Zeilen,
+- jedes CLI-Fachmodul höchstens 500 Zeilen,
+- keine zyklischen Importe zurück zu `cli.py`,
+- keine Shell-Auswertung, `eval`, `exec` oder `os.system`,
+- jeder öffentliche Befehl besitzt Handler und `CommandPolicy`,
+- Originaldatei-Schreibzugriffe bleiben global gesperrt,
+- Parser und Handler gehören zum selben Fachmodul,
+- Rückgabecodes bleiben ganzzahlig und kontrolliert.
+
+## Mehrschichtige Laienhilfe
+
+DATENBANKTOOL erklärt Funktionen in mehreren Tiefen. Der Nutzer entscheidet selbst,
+wie viele Informationen benötigt werden.
 
 ### Ebene 1: Soforthilfe
 
@@ -37,8 +82,6 @@ In der Startseite `?` vor die Funktionsnummer setzen:
 ?7   Details zur Sicherung
 ```
 
-Die Detailhilfe nennt Zweck, tatsächliche Schreibwirkung, Risiko, Voraussetzungen, Erfolgskontrolle und Beispielbefehl.
-
 ### Ebene 3: Schritt-für-Schritt-Hilfe
 
 In der Startseite `g` vor die Nummer setzen:
@@ -51,52 +94,34 @@ g7   Sicherung Schritt für Schritt
 
 ### Ebene 4: Hilfe im Eingabefeld
 
-Bei jeder geführten Pfad-, Such- oder Bestätigungsfrage kann `?` eingegeben werden. Das Tool erklärt dann genau dieses Feld und fragt anschließend erneut.
+Bei jeder geführten Pfad-, Such- oder Bestätigungsfrage kann `?` eingegeben werden.
+Das Tool erklärt dieses Feld und stellt danach dieselbe Frage erneut.
 
 ### Ebene 5: Fehlerhilfe
 
-Beendet ein Fachbefehl sich mit einem Fehlercode, zeigt die Startseite:
-
-- dass keine automatische Originaldateiänderung erfolgt ist,
-- die wahrscheinlichsten Prüfstellen,
-- den passenden ausführlichen Hilfebefehl.
+Beendet ein Fachbefehl sich mit einem Fehlercode, zeigt die Startseite sichere
+Prüfstellen und den passenden ausführlichen Hilfebefehl. Es erfolgt keine versteckte
+Reparatur.
 
 ## Eigenständiger Hilfebefehl
 
-Alle Themen auflisten:
-
 ```bash
+# Alle Themen
 datenbanktool help
-```
 
-Kurze Erklärung:
-
-```bash
+# Kurze Erklärung
 datenbanktool help search --level quick
-```
 
-Ausführliche Erklärung:
-
-```bash
+# Ausführliche Erklärung
 datenbanktool help build --level detail
-```
 
-Vollständige Anleitung:
-
-```bash
+# Vollständige Anleitung
 datenbanktool help build --level guided
-```
 
-Mit einem Alltagsbegriff suchen:
-
-```bash
-datenbanktool help --find "große Ordner"
+# Suche mit Alltagsbegriff
 datenbanktool help --find Platzfresser
-```
 
-Maschinenlesbar:
-
-```bash
+# Maschinenlesbar
 datenbanktool help folders --level guided --json
 ```
 
@@ -132,7 +157,7 @@ h  Hilfezentrum
 | **GELB** | kontrollierter Schreibzugriff oder Prüfbedarf |
 | **ROT** | dringender Prüfbedarf |
 
-Farben stehen nie allein. Farbnamen, Statuswort und Begründung bleiben immer sichtbar.
+Farben stehen nie allein. Farbnamen, Statuswort und Begründung bleiben sichtbar.
 
 ## Wichtige Direktbefehle
 
@@ -159,13 +184,14 @@ datenbanktool index backup index.sqlite3 --output backup.sqlite3
 ## Sicherheitsgrundsätze
 
 - Originaldateien werden standardmäßig nur gelesen.
-- Die Startseite führt keine Shell-Zeichenkette aus.
+- Jeder CLI-Befehl deklariert seine Seiteneffekte über `CommandPolicy`.
+- Eine Richtlinie mit Originaldatei-Schreibzugriff wird technisch abgewiesen.
+- Die Startseite und direkte CLI führen keine Shell-Zeichenketten aus.
 - Pfade und Suchtexte werden als einzelne Argumente übergeben.
-- Indexaufbau, Re-Scan und Sicherung benötigen in der Startseite eine Bestätigung.
 - Berichte und Sicherungen werden nicht still überschrieben.
 - Restore erstellt standardmäßig eine Rückfallsicherung.
 - Automatisches Löschen, Verschieben und Umbenennen bleibt gesperrt.
-- Der Hilfebefehl und sämtliche Hilfestufen verändern keine Daten.
+- Maschinenlesbare Ausgaben bleiben frei von Farbcodes und Bedienhinweisen.
 
 ## Installation für die Entwicklung
 
@@ -183,27 +209,31 @@ python -m compileall -q src tests
 PYTHONWARNINGS=error python -m unittest discover -s tests -v
 ```
 
-GitHub Actions prüft Python 3.10 und 3.12.
+GitHub Actions prüft Python 3.10 und 3.12. Zusätzlich werden Modulgrößen,
+Importgrenzen, Handlerzuordnung, Seiteneffekte und verbotene Shell-Funktionen geprüft.
 
 ## Aktuelle Grenzen
 
 - Die Oberfläche bleibt vorerst terminalbasiert.
 - Pfade werden noch als Text eingegeben oder eingefügt.
-- Alltagssuche arbeitet über gepflegte Stichwörter und noch nicht über semantische KI.
-- Fehlerhilfe gibt sichere nächste Prüfungen, repariert aber nicht automatisch.
-- Die zentrale `cli.py` ist weiterhin groß und soll als Nächstes zerlegt werden.
+- Die Ordnerübersicht besitzt JSON und HTML, aber noch keinen CSV-Export.
+- Ordnerwachstum zwischen zwei Scan-Sitzungen wird noch nicht direkt verglichen.
+- Vor einem stabilen Release fehlt eine Abnahme mit sehr großen realistischen Beständen
+  und Linux-Laien.
 
 ## Nächster einfacher Entwicklungsschritt
 
-Den großen Befehlsblock in kleinere Funktionsmodule aufteilen, damit Änderungen leichter geprüft und Fehler schneller gefunden werden können.
+**Ordnerübersicht als CSV speichern:** Ordnergrößen, Dateizahlen, Ampelgründe und
+größte Platzfresser sollen direkt in LibreOffice Calc geöffnet werden können.
 
 ## Sichere Zusatzverbesserung
 
-Die Ordnerübersicht zusätzlich als CSV speichern, damit sie direkt in LibreOffice Calc geöffnet werden kann.
+**Ordnervergleich:** Anzeigen, welche Ordner seit dem vorherigen Scan gewachsen oder
+kleiner geworden sind, ohne Originaldateien zu verändern.
 
 ## Weitere sinnvolle Upgrades
 
-- Ordnerwachstum zwischen zwei Scans vergleichen.
-- Suchvorlagen exportieren und importieren.
 - Grafische Oberfläche mit Schaltflächen und Dateiauswahlfenstern entwickeln.
+- Suchvorlagen exportieren und importieren.
 - Sehr große reale Dateibestände mit festen Laufzeit- und Speichergrenzen prüfen.
+- Hilfetexte später für weitere Sprachen vorbereiten.
