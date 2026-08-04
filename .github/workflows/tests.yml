@@ -34,3 +34,20 @@ jobs:
         env:
           PYTHONWARNINGS: error
         run: python -m unittest discover -s tests -v
+      - name: Quick-Abnahme mit 600 Dateien
+        if: matrix.python-version == '3.12'
+        env:
+          PYTHONWARNINGS: error
+        run: datenbanktool acceptance --profile quick --workspace acceptance-quick
+      - name: Abnahmeberichte archivieren
+        if: always() && matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: datenbanktool-acceptance-quick
+          path: |
+            acceptance-quick/acceptance-result.json
+            acceptance-quick/acceptance-report.md
+            acceptance-quick/NOVICE_ACCEPTANCE_CHECKLIST.md
+            acceptance-quick/ordneruebersicht.csv
+          retention-days: 14
+          if-no-files-found: error
