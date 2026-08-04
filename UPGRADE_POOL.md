@@ -2,14 +2,14 @@
 
 ## Einfach verständliche nächste Verbesserungen
 
-1. **Startmenü** – wichtige Funktionen als nummerierte Auswahl anzeigen, damit keine Befehle auswendig gelernt werden müssen.
+1. **Kleinere Codebausteine** – den großen Befehlsblock aufteilen, damit Fehler leichter gefunden und Änderungen sicherer geprüft werden können.
 2. **CSV für Ordner** – Ordnergrößen und Platzfresser direkt als Tabelle speichern.
 3. **Ordnervergleich** – anzeigen, welche Ordner seit dem letzten Scan gewachsen oder kleiner geworden sind.
 4. **Vorlagen übertragen** – Suchvorlagen als Datei sichern und auf einen anderen Rechner übernehmen.
-5. **Favoriten** – häufig verwendete Ordner und Scans schneller auswählen.
-6. **Einfachmodus** – nur die wichtigsten sicheren Funktionen anzeigen.
-7. **Geführte Prüfung** – Schritt für Schritt durch große Dateien, Namensprobleme und Duplikate führen.
-8. **HTML-Startbericht** – alle wichtigen Ergebnisse auf einer lokalen Übersichtsseite bündeln.
+5. **Favoriten** – häufig verwendete Ordner und Indexdateien in der Startseite schneller auswählen.
+6. **Geführte Prüfung** – Schritt für Schritt durch große Dateien, Namensprobleme und Duplikate führen.
+7. **HTML-Startbericht** – alle wichtigen Ergebnisse auf einer lokalen Übersichtsseite bündeln.
+8. **Großbestandstest** – sehr große realistische Sammlungen mit messbaren Laufzeit- und Speichergrenzen prüfen.
 
 ## Später mit zusätzlicher Sicherheitsentwicklung
 
@@ -21,6 +21,10 @@
 
 ## Bereits umgesetzt
 
+- Geführte Terminal-Startseite mit nummerierter Auswahl.
+- Wirkungserklärung und Bestätigungsschutz vor schreibenden Menüaktionen.
+- Sichere Argumentübergabe ohne Shell-Auswertung.
+- Robuster Start in interaktiven und nicht-interaktiven Umgebungen.
 - Ordnerübersicht mit Dateizahl, Größe und Platzfressern.
 - Ampeln mit Farbe, Klartext und Begründung.
 - Suchvorlagen mit sicherem Speichern und bestätigtem Löschen.
