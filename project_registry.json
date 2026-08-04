@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "project": "DATENBANKTOOL",
+  "version": "0.1.0-alpha.1",
+  "phase": "foundation",
+  "development_progress_percent": 18,
+  "runtime": {
+    "python": ">=3.10",
+    "external_runtime_dependencies": []
+  },
+  "safety_defaults": {
+    "filesystem_mode": "read-only",
+    "follow_symlinks": false,
+    "overwrite_reports": false,
+    "destructive_actions_available": false
+  },
+  "modules": {
+    "scanner": "alpha",
+    "classification": "alpha",
+    "filename_checks": "alpha",
+    "exact_duplicate_detection": "alpha",
+    "persistent_index": "planned",
+    "graphical_interface": "planned",
+    "file_operations": "blocked-until-safety-contract"
+  }
+}
