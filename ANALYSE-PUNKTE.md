@@ -2,87 +2,64 @@
 
 ## Ergebnis dieser Iteration
 
-DATENBANKTOOL kann jetzt ohne Kenntnis einzelner Befehle bedient werden. Eine nummerierte Startseite erklärt jede Funktion, fragt nur die benötigten Werte ab, zeigt den geplanten Befehl und schützt schreibende Indexaktionen durch eine zusätzliche Bestätigung.
+Die Startseite erklärt Funktionen nicht mehr nur mit einem einzelnen Textblock. Nutzer können zwischen kurzer Orientierung, ausführlicher Wirkungserklärung, vollständiger Schrittanleitung und Hilfe zur konkreten Eingabe wechseln. Nach Fehlern zeigt das Tool einen sicheren nächsten Prüfweg.
 
 ## Vollständig gelöste Punkte
 
-1. Die wichtigsten Funktionen sind über eine einheitliche Startseite erreichbar.
-2. Jede Auswahl besitzt eine kurze Funktionsbeschreibung.
-3. Jede Auswahl nennt ihre tatsächliche Wirkung auf Index, Sicherung und Originaldateien.
-4. Lesende Funktionen werden grün und schreibende Index-/Sicherungsfunktionen gelb markiert.
-5. Farbe bleibt Zusatzinformation; Wirkung und Begründung stehen immer im Klartext.
-6. Ungültige Auswahlnummern führen nicht zum Programmabbruch.
-7. `q` bricht nur den aktuellen Dialog ab und kehrt sicher zum Menü zurück.
-8. Ein geschlossenes Eingabemedium beendet die Startseite ohne Endlosschleife.
-9. Tastaturabbruch wird kontrolliert mit eigenem Rückgabecode behandelt.
-10. Der zuletzt verwendete Datenbank- und Ordnerpfad wird innerhalb der Sitzung vorgeschlagen.
-11. Schreibende Indexaktionen benötigen eine ausdrückliche Ja/Nein-Bestätigung.
-12. Der geplante Befehl wird vor der Ausführung lesbar angezeigt.
-13. Pfade und Suchtexte werden als Argumentliste und nicht über eine Shell übergeben.
-14. Leerzeichen und Sonderzeichen in Pfaden können dadurch keine zusätzlichen Befehle erzeugen.
-15. Interaktive Leerstarts öffnen die Startseite.
-16. Nicht-interaktive Leerstarts blockieren keine Skripte oder Umleitungen.
-17. Bestehende direkte CLI-Befehle werden unverändert an die bisherige Befehlslogik weitergereicht.
-18. Startlogik und Menülogik wurden außerhalb der bereits großen `cli.py` umgesetzt.
-19. Ein-/Ausgabeströme und Befehlsausführung sind austauschbar und vollständig testbar.
-20. Acht neue Tests decken Auswahl, Abbruch, Bestätigung, sichere Argumente und Nicht-Blockierung ab.
-21. Der vollständige Stand besteht 39 Tests unter Python 3.10 und Python 3.12.
+1. Jede Hauptfunktion besitzt eine kurze Soforthilfe.
+2. `?NUMMER` zeigt ausführliche Detailhilfe, ohne die Funktion zu starten.
+3. `gNUMMER` zeigt eine vollständige Schrittfolge.
+4. `?` erklärt das aktuelle Eingabefeld und wiederholt danach dieselbe Frage.
+5. Hilfen nennen Schreibwirkung und Risiko ausdrücklich.
+6. Hilfen erklären Voraussetzungen vor dem Start.
+7. Hilfen erklären, woran ein erfolgreicher Abschluss erkennbar ist.
+8. Typische Probleme erhalten eine konkrete sichere Lösung.
+9. Fehlercodes führen zu kontextbezogener Fehlerhilfe.
+10. Die Fehlerhilfe führt keine automatische Reparatur aus.
+11. `datenbanktool help` funktioniert unabhängig von der interaktiven Startseite.
+12. Drei Hilfestufen stehen bereit: `quick`, `detail` und `guided`.
+13. Themen können über Alltagsbegriffe gesucht werden.
+14. Hilfedaten können als JSON ausgegeben werden.
+15. Unbekannte Themen enden kontrolliert mit Rückgabecode 2.
+16. Hilfekatalog und Startseitenlogik sind voneinander getrennt.
+17. Der alte Importpfad bleibt kompatibel, enthält aber keine zweite aktive Logik.
+18. Die große `cli.py` wurde nicht weiter vergrößert.
+19. Originaldateien bleiben durch sämtliche Hilfefunktionen unverändert.
+20. 48 Tests laufen unter Python 3.10 und 3.12 erfolgreich.
 
-## Fachliche Entscheidungen
+## Zentrale Architekturentscheidungen
 
-### Keine Shell-Auswertung
+### Hilfe auf Wunsch statt Zwangsdialoge
 
-Die Startseite baut keine Befehlskette als ausführbaren Text. Sie übergibt eine feste Liste von Argumenten direkt an die vorhandene Python-CLI. Das reduziert Befehlseinschleusung, schützt Pfade mit Leerzeichen und vermeidet unnötige Unterprozesse.
+Zusätzliche Pflichtfragen würden erfahrene Nutzer ausbremsen und bestehende Abläufe verändern. Deshalb bleibt die normale Nummernauswahl direkt nutzbar; tiefergehende Hilfe wird gezielt über `?NUMMER`, `gNUMMER` oder `?` aufgerufen.
 
-### Startseite als eigener Programmeinstieg
+### Ein zentraler Hilfekatalog
 
-Die bestehende `cli.py` enthält bereits viele Parser und Handler. Eine weitere interaktive Schicht direkt dort hätte Komplexität und Kopplung erhöht. `entrypoint.py` übernimmt deshalb nur die Startentscheidung; `terminal_home.py` enthält ausschließlich Menü und Dialoge.
+Titel, Kurzbeschreibung, Schreibwirkung, Voraussetzungen, Schritte, Erfolgskontrolle und typische Probleme liegen in einem zentralen Modul. Dadurch können Startseite, Hilfebefehl und spätere GUI dieselben Inhalte verwenden.
 
-### Schreibbestätigung nur dort, wo sie nötig ist
+### Keine automatische Fehlerreparatur
 
-Lesende Funktionen starten nach der Eingabe direkt. Indexaufbau, Re-Scan und Sicherung zeigen zuerst den geplanten Befehl und benötigen dann eine zusätzliche Bestätigung. Dadurch bleibt die Bedienung schnell, ohne schreibende Wirkungen zu verstecken.
+Ein Fehlercode kann viele Ursachen besitzen. Automatisches Korrigieren könnte falsche Pfade, Datenbanken oder Berechtigungen verändern. Die Hilfe nennt deshalb sichere Prüfstellen und überlässt die Entscheidung dem Nutzer.
 
-### Kein automatisches Menü in Skripten
+### Alltagssuche ohne Online-Abhängigkeit
 
-Ein Aufruf ohne Argumente öffnet das Menü nur, wenn Eingabe und Ausgabe echte Terminals sind. In Pipelines, Tests oder Umleitungen erscheint stattdessen ein kurzer Hinweis. Das verhindert unbemerkte Warteschleifen in Automation.
+Die Hilfesuche arbeitet vollständig offline über Funktionsnamen, Beschreibungen und gepflegte Stichwörter. Sie bleibt schnell, nachvollziehbar und ohne Cloud-Abhängigkeit.
 
-### Restore und Reparatur nicht im einfachen Hauptmenü
+### Kompatibilität ohne doppelte Logik
 
-Wiederherstellung und Reparatur wirken stärker auf die Indexdatenbank. Sie bleiben bewusst außerhalb des einfachen Hauptmenüs und werden weiterhin über direkte Befehle sowie ausführliche Wirkungsbeschreibungen angeboten.
-
-## Codequalitätsbewertung
-
-### Verbessert
-
-- Verantwortung zwischen Einstieg, Menü und Fachbefehlen getrennt.
-- Keine Erweiterung der bereits großen `cli.py`.
-- Unveränderlicher Menükatalog als zentrale Quelle.
-- Doppelte Auswahlnummern werden beim Start erkannt.
-- Keine Shell- oder Subprozessabhängigkeit.
-- Neue Dateien halten die konfigurierte Zeilenlänge ein.
-- Testbare Ein-/Ausgabe ohne echte Dateioperationen.
-- Bestehende Regressionstests bleiben vollständig grün.
-
-### Weiter offen
-
-- Die vorhandene `cli.py` sollte schrittweise nach Befehlsgruppen aufgeteilt werden.
-- Ruff und MyPy sollten als verpflichtende CI-Schritte aktiviert werden.
-- Eine zentrale Spezifikation könnte Menüeinträge, Hilfetexte und CLI-Unterbefehle künftig noch enger synchronisieren.
-- Reale Bedienabnahmen in verschiedenen Linux-Terminals bleiben notwendig.
+`core/terminal_home.py` bleibt als kleiner Importadapter bestehen. Die tatsächliche Implementierung liegt nur noch in `core/guided_home.py`.
 
 ## Erkannte nächste Analysepunkte
 
-1. Handler für Suche, Berichte, Verwaltung und Scans aus `cli.py` in getrennte Module verschieben.
-2. Gemeinsame Rückgabecodes und Fehlermeldungen zentralisieren.
-3. Ruff und MyPy in GitHub Actions aufnehmen.
-4. CSV-Export der Ordnerübersicht ergänzen.
-5. Favoriten für häufige Index- und Ordnerpfade sicher speichern.
-6. Menütests gegen alle registrierten Aktionen automatisch erzeugen.
-7. Startseite später als Grundlage einer grafischen Oberfläche verwenden.
-8. Bedienabnahme mit vollständigen Linux-Laien durchführen.
-9. Sehr große Bestände mit Millionen Dateien messen.
-10. Restore und Reparatur in einem getrennten, besonders deutlich gewarnten Expertenbereich führen.
+1. Große `cli.py` in getrennte Parser- und Ausführungsmodule zerlegen.
+2. Hilfetexte künftig direkt aus den Fachmodulen registrieren, ohne Importzyklen zu erzeugen.
+3. CSV-Export der Ordnerübersicht ergänzen.
+4. Ordnerwachstum zwischen Scan-Sitzungen darstellen.
+5. Hilfekatalog später für Übersetzungen vorbereiten.
+6. Bedienabnahme mit Linux-Laien durchführen.
+7. Hilfesuche mit weiteren realen Nutzerformulierungen testen.
+8. Sehr große Bestände unter festen Ressourcenlimits prüfen.
 
-## Architektur-Fazit
+## Fazit
 
-Die Startseite verbessert die Laienbedienung, ohne den Sicherheitsvertrag zu erweitern. Sie ist nur eine geführte Schicht über den vorhandenen Befehlen. Originaldateien bleiben geschützt, und die neue Architektur verhindert, dass interaktive Bedienlogik die fachliche Indexlogik vermischt.
+Die Bedienung ist deutlich fehlertoleranter und verständlicher, ohne den Sicherheitsvertrag aufzuweichen. Hilfe ist jederzeit erreichbar, bleibt vollständig offline und löst keine versteckten Datenänderungen aus.
