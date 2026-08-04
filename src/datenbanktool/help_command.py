@@ -5,9 +5,9 @@ import json
 from typing import Sequence, TextIO
 
 from datenbanktool.core.folder_timeline_help import (
-    FOLDER_TIMELINE_TOPIC,
-    timeline_matches,
+    find_timeline_topics,
     timeline_topic,
+    timeline_topics,
 )
 from datenbanktool.core.layered_help import (
     find_topics as find_base_topics,
@@ -19,14 +19,13 @@ from datenbanktool.core.layered_help import (
 
 def _all_topics():
     topics = {topic.name: topic for topic in list_base_topics()}
-    topics[FOLDER_TIMELINE_TOPIC.name] = FOLDER_TIMELINE_TOPIC
+    topics.update({topic.name: topic for topic in timeline_topics()})
     return tuple(sorted(topics.values(), key=lambda topic: topic.name))
 
 
 def _find_topics(query: str):
     topics = {topic.name: topic for topic in find_base_topics(query)}
-    if timeline_matches(query):
-        topics[FOLDER_TIMELINE_TOPIC.name] = FOLDER_TIMELINE_TOPIC
+    topics.update({topic.name: topic for topic in find_timeline_topics(query)})
     return tuple(sorted(topics.values(), key=lambda topic: topic.name))
 
 
@@ -46,7 +45,10 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "topic",
         nargs="?",
-        help="Zum Beispiel search, build, folders oder folder-timeline",
+        help=(
+            "Zum Beispiel search, build, folders, folder-timeline oder "
+            "timeline-presets"
+        ),
     )
     parser.add_argument(
         "--level",
@@ -122,9 +124,7 @@ def run_help_command(
         if arguments.json:
             payload = topic.to_dict()
             payload["level"] = arguments.level
-            payload["rendered_lines"] = list(
-                render_topic(topic, arguments.level)
-            )
+            payload["rendered_lines"] = list(render_topic(topic, arguments.level))
             output_stream.write(
                 json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
             )
