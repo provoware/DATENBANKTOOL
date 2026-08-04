@@ -2,34 +2,32 @@
 
 ## In dieser Iteration erledigt
 
-1. [x] Geführte Startseite als nummeriertes Terminalmenü entwickeln.
-2. [x] Such-, Ordner-, Änderungs- und Statusfunktionen direkt aus dem Menü starten.
-3. [x] Indexaufbau, Re-Scan und Sicherung geführt vorbereiten.
-4. [x] Wirkung jeder Auswahl mit Ampel und Klartext erklären.
-5. [x] Schreibende Menüaktionen durch zusätzliche Bestätigung schützen.
-6. [x] Geplanten vollständigen Befehl vor der Ausführung anzeigen.
-7. [x] Pfade und Suchtexte ohne Shell-Auswertung als sichere Argumentliste übergeben.
-8. [x] `datenbanktool start` als neuen Programmeinstieg ergänzen.
-9. [x] Interaktiven Leerstart ermöglichen und nicht-interaktive Aufrufe vor Blockierung schützen.
-10. [x] Startlogik aus der großen `cli.py` in eigene Module auslagern.
-11. [x] Ein-/Ausgabe und Befehlsausführung für automatisierte Tests austauschbar machen.
-12. [x] Acht neue Tests für Auswahl, Abbruch, Bestätigung und sicheren Start ergänzen.
-13. [x] 39 automatisierte Tests unter Python 3.10 und 3.12 erfolgreich ausführen.
+1. [x] Soforthilfe direkt in der Startseite ergänzen.
+2. [x] Detailhilfe über `?NUMMER` ergänzen.
+3. [x] Geführte Schrittanleitung über `gNUMMER` ergänzen.
+4. [x] Hilfe für einzelne Eingabefelder über `?` ergänzen.
+5. [x] Kontextbezogene Fehlerhilfe nach Fehlercodes anzeigen.
+6. [x] Eigenständigen Befehl `datenbanktool help` entwickeln.
+7. [x] Hilfestufen `quick`, `detail` und `guided` anbieten.
+8. [x] Hilfethemen über Alltagswörter mit `--find` suchen.
+9. [x] Hilfen maschinenlesbar als JSON ausgeben.
+10. [x] Hilfekatalog zentral und unveränderlich definieren.
+11. [x] Startseitenlogik in ein eigenes Modul auslagern.
+12. [x] Alten Importpfad als schmale Kompatibilitätsschicht erhalten.
+13. [x] Fehlerfälle ohne automatische Reparatur sicher erklären.
+14. [x] 48 automatisierte Tests unter Python 3.10 und 3.12 erfolgreich ausführen.
 
 ## Noch offen
 
-1. [ ] Die große `cli.py` schrittweise in kleinere Befehlsmodule aufteilen.
+1. [ ] Große `cli.py` in kleinere Befehlsmodule aufteilen.
 2. [ ] Ordnerübersicht zusätzlich als CSV exportieren.
-3. [ ] Speicherentwicklung eines Ordners zwischen zwei Scans vergleichen.
-4. [ ] Gespeicherte Suchvorlagen exportieren und importieren.
-5. [ ] Alte Scan-Sitzungen nach Vorschau sicher archivieren.
-6. [ ] Barrierearme grafische Oberfläche mit Schaltflächen entwickeln.
-7. [ ] Sichere Dateiänderungspläne mit Journal, Rückgängig-Funktion und Quarantäne entwickeln.
+3. [ ] Ordnerwachstum zwischen zwei Scan-Sitzungen vergleichen.
+4. [ ] Abnahme mit sehr großen realistischen Beständen und Linux-Laien durchführen.
 
 ## Direkt folgender einfacher Schritt
 
-Den großen Befehlsblock in kleinere Bausteine teilen, damit einzelne Funktionen leichter geprüft und geändert werden können.
+Den großen Befehlsblock in kleinere, klar benannte Module teilen. Suche, Berichte, Verwaltung und Scan erhalten getrennte Dateien, ohne die sichtbaren Befehle zu ändern.
 
 ## Sichere Zusatzverbesserung
 
-Die Ordnerübersicht als CSV speichern, damit sie direkt in LibreOffice Calc oder ähnlichen Tabellenprogrammen geöffnet werden kann.
+Die Ordnerübersicht als CSV speichern, damit sie direkt in LibreOffice Calc geöffnet werden kann.
