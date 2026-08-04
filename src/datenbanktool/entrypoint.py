@@ -6,6 +6,7 @@ from typing import Sequence, TextIO
 
 from datenbanktool import cli
 from datenbanktool.core.terminal_home import TerminalHome
+from datenbanktool.help_command import run_help_command
 
 
 def _start_parser() -> argparse.ArgumentParser:
@@ -36,11 +37,18 @@ def main(
     output_stream: TextIO | None = None,
     error_stream: TextIO | None = None,
 ) -> int:
-    """Route guided start requests and delegate all existing CLI commands unchanged."""
+    """Route guided help/start requests and delegate existing CLI commands."""
     arguments = list(sys.argv[1:] if argv is None else argv)
     stdin = input_stream or sys.stdin
     stdout = output_stream or sys.stdout
     stderr = error_stream or sys.stderr
+
+    if arguments and arguments[0] in {"help", "hilfe"}:
+        return run_help_command(
+            arguments[1:],
+            output_stream=stdout,
+            error_stream=stderr,
+        )
 
     if arguments and arguments[0] == "start":
         start_arguments = _start_parser().parse_args(arguments[1:])
@@ -65,6 +73,7 @@ def main(
         stdout.write(
             "DATENBANKTOOL benötigt in nicht-interaktiven Umgebungen einen Befehl.\n"
             "Geführte Bedienung: datenbanktool start\n"
+            "Laienhilfe: datenbanktool help\n"
             "Befehlsübersicht: datenbanktool --help\n"
         )
         stdout.flush()
