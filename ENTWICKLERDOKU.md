@@ -1,254 +1,185 @@
 # Entwicklerdokumentation
 
-## Architekturstand 0.6.0-alpha.1
+## Architekturstand 0.7.0-alpha.1
 
-Der Datenkern, die Präsentation und der Programmeinstieg sind getrennt:
+Die Bedien- und Hilfeschichten sind jetzt klar getrennt:
 
-1. Scanner und Indexaufbau.
-2. Inkrementeller Snapshotvergleich.
-3. Rein lesende Suche und Berichte.
-4. Rein lesende Ordneraggregation.
-5. Externe Suchvorlagen-Konfiguration.
-6. Zentrale Präsentationsschicht für Farben und Ampeln.
-7. Zentrale Hilfetexte für Zweck und Auswirkung.
-8. Bestehende argparse-CLI mit Fachhandlern.
-9. Neuer schmaler Programmeinstieg.
-10. Neue geführte Terminal-Startseite.
+1. `entrypoint.py` entscheidet zwischen direktem Befehl, Startseite und Hilfebefehl.
+2. `help_command.py` verarbeitet die eigenständige mehrschichtige Hilfe.
+3. `core/layered_help.py` enthält den zentralen Hilfekatalog und reine Renderfunktionen.
+4. `core/guided_home.py` enthält die interaktive Startseitenlogik.
+5. `core/terminal_home.py` ist nur noch ein Kompatibilitätsimport.
+6. `core/presentation.py` liefert Farben, Ampeln und Statusdarstellung.
+7. `cli.py` enthält weiterhin die bestehenden Fachbefehle.
 
-Originaldatei-Schreibfunktionen bleiben außerhalb dieser Architektur.
+## `core/layered_help.py`
 
-## Neuer Programmeinstieg
+### Datenmodell
 
-### `entrypoint.py`
+`HelpTopic` ist unveränderlich und enthält:
 
-Der installierte Konsolenbefehl verweist jetzt auf:
-
-```text
-datenbanktool.entrypoint:main
-```
-
-Der Einstieg besitzt nur drei Aufgaben:
-
-1. `datenbanktool start` an die geführte Startseite weiterleiten.
-2. Einen leeren interaktiven Aufruf ebenfalls an die Startseite weiterleiten.
-3. Alle anderen Argumente unverändert an `datenbanktool.cli.main()` übergeben.
-
-Nicht-interaktive Aufrufe ohne Argumente öffnen kein Menü. Sie geben einen kurzen Nutzungshinweis aus und kehren zurück. Damit entstehen in Pipelines, Tests und umgeleiteten Ein-/Ausgaben keine unbeabsichtigten Warteschleifen.
-
-Auch `python -m datenbanktool` verwendet den neuen Einstiegspunkt.
-
-## Geführte Startseite
-
-### `core/terminal_home.py`
-
-Das Modul enthält keine Scanner-, SQLite- oder Berichtslogik. Es baut ausschließlich sichere Argumentlisten für bereits vorhandene CLI-Befehle.
-
-Zentrale Typen:
-
-- `MenuAction`: unveränderliche Beschreibung einer auswählbaren Funktion.
-- `HomeSession`: merkt Datenbank- und Ordnerpfad innerhalb einer laufenden Menüsitzung.
-- `TerminalHome`: rendert Menü, validiert Eingaben und ruft den injizierten `command_runner` auf.
-- `InputClosed`: kontrolliertes Ende bei geschlossenem Eingabestrom.
-- `UserCancelled`: Rückkehr zum Hauptmenü bei `q` oder `abbrechen`.
-
-### Menükatalog
-
-Der Katalog ist ein unveränderliches Tupel. Jeder Eintrag besitzt:
-
-- eindeutige Nummer,
-- Titel,
-- kurze Beschreibung,
-- Ampelstufe,
-- Wirkungsbezeichnung,
-- konkrete Wirkungsbegründung,
-- internen Buildernamen,
-- Kennzeichen für zusätzliche Bestätigung.
-
-Beim Erzeugen einer `TerminalHome`-Instanz werden doppelte Auswahlnummern erkannt.
-
-### Aktuelle Aktionen
-
-```text
-1 Suche
-2 Ordnerübersicht
-3 Änderungen
-4 Indexstatus
-5 Indexaufbau
-6 Re-Scan
-7 Sicherung
-8 Suchvorlagen
-9 Hilfe
-0 Beenden
-```
-
-Restore und Reparatur sind absichtlich nicht Teil des einfachen Hauptmenüs. Sie besitzen stärkere Auswirkungen auf die Indexdatenbank und bleiben über direkte Befehle sowie `datenbanktool explain` verfügbar.
-
-## Sicherheitsvertrag der Startseite
-
-### Keine Shell-Auswertung
-
-Die Startseite verwendet weder `subprocess` noch `shell=True`. Sie erzeugt zum Beispiel:
-
-```python
-["index", "search", "/pfad/mit leerzeichen/index.sqlite3", "urlaub bilder"]
-```
-
-Diese Liste wird direkt an `cli.main()` übergeben. Der angezeigte Text wird nur mit `shlex.join()` formatiert und niemals ausgeführt.
-
-Folgen:
-
-- Leerzeichen bleiben Teil eines Arguments.
-- Shell-Metazeichen erzeugen keinen zweiten Befehl.
-- Kein unnötiger Unterprozess.
-- Bestehende Parser- und Validierungsregeln bleiben verbindlich.
-
-### Bestätigungsschutz
-
-Folgende Aktionen benötigen nach der Befehlsvorschau eine zusätzliche Ja/Nein-Bestätigung:
-
-- Index neu aufbauen,
-- Re-Scan starten,
-- Sicherung erstellen.
-
-Lesende Funktionen starten ohne zweite Bestätigung. Dadurch bleibt die Bedienung schnell und die Wirkung trotzdem transparent.
-
-### Abbruchverhalten
-
-- `q`, `quit`, `abbrechen`, `zurück` und `zurueck` brechen den aktuellen Dialog ab.
-- Ungültige Menünummern zeigen einen Fehler und wiederholen das Menü.
-- Ein geschlossener Eingabestrom beendet die Startseite mit Rückgabecode 0.
-- `KeyboardInterrupt` beendet sie kontrolliert mit Rückgabecode 130.
-- Ein Fachbefehl mit Rückgabecode ungleich 0 führt nicht zum Absturz der Startseite.
-
-## Testbarkeit
-
-`TerminalHome` erhält vier Abhängigkeiten von außen:
-
-- `command_runner`,
-- `input_stream`,
-- `output_stream`,
-- `error_stream`.
-
-Dadurch können Menüabläufe vollständig mit `StringIO` und einem aufzeichnenden Stub getestet werden. Die Tests erzeugen keine echte Indexdatenbank und führen keine Dateioperationen aus.
-
-Neu geprüfte Fälle:
-
-1. eindeutige Menünummern,
-2. ungültige Auswahl,
-3. sichere Suche mit Leerzeichen in Pfad und Suchtext,
-4. Abbruch einer schreibenden Aktion,
-5. bestätigter Indexaufbau,
-6. geschlossener Eingabestrom,
-7. nicht-interaktiver Leerstart ohne Blockierung,
-8. ausdrücklicher Start und sofortiges Beenden.
-
-Der vollständige Stand besteht 39 Tests unter Python 3.10 und Python 3.12 mit `PYTHONWARNINGS=error`.
-
-## Bestehende Module
-
-### `core/folders.py`
-
-- Öffnet SQLite über URI `mode=ro`.
-- Aktiviert `PRAGMA query_only`.
-- Aggregiert direkte und rekursive Ordnerwerte.
-- Liefert größte Dateien, Ampelwerte, Seiten und JSON-/HTML-Export.
-
-### `core/presentation.py`
-
-Zentrale Ausgabe für:
-
-- ANSI-Farben,
-- Ampeltext,
-- Statusfarben,
-- Änderungsarten,
-- Bedienhinweise.
-
-Farbmodi:
-
-- `auto`,
-- `always`,
-- `never`.
-
-Farben sind nie das einzige Signal.
-
-### `core/presets.py`
-
-- versionierte JSON-Struktur,
-- strikte Filtervalidierung,
-- atomisches Schreiben,
-- Ersetzen nur mit ausdrücklicher Freigabe,
-- bestätigtes Löschen in der CLI.
-
-### `core/help_system.py`
-
-Jedes `HelpTopic` enthält:
-
-- Titel,
+- technischen Namen,
+- sichtbaren Titel,
+- Kurzbeschreibung,
 - Zweck,
-- Wirkung,
-- geschriebene Daten,
+- Schreibwirkung,
 - Risiko,
-- geeigneten Anwendungsfall,
-- Beispiel.
+- geeigneten Einsatzfall,
+- Voraussetzungen,
+- Schrittfolge,
+- Erfolgskontrolle,
+- typische Probleme,
+- Beispiel,
+- Suchstichwörter.
 
-Neu hinzugekommen ist das Thema `start`.
+### Hilfestufen
 
-## Codequalitätsentscheidung
+`render_topic()` unterstützt:
 
-Die Startseite wurde nicht in die bereits große `cli.py` integriert. Dadurch:
+- `quick`: Titel, Kurzbeschreibung, Schreibwirkung und Risiko,
+- `detail`: zusätzlich Zweck, Einsatzfall, Voraussetzungen, Erfolg und Beispiel,
+- `guided`: zusätzlich nummerierte Schritte und typische Probleme.
 
-- wächst die zentrale Parserdatei nicht weiter,
-- kann interaktive Logik unabhängig getestet werden,
-- bleiben bestehende Handler unverändert,
-- bleibt der Programmeinstieg klein,
-- können künftige GUI- oder TUI-Oberflächen denselben Fachkern verwenden.
+Die Funktion ist rein und führt keine Ein-/Ausgabe oder Dateioperation aus.
 
-Offen bleibt die schrittweise Zerlegung von `cli.py` nach Befehlsgruppen. Vorgeschlagene Zielmodule:
+### Alltagssuche
+
+`find_topics()` vergleicht den Suchtext ohne Groß-/Kleinschreibung mit:
+
+- Themenname,
+- Titel,
+- Kurzbeschreibung,
+- Einsatzbeschreibung,
+- gepflegten Stichwörtern.
+
+Die Suche funktioniert vollständig offline. Leerer Suchtext liefert alle Themen.
+
+### Fehlerhilfe
+
+`error_help()` erzeugt aus Themenname und Rückgabecode:
+
+- verständliche Fehlerzusammenfassung,
+- Sicherheitsinformation zu Originaldateien,
+- bis zu drei passende Prüfhinweise,
+- direkten Befehl zur geführten Hilfe.
+
+Es wird bewusst keine automatische Korrektur ausgeführt.
+
+## `core/guided_home.py`
+
+### Menüvertrag
+
+`MenuAction` enthält nur:
+
+- eindeutige Taste,
+- Hilfethema,
+- Buildername,
+- Bestätigungspflicht.
+
+Titel, Beschreibung und Wirkung stammen zentral aus `layered_help.py`. Dadurch werden widersprüchliche doppelte Texte vermieden.
+
+### Hilfenavigation
+
+- `h`, `hilfe`, `help` oder `?`: Hilfezentrum,
+- `?NUMMER`: Detailhilfe,
+- `gNUMMER`: geführte Hilfe,
+- `?` in einem Eingabefeld: Feldhilfe,
+- `q`: aktueller Schritt wird abgebrochen,
+- `0`: Startseite wird beendet.
+
+Hilfenavigation startet keinen Fachbefehl.
+
+### Feldhilfe
+
+`_read()` erkennt `?`, `hilfe` und `help`, wenn für das Feld ein Hilfetext hinterlegt ist. Danach wird dieselbe Frage erneut gestellt. Der Hilfetext wird nicht als Nutzereingabe übernommen.
+
+Abgesicherte Felder:
+
+- Indexdatenbank,
+- Quellordner,
+- Suchtext,
+- Suchvorlage,
+- Prüfsummenentscheidung,
+- Sicherungsziel,
+- Abschlussbestätigung.
+
+### Befehlsausführung
+
+Die Startseite baut weiterhin ausschließlich `list[str]`-Argumente. Es gibt:
+
+- keine Shell-Auswertung,
+- keinen Subprozess,
+- kein `eval`,
+- keine Interpretation von Metazeichen.
+
+Pfade und Suchtexte mit Leerzeichen bleiben einzelne Argumente.
+
+### Fehlerpfad
+
+Ein Fachbefehl mit Rückgabecode ungleich null:
+
+1. beendet nicht die Startseite,
+2. zeigt den Rückgabecode,
+3. zeigt kontextbezogene Fehlerhilfe,
+4. kehrt anschließend ins Hauptmenü zurück.
+
+## `help_command.py`
+
+Befehlsformen:
 
 ```text
-commands/scan_commands.py
-commands/search_commands.py
-commands/report_commands.py
-commands/admin_commands.py
-commands/preset_commands.py
+datenbanktool help
+datenbanktool help THEMA --level quick
+datenbanktool help THEMA --level detail
+datenbanktool help THEMA --level guided
+datenbanktool help --find TEXT
+datenbanktool help THEMA --json
 ```
 
-Eine zentrale Handlerregistrierung sollte anschließend Unterbefehle, Hilfetexte und Rückgabecodes zusammenführen.
+Unbekannte Themen werden kontrolliert behandelt und liefern Rückgabecode 2. JSON-Ausgaben enthalten Rohdaten und gerenderte Zeilen der gewählten Stufe.
 
-## Qualitätsprüfungen
+## Kompatibilität
+
+Bestehende Importe aus `datenbanktool.core.terminal_home` bleiben gültig. Das Modul exportiert die Klassen und Funktionen aus `guided_home.py`, enthält aber keine zweite Startseitenimplementierung.
+
+Der bestehende Befehl `datenbanktool explain` bleibt unverändert. Die neue mehrschichtige Oberfläche wird zusätzlich über `datenbanktool help` angeboten.
+
+## Automatische Prüfungen
 
 ```bash
 python -m compileall -q src tests
 PYTHONWARNINGS=error python -m unittest discover -s tests -v
 ```
 
-GitHub Actions prüft:
+Neu geprüft werden:
 
-- Python 3.10,
-- Python 3.12,
-- installierbares Editable-Paket,
-- vollständige Kompilierung,
-- 39 automatisierte Tests.
+- zunehmender Informationsumfang der drei Hilfestufen,
+- Alltagssuche nach „Platzfresser“ und „große Ordner“,
+- Detailhilfe ohne Fachbefehlsstart,
+- geführte Hilfe mit Schrittfolge,
+- Feldhilfe mit Wiederholung derselben Eingabe,
+- kontextbezogene Fehlerhilfe,
+- eigenständiger Hilfebefehl,
+- unbekanntes Thema mit kontrolliertem Fehlercode.
 
-Ruff und MyPy sind konfiguriert, aber noch nicht Teil des verpflichtenden Workflows. Dies bleibt ein nächster Codequalitätsblock.
+Gesamtstand: 48 Tests unter Python 3.10 und 3.12, jeweils mit Warnungen als Fehler.
 
 ## Bekannte technische Grenzen
 
-- `cli.py` ist weiterhin groß.
-- Menü und CLI sind über stabile Argumentnamen gekoppelt; Änderungen benötigen Regressionstests.
-- Pfadfavoriten werden noch nicht dauerhaft gespeichert.
-- Die Startseite bietet keine nativen Dateiauswahldialoge.
-- Ordnerexport besitzt noch kein CSV-Format.
-- Reale Bedienabnahmen in verschiedenen Terminalgrößen und Themes stehen noch aus.
+- `cli.py` ist weiterhin zu groß und muss in kleinere Befehlsmodule zerlegt werden.
+- Hilfetexte sind derzeit deutschsprachig.
+- Stichwortsuche ist deterministisch und nicht semantisch.
+- Fehlerhilfe schlägt Prüfungen vor, repariert aber nicht automatisch.
+- Persistente Favoriten und grafische Dateiauswahl fehlen noch.
 
-## Nächster einfacher Entwicklungsblock
+## Nächster Entwicklungsblock
 
-Die große `cli.py` schrittweise in kleinere Befehlsmodule aufteilen und dabei Rückgabecodes, Fehlermeldungen und Handlerregistrierung vereinheitlichen.
+`cli.py` ohne sichtbare Befehlsänderung in getrennte Module für Parser, Scans, Suche, Berichte und Indexverwaltung aufteilen. Jede Verschiebung wird durch bestehende Regressionstests abgesichert.
 
 ## Sichere Zusatzverbesserung
 
-CSV-Export für die Ordnerübersicht ergänzen und mit denselben Filtern wie Terminal, JSON und HTML absichern.
+CSV-Export der Ordnerübersicht mit denselben Filtern, stabiler Sortierung und Überschreibschutz ergänzen.
 
 ## Unverändert
 
-`AGENTS.md` wird in dieser Iteration nicht verändert.
+`AGENTS.md` wird nicht verändert. Automatische Originaldateioperationen bleiben gesperrt.
