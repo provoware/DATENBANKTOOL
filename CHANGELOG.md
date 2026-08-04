@@ -72,6 +72,8 @@ Alle wichtigen Änderungen werden hier dokumentiert. Das Projekt verwendet seman
   SHA-256 `c3678cdd50d235b9819475d6f1f6660e0367833c3a80f7faa5dff7ce990b0c1b`.
 - Standard-Artefakt: ID 8899791444,
   SHA-256 `846ebbd02d213bc336800d330a8a2612e2a069e17e13362f0a27f5aa4ed7571d`.
+- CLI-Startdatei von einem alten duplizierten SQLite-MVP-Vorspann bereinigt; `from __future__` steht wieder am Dateianfang.
+- Large-Abnahme auf Zielhardware: 100.000 Dateien, 11/11, 218,722 s, 107.011.474 Byte Python-Peak, 309.166.080 Byte Prozess-RSS, Python 3.12.13, ext4 auf `/dev/vda`, KVM x86_64 mit 3 vCPU.
 
 ## 0.12.0-alpha.1 – 2026-08-04
 

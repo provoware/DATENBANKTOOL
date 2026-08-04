@@ -59,8 +59,8 @@
 
 ## Zusätzliche, nicht blockierende Zielsystemprüfung
 
-- [ ] `large`-Profil mit 100.000 Dateien auf geeigneter Zielhardware ausführen und
-  Referenzwerte dokumentieren.
+- [x] `large`-Profil mit 100.000 Dateien auf geeigneter Zielhardware ausführen und
+  Referenzwerte dokumentieren: 11/11 Kriterien, 218,722 s, 107.011.474 Byte Python-Peak.
 
 ## Direkt folgender technischer Entwicklungsschritt
 

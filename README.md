@@ -1,12 +1,12 @@
 # DATENBANKTOOL
 
-**Erledigt:** schreibgeschützte SQLite-Analyse, Tabellenübersicht, validierte Text-/JSON-Ausgabe und automatische Tests.
+**Erledigt:** 100.000-Dateien-Large-Abnahme bestanden, CLI-Startblock bereinigt, schreibgeschützte SQLite-Analyse, Tabellenübersicht, validierte Text-/JSON-Ausgabe und automatische Tests.
 
-**Offen:** weitere Datenbanktreiber und eine grafische Oberfläche.
+**Offen:** reale Laienabnahme, geführte Vorlagenverwaltung, weitere Datenbanktreiber und eine grafische Oberfläche.
 
-**Entwicklungsfortschritt:** **35 %** (stabiler SQLite-MVP).
+**Entwicklungsfortschritt:** **99 %** (Large-Abnahme bestanden; reale Laienabnahme offen).
 
-**Mögliche Upgrades:** CSV-Export und optionale PostgreSQL-Anbindung; Details stehen im [Upgrade-Pool](UPGRADE_POOL.md).
+**Mögliche Upgrades:** geführte Vorlagenverwaltung, Mehrordner-Zeitreihe und Abnahmehistorie; Details stehen im [Upgrade-Pool](UPGRADE_POOL.md).
 
 Das DATENBANKTOOL zeigt Aufbau und Kerndaten einer lokalen SQLite-Datenbank, ohne sie zu verändern. Es benötigt Python 3.10 oder neuer und keine zusätzlichen Laufzeitpakete.
 
@@ -49,6 +49,7 @@ Die Version wird ausschließlich in `registry.json` gepflegt. Architektur und Qu
 | Automatisierte Tests | **86/86** unter Python 3.10 und 3.12 |
 | Quick-Abnahme | **600 Dateien · 11/11 bestanden** |
 | Standard-Abnahme | **10.000 Dateien · 11/11 bestanden** |
+| Large-Abnahme | **100.000 Dateien · 11/11 bestanden · 218,722 s · 107.011.474 Byte Python-Peak** |
 | Reale Laienabnahme | **Noch offen** |
 
 ## Neu: lokale Zeitreihen-Vorlagen
@@ -189,10 +190,11 @@ GitHub Actions Run `30927676213` auf Ubuntu 24.04, Funktionscommit
 |---|---:|---:|---:|---:|
 | Quick | 600 | 11/11 | 1,129 s | 1.324.226 Byte |
 | Standard | 10.000 | 11/11 | 18,150 s | 13.398.233 Byte |
+| Large | 100.000 | 11/11 | 218,722 s | 107.011.474 Byte |
 
 Zusätzlich bestanden 86/86 Tests unter Python 3.10 und Python 3.12 mit
 `PYTHONWARNINGS=error`. Die Messwerte sind CI-Referenzen und keine Garantie für andere
-Hardware.
+Hardware. Large wurde lokal im Container auf KVM x86_64 mit 3 vCPU, Python 3.12.13 und ext4 auf `/dev/vda` gemessen.
 
 ## Sicherheit
 
@@ -218,7 +220,7 @@ Hardware.
 ## Aktuelle Grenzen
 
 - Die reale Laienabnahme ist noch nicht durchgeführt.
-- Das `large`-Profil wurde noch nicht auf Zielhardware ausgeführt.
+- Das `large`-Profil bestand auf Zielhardware mit 100.000 Dateien in 218,722 s und 107.011.474 Byte Python-Spitzenspeicher.
 - Die Startseite kann Vorlagen speichern und auswählen; geführtes Anzeigen, Ersetzen und
   Löschen ist noch nicht als eigenes Untermenü vorhanden.
 - Vorlagen speichern bewusst nur den Ordner, nicht Warnschwellen oder Berichtspfade.

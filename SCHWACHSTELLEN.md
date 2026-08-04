@@ -69,7 +69,7 @@ Sicherheitsrelevante Fehler sollen ohne sensible Dateiinhalte, Zugangsdaten oder
 
 ## Großbestands- und Laienabnahme
 
-24. Das `large`-Profil mit 100.000 Dateien wurde noch nicht auf Zielhardware ausgeführt.
+24. Das `large`-Profil wurde auf Zielhardware bestanden: 100.000 Dateien, 11/11 Kriterien, 218,722 Sekunden, 107.011.474 Byte Python-Spitzenspeicher und 309.166.080 Byte Prozess-RSS.
 25. Eine echte Laienabnahme wurde noch nicht durchgeführt. Automatisierte Tests ersetzen
     keine Beobachtung einer unerfahrenen Person.
 26. Sparse-Testdateien bilden Metadatenleistung besser ab als reale vollständig gefüllte
@@ -81,6 +81,7 @@ Sicherheitsrelevante Fehler sollen ohne sensible Dateiinhalte, Zugangsdaten oder
 - 86/86 Tests unter Python 3.10 und Python 3.12.
 - Quick: 600 Dateien, 11/11 Kriterien, 1,129 Sekunden.
 - Standard: 10.000 Dateien, 11/11 Kriterien, 18,150 Sekunden.
+- Large: 100.000 Dateien, 11/11 Kriterien, 218,722 Sekunden, 107.011.474 Byte Python-Peak.
 - Diese CI-Werte sind Referenzen und keine Zusage für andere Hardware.
 
 ## Sicherheitsfazit
