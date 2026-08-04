@@ -49,6 +49,13 @@
     wird zusätzlich protokolliert, besitzt aber noch keine harte Plattformgrenze.
 20. GitHub-Actions-Artefakte laufen nach der festgelegten Aufbewahrungsdauer ab.
 
+## Finale technische Referenz
+
+- 71/71 Tests unter Python 3.10 und Python 3.12.
+- Quick: 600 Dateien, 11/11 Kriterien, 1,131 Sekunden.
+- Standard: 10.000 Dateien, 11/11 Kriterien, 18,072 Sekunden.
+- Diese CI-Werte sind Referenzen und keine Zusage für andere Hardware.
+
 ## Bedienung und Plattform
 
 21. Die Oberfläche bleibt terminalbasiert und besitzt keine grafischen Pfaddialoge.
