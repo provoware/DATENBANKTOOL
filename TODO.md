@@ -1,65 +1,57 @@
 # TODO
 
-## P0 – Sicherheits- und Datenkern
+## Erledigt
 
-1. [x] Projektstruktur, Versionierung und rein lesenden Scanner anlegen.
-2. [x] Dateikategorien, Dateinamenprüfung und exakte Duplikaterkennung anlegen.
-3. [x] Atomaren JSON-Bericht und Basistests anlegen.
-4. [ ] SQLite-Index mit Schema-Version, Migration und Reparaturmodus entwickeln.
-5. [ ] Scan-Journal für Pause, Fortsetzen und Wiederaufnahme nach Absturz entwickeln.
-6. [ ] Dateiidentität aus Gerät, Inode, Größe, Zeitwerten und optionalem Hash robust modellieren.
-7. [ ] Vorschauplan als unveränderliches Manifest entwickeln.
-8. [ ] Konfliktprüfung für Zielpfade, Rechte, Speicherplatz und Dateisystemgrenzen entwickeln.
-9. [ ] Transaktionale Kopier-, Verschiebe- und Umbenennungsengine mit Undo entwickeln.
-10. [ ] Quarantäne und Papierkorb statt Direktlöschung entwickeln.
+1. [x] Rein lesenden Scanner anlegen.
+2. [x] Dateiklassifizierung implementieren.
+3. [x] Dateinamenrisiken erkennen.
+4. [x] Große Dateien markieren.
+5. [x] Exakte Duplikate per SHA-256 erkennen.
+6. [x] JSON-Berichte atomar schreiben.
+7. [x] Projekt- und Sicherheitsregister einführen.
+8. [x] SQLite-Index mit Schema-Versionierung implementieren.
+9. [x] V1→V2-Migration implementieren.
+10. [x] Batch-Import transaktional umsetzen.
+11. [x] Scan-Wiederaufnahme mit Checkpoint umsetzen.
+12. [x] Hashing-Wiederaufnahme vorbereiten.
+13. [x] Reparaturmodus mit Sicherheitskopie implementieren.
+14. [x] CSV-Berichte mit Filtern implementieren.
+15. [x] HTML-Berichte mit Filtern implementieren.
 
-## P1 – Laienoberfläche
+## Priorität P0 – nächster technischer Block
 
-11. [ ] PySide6-Oberfläche mit Einfach-, Geführt- und Expertenmodus entwickeln.
-12. [ ] Ordnerauswahl, Scanfortschritt, Pause, Abbruch und verständliche Fehleranzeige entwickeln.
-13. [ ] Ergebnis-Dashboard mit Ampel, Fundgruppen und empfohlenen Aktionen entwickeln.
-14. [ ] Bild-, Audio-, Video-, Text-, PDF-, Archiv- und Codevorschau entwickeln.
-15. [ ] Große Schaltflächen, Touchbedienung, Tastaturführung und hohe Kontraste prüfen.
-16. [ ] Jede technische Meldung mit Ursache, Wirkung und sicherer Handlung ergänzen.
+1. [ ] Inkrementellen Re-Scan abgeschlossener Sitzungen entwickeln.
+2. [ ] Änderungen, neue und entfernte Dateien sicher abgleichen.
+3. [ ] Dateisystemidentität und Mountwechsel erfassen.
+4. [ ] Fortschrittsereignisse für Scan und Hashing einführen.
+5. [ ] Kontrolliertes Pausieren und Abbrechen ohne Testgrenze umsetzen.
+6. [ ] Wiederaufnahme bei entferntem Checkpoint sicher lösen.
+7. [ ] Simultane Schreibzugriffe über Anwendungslock verhindern.
+8. [ ] Datenbank-Backup und Wiederherstellung als eigenes CLI-Kommando ergänzen.
 
-## P1 – Suche und Ordnung
+## Priorität P1 – Suche und Bedienung
 
-17. [ ] Schnellsuche über Name, Pfad, Typ, Größe, Datum und Metadaten entwickeln.
-18. [ ] Gespeicherte Filter, Suchprofile und transparente Regelkombinationen entwickeln.
-19. [ ] Sortierpläne nach Medientyp, Datum, Projekt, Künstler und frei definierbaren Regeln entwickeln.
-20. [ ] Stapelumbenennung mit Vorschau, Nummerierung und Kollisionsschutz entwickeln.
-21. [ ] Leere, extrem große, tief verschachtelte und unzugängliche Ordner erkennen.
-22. [ ] Archive inventarisieren und optional ohne Entpacken prüfen.
-23. [ ] Codeprojekte erkennen, Buildreste markieren und Projektgrenzen darstellen.
+9. [ ] Indexsuche nach Pfad, Dateiname, Endung, Kategorie und Größe ergänzen.
+10. [ ] FTS5 für freigegebene Textinhalte evaluieren.
+11. [ ] gespeicherte Filterprofile einführen.
+12. [ ] Ergebnisstatistik nach Kategorie, Größe und Warnung ergänzen.
+13. [ ] HTML-Ausgabe für Millionen Zeilen paginieren oder aufteilen.
+14. [ ] PySide6-Grundoberfläche mit Einfach-/Geführt-/Expertenmodus anlegen.
+15. [ ] Fortschritt, Pause, Abbruch und Wiederaufnahme laiengerecht darstellen.
 
-## P2 – Medienintelligenz
+## Priorität P2 – Medien und Prüfung
 
-24. [ ] FFmpeg/ffprobe- und MediaInfo-Prüfung integrieren.
-25. [ ] Audio-Fingerprints für inhaltlich gleiche Audiodateien entwickeln.
-26. [ ] Perceptual Hashes für ähnliche Bilder und Videos entwickeln.
-27. [ ] Textähnlichkeit und Normalisierungsvarianten entwickeln.
-28. [ ] Beschädigte, unvollständige oder falsch benannte Medien erkennen.
+16. [ ] ffprobe/MediaInfo-Abstraktion entwickeln.
+17. [ ] Bild-, Audio-, Video- und Textvorschau einführen.
+18. [ ] beschädigte und falsch benannte Medien erkennen.
+19. [ ] Audio-Fingerprints und Bildähnlichkeit getrennt von exakten Duplikaten umsetzen.
+20. [ ] Archive ohne unkontrolliertes Entpacken inventarisieren.
 
-## P2 – Betrieb und Release
+## Weiterhin gesperrt
 
-29. [ ] CPU-, RAM-, Datenträger- und I/O-Limits entwickeln.
-30. [ ] AppImage oder portable Linux-Ausgabe mit Doppelklick-Start entwickeln.
-31. [ ] Ruff, MyPy, Bandit, pip-audit und Coverage als Qualitätsgates einrichten.
-32. [ ] Reale Tests auf Kubuntu, externen HDDs, NTFS, exFAT und schreibgeschützten Medien durchführen.
-
-## Erledigte Punkte
-
-- Grundarchitektur getrennt in CLI, Modelle, Klassifizierung, Benennungsprüfung und Scanner.
-- Rein lesender Standardmodus.
-- Symbolischen Links wird standardmäßig nicht gefolgt.
-- Vorhandene Berichte werden nicht still überschrieben.
-- Exakte Duplikate werden optional per SHA-256 geprüft.
-- Basisprüfungen lokal erfolgreich ausgeführt.
-
-## Erinnerungsliste für spätere Maßnahmen
-
-1. Keine schreibende Funktion vor fertigem Vorschau-, Journal- und Undo-Vertrag freigeben.
-2. Große Sammlungen niemals vollständig im Arbeitsspeicher halten.
-3. Originaldateien bei Duplikaten nie automatisch bestimmen.
-4. Wechselmedien und getrennte Dateisysteme als Normalfall behandeln.
-5. Laienmodus darf Fachbegriffe anzeigen, muss sie aber direkt erklären.
+21. [ ] Stapelumbenennung.
+22. [ ] Verschieben und Sortieren.
+23. [ ] Quarantäne und Papierkorb.
+24. [ ] Undo-Journal.
+25. [ ] Recovery nach Abbruch schreibender Operationen.
+26. [ ] Freigabe schreibender Dateioperationen erst nach vollständigen Sicherheitsgates.
