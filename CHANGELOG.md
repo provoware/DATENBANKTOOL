@@ -1,44 +1,43 @@
 # Changelog
 
-Alle wesentlichen Projektänderungen werden hier dokumentiert.
-
-## 0.3.0-alpha.1 – 2026-08-04
+## 0.4.0-alpha.1 – 2026-08-04
 
 ### Hinzugefügt
 
-- SQLite-Schema 3 mit automatischer Migration von vorhandenen Schema-2-Datenbanken.
-- Inkrementeller Re-Scan auf Basis einer abgeschlossenen Index-Sitzung.
-- Erkennung neuer, geänderter, verschobener, entfernter und unveränderter Dateien.
-- Sichere Verschiebungserkennung über Geräte-/Inode-Identität plus identische Größe und Nanosekunden-Zeit.
-- Zusätzliche Hash-Verschiebungserkennung, wenn die Baseline bereits SHA-256-Werte besitzt.
-- Wiederverwendung vorhandener SHA-256-Werte für unveränderte Dateien.
-- Fortsetzbarer Re-Scan mit persistentem Checkpoint und kompatibilitätsgeprüfter Baseline.
-- Prozessübergreifender Linux-Dateilock auf Basis von `fcntl.flock`.
-- Persistente Fortschrittsereignisse sowie Ausgabe als verständlicher Text oder JSONL.
-- `index sessions` mit Status-, Wurzel- und Mengenfilter.
-- `index backup` über die konsistente SQLite-Backup-API.
-- `index restore` mit Vorabprüfung und standardmäßiger Sicherheitskopie des Zielindexes.
-- Zusätzliche Tests für Migration, Inode-Wiederverwendung, Wiederaufnahme, Backup und Restore.
+- Rein lesende SQLite-Suche über gespeicherte Scan-Sitzungen.
+- Seitenweise Trefferanzeige mit frei wählbarer Seitengröße bis 200.
+- Stabile Sortierung nach Pfad, Größe, Datum und Dateityp.
+- Kombinierbare Filter für Suchtext, Dateityp, Größe, Namensprobleme und Duplikate.
+- JSON-Ausgabe der Suchergebnisse.
+- Optionaler FTS5-Index für Dateinamen, Pfade, Endungen, Typen und Namenswarnungen.
+- `index changes` mit verständlicher Terminalansicht.
+- Änderungsberichte als JSON, CSV mit UTF-8-BOM und lokale HTML-Datei.
+- Filter für Änderungsart, Dateityp und Pfadtext.
+- Interaktive Suche und Filter im HTML-Änderungsbericht.
+- Neue Integrations- und Sicherheitstests.
 
-### Verbessert
+### Sicherheitsverbesserungen
 
-- Gleichgroße Dateiersetzungen werden über Geräte-/Inode-Wechsel als Änderung erkannt.
-- Inode-Wiederverwendung nach Löschen erzeugt keine falsche Verschiebung mehr.
-- Hashing im Re-Scan konzentriert sich auf neue oder geänderte Kandidaten.
-- Reparatur, Vollindex, Re-Scan, Backup und Restore verwenden denselben Prozesslock.
-- CLI-Status zeigt Scanmodus und Baseline-Sitzung.
+- Normale Suchabfragen öffnen SQLite mit `mode=ro` und `query_only`.
+- SQLite-Verbindungen werden ausdrücklich geschlossen.
+- FTS5-Aufbau benötigt einen bewussten Schalter und verwendet den Prozesslock.
+- Mehrere Berichtziele werden vollständig vor dem Schreiben geprüft.
+- Vorhandene Ausgabedateien werden nicht still überschrieben.
+- Alle HTML-Werte werden maskiert.
 
-### Validiert
+### Unverändert
 
-- Python-Kompilierung erfolgreich.
-- 19 von 19 Unittests erfolgreich mit `PYTHONWARNINGS=error`.
-- Schema-2→3-Migration mit historischer Phasen-Check-Constraint erfolgreich.
-- End-to-End-Abläufe für Build, Re-Scan, Sitzungen, Backup, Restore und Berichte erfolgreich.
+- Originaldateien werden nicht verändert.
+- Schreibende Dateioperationen bleiben gesperrt.
+- `AGENTS.md` bleibt unverändert.
+
+## 0.3.0-alpha.1 – 2026-08-04
+
+- Inkrementeller Re-Scan, Prozesslock, Fortschrittsereignisse, Sitzungsverwaltung, Backup und Restore.
 
 ## 0.2.0-alpha.1 – 2026-08-04
 
-- Persistenter SQLite-Index mit Schema-Versionierung, Batch-Import, Wiederaufnahme und Reparaturmodus.
-- Gefilterte CSV- und HTML-Berichte.
+- Persistenter SQLite-Index, Migration, Batch-Import, Wiederaufnahme, Reparatur sowie CSV-/HTML-Dateiberichte.
 
 ## 0.1.0-alpha.1 – 2026-08-04
 
