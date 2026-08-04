@@ -1,0 +1,137 @@
+{
+  "schema_version": 1,
+  "scope": "global",
+  "status": "enforced",
+  "rules": [
+    {
+      "id": "G-001",
+      "title": "Öffentliche Schnittstellen stabil halten",
+      "requirement": "Bestehende Befehlsnamen, Parameter, Rückgabecodes und maschinenlesbare Felder bleiben kompatibel, sofern eine Migration nicht ausdrücklich versioniert wird.",
+      "enforcement": [
+        "tests",
+        "changelog"
+      ]
+    },
+    {
+      "id": "G-002",
+      "title": "Fachmodule klar trennen",
+      "requirement": "Parser und Ausführung einer Funktion liegen im selben Fachmodul; cli.py bleibt ausschließlich Zusammensetzung, Dispatch und Fehlergrenze.",
+      "enforcement": [
+        "architecture-test",
+        "line-limit"
+      ]
+    },
+    {
+      "id": "G-003",
+      "title": "Abhängigkeiten nur nach innen",
+      "requirement": "CLI-Fachmodule dürfen gemeinsame Hilfen und Core-Module importieren, aber niemals cli.py oder ein anderes CLI-Fachmodul zyklisch.",
+      "enforcement": [
+        "ast-import-test"
+      ]
+    },
+    {
+      "id": "G-004",
+      "title": "Seiteneffekte deklarieren",
+      "requirement": "Jeder Befehl besitzt eine maschinenlesbare CommandPolicy für Lese- und Schreibwirkungen.",
+      "enforcement": [
+        "parser-contract-test"
+      ]
+    },
+    {
+      "id": "G-005",
+      "title": "Originaldateien standardmäßig nur lesen",
+      "requirement": "Schreibzugriffe auf gescannte Originaldateien bleiben ohne separaten, versionierten Sicherheitsvertrag gesperrt.",
+      "enforcement": [
+        "CommandPolicy.validate",
+        "security-test"
+      ]
+    },
+    {
+      "id": "G-006",
+      "title": "Dateien atomar schreiben",
+      "requirement": "Berichte, Konfigurationen und andere ersetzbare Dateien werden über temporäre Dateien geschrieben und atomar freigegeben.",
+      "enforcement": [
+        "implementation-review",
+        "failure-tests"
+      ]
+    },
+    {
+      "id": "G-007",
+      "title": "Kein stilles Überschreiben",
+      "requirement": "Vorhandene Ziele werden nur mit einer ausdrücklichen Überschreiboption ersetzt.",
+      "enforcement": [
+        "tests"
+      ]
+    },
+    {
+      "id": "G-008",
+      "title": "Keine Shell-Auswertung",
+      "requirement": "subprocess-Shellmodus, os.system, eval und exec sind in CLI-Fachmodulen verboten.",
+      "enforcement": [
+        "source-scan-test"
+      ]
+    },
+    {
+      "id": "G-009",
+      "title": "Einheitliche Rückgabecodes",
+      "requirement": "Handler liefern int: 0 Erfolg, 1 fachlich unvollständig, 2 kontrollierter Eingabe- oder Ausführungsfehler.",
+      "enforcement": [
+        "dispatch-validation",
+        "tests"
+      ]
+    },
+    {
+      "id": "G-010",
+      "title": "Maschinen- und Menschenausgabe trennen",
+      "requirement": "JSON und andere Maschinenformate enthalten keine ANSI-Farben, Tooltips oder Bedienhinweise.",
+      "enforcement": [
+        "tests"
+      ]
+    },
+    {
+      "id": "G-011",
+      "title": "Module klein halten",
+      "requirement": "cli.py bleibt unter 150 Zeilen; jedes CLI-Fachmodul bleibt unter 500 Zeilen oder wird weiter aufgeteilt.",
+      "enforcement": [
+        "line-limit-test"
+      ]
+    },
+    {
+      "id": "G-012",
+      "title": "Änderungen vollständig prüfen",
+      "requirement": "Neue Funktionen erhalten Syntax-, Parser-, Handler-, Fehler-, Sicherheits- und Rückwärtskompatibilitätstests unter allen unterstützten Python-Versionen.",
+      "enforcement": [
+        "github-actions"
+      ]
+    },
+    {
+      "id": "G-013",
+      "title": "Dokumentation gemeinsam aktualisieren",
+      "requirement": "README, Changelog, TODO, Upgrade-Pool, Schwachstellen, Analyse, Entwicklerdokumentation und Registry werden pro Iteration konsistent aktualisiert.",
+      "enforcement": [
+        "iteration-checklist"
+      ]
+    },
+    {
+      "id": "G-014",
+      "title": "Keine unnötigen Abhängigkeiten",
+      "requirement": "Neue Laufzeitabhängigkeiten benötigen eine dokumentierte Begründung, Offline-Auswirkung und Alternative.",
+      "enforcement": [
+        "project-registry",
+        "review"
+      ]
+    }
+  ],
+  "limits": {
+    "cli_entry_max_lines": 150,
+    "cli_module_max_lines": 500,
+    "external_runtime_dependencies": 0
+  },
+  "forbidden_cli_patterns": [
+    "subprocess.",
+    "os.system(",
+    "shell=True",
+    "eval(",
+    "exec("
+  ]
+}
