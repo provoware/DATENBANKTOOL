@@ -18,6 +18,7 @@ class CommandPolicy:
     writes_reports: bool = False
     writes_backups: bool = False
     writes_configuration: bool = False
+    writes_test_data: bool = False
 
     def validate(self) -> None:
         if not self.name.strip():
@@ -38,6 +39,7 @@ GLOBAL_CLI_RULES = (
     "Jeder Handler erhält argparse.Namespace und liefert einen ganzzahligen Rückgabecode.",
     "0 bedeutet Erfolg, 1 bedeutet fachlich unvollständig, 2 bedeutet kontrollierten Fehler.",
     "Originaldateien bleiben ohne separaten Sicherheitsvertrag rein lesend.",
+    "Testdaten werden nur in einem ausdrücklich neuen Arbeitsordner erzeugt.",
     "Dateischreibvorgänge sind ausdrücklich, atomar und überschreiben nicht still.",
     "Shell-Auswertung, eval, exec und os.system sind in CLI-Fachmodulen verboten.",
     "Neue Befehle erhalten Parser-, Handler-, Fehler- und Rückwärtskompatibilitätstests.",
