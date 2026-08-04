@@ -77,6 +77,7 @@ class CliArchitectureTests(unittest.TestCase):
         commands = (
             ["explain"],
             ["scan", "/tmp"],
+            ["acceptance", "--workspace", "/tmp/neue-abnahme"],
             ["index", "build", "/tmp", "--database", "/tmp/index.sqlite3"],
             ["index", "rescan", "/tmp", "--database", "/tmp/index.sqlite3"],
             ["index", "status", "/tmp/index.sqlite3"],
@@ -119,6 +120,11 @@ class CliArchitectureTests(unittest.TestCase):
         parser = build_parser()
         expected = {
             ("scan", "/tmp"): "datenbanktool.cli_scan",
+            (
+                "acceptance",
+                "--workspace",
+                "/tmp/neue-abnahme",
+            ): "datenbanktool.cli_acceptance",
             ("index", "search", "/tmp/index.sqlite3"): "datenbanktool.cli_search",
             ("index", "folders", "/tmp/index.sqlite3"): "datenbanktool.cli_reports",
             (
