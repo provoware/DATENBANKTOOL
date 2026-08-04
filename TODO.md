@@ -2,38 +2,39 @@
 
 ## In dieser Iteration erledigt
 
-1. [x] Ordner-Zeitreihe als eigenen Startseitenpunkt 11 aufnehmen.
-2. [x] Indexdatenbank im geführten Dialog auswählen.
-3. [x] Relativen Ordner oder `.` verständlich abfragen.
-4. [x] Älteste und neueste Scan-ID optional abfragen.
-5. [x] Zeitpunkte vor dem Start auf 2 bis 500 validieren.
-6. [x] Berichtsauswahl auf kein, JSON, CSV oder HTML begrenzen.
-7. [x] Berichtspfad mit eigener Feldhilfe abfragen.
-8. [x] Geplanten Zeitreihenbefehl sichtbar anzeigen.
-9. [x] Sichere Argumentliste ohne Shell-Auswertung verwenden.
-10. [x] Detailhilfe über `?11` verbinden.
-11. [x] Schritt-für-Schritt-Hilfe über `g11` verbinden.
-12. [x] Feldhilfe über `?` für jede neue Eingabe ergänzen.
-13. [x] Zeitreihenspezifische Fehlerhilfe ergänzen.
-14. [x] Eigenständiges Hilfethema `folder-timeline` integrieren.
-15. [x] Hilfesuche nach Verlauf und Speicherentwicklung ergänzen.
-16. [x] Größenverlauf als lokales SVG-Liniendiagramm erzeugen.
-17. [x] Dateizahlverlauf als lokales SVG-Liniendiagramm erzeugen.
-18. [x] SVG-`title`, `desc` und `aria-labelledby` ergänzen.
-19. [x] Datenpunkte mit Tastaturfokus und `aria-label` versehen.
-20. [x] Achsen-, Scan- und Wertbeschriftungen sichtbar darstellen.
-21. [x] Minimum, Maximum und Nettoänderung textlich zusammenfassen.
-22. [x] Vollständige Wertetabelle unter den Diagrammen erhalten.
-23. [x] Lange Zeitreihen durch reduzierte sichtbare Beschriftung entzerren.
-24. [x] JavaScript und externe HTML-Ressourcen vollständig vermeiden.
-25. [x] Responsive Darstellung und sichtbare Fokusmarkierung ergänzen.
-26. [x] Menü-, Dialog- und Validierungstests ergänzen.
-27. [x] Detail-, Schritt-, Feld- und Fehlerhilfetests ergänzen.
-28. [x] SVG-, ARIA-, Offline- und Skriptfreiheitstests ergänzen.
-29. [x] 77 Tests unter Python 3.10 und 3.12 erfolgreich ausführen.
-30. [x] Quick-Abnahme mit 600 Dateien und 11/11 Kriterien ausführen.
-31. [x] Standard-Abnahme mit 10.000 Dateien und 11/11 Kriterien ausführen.
-32. [x] Version und Pflichtdokumentation auf 0.12.0-alpha.1 synchronisieren.
+1. [x] Eigenständige Zeitreihen-Vorlagendomäne entwickeln.
+2. [x] Nur Name, relativen Ordner, Beschreibung und Zeitstempel speichern.
+3. [x] Datenbankpfade und Scan-Inhalte aus Vorlagen ausschließen.
+4. [x] Relative Ordner über dieselbe Kernvalidierung wie Zeitreihen prüfen.
+5. [x] Absolute Pfade und `..` ablehnen.
+6. [x] Namen und Beschreibungen begrenzen und normalisieren.
+7. [x] Vorlagendatei atomar mit Modus `0600` schreiben.
+8. [x] Gleichnamige Vorlagen ohne `--replace` schützen.
+9. [x] Löschen nur mit `--yes` zulassen.
+10. [x] CLI-Befehle `list`, `show`, `save` und `delete` ergänzen.
+11. [x] `folder-timeline --preset` und `--preset-file` ergänzen.
+12. [x] Ordner und Vorlage als gegenseitig ausschließend validieren.
+13. [x] Gespeicherte Vorlagen auf Startseitenpunkt 11 nummeriert anzeigen.
+14. [x] Auswahl per Nummer oder exaktem Namen ermöglichen.
+15. [x] Manuelle Eingabe bei leerer oder beschädigter Vorlagenliste erhalten.
+16. [x] Startseitenpunkt 12 zum bestätigten Speichern ergänzen.
+17. [x] Detail-, Schritt-, Feld- und Fehlerhilfe für Vorlagen ergänzen.
+18. [x] Größenwachstum als optionale Prozent-Warnschwelle ergänzen.
+19. [x] Dateizahlwachstum als optionale Prozent-Warnschwelle ergänzen.
+20. [x] Nur positives Wachstum zum vorherigen sichtbaren Scan prüfen.
+21. [x] Nicht endliche und unzulässige Schwellen ablehnen.
+22. [x] Prozentwert bei vorherigem Wert null sicher leer lassen.
+23. [x] Warnstatus von der normalen Verlaufsklassifikation trennen.
+24. [x] Messwert, Schwelle und Klartextbegründung gemeinsam ausgeben.
+25. [x] Rein lesenden Charakter und fehlende Schadensbewertung ausdrücklich nennen.
+26. [x] Terminal um aktive Grenzen, Trefferzahl und Datei-Prozentwerte erweitern.
+27. [x] JSON, CSV und HTML um Grenzen und Begründungen erweitern.
+28. [x] SVG-Grenztreffer sichtbar mit `Warnung` und ARIA markieren.
+29. [x] CLI-Architektur- und Seiteneffektverträge erweitern.
+30. [x] Vorlagen-, Startseiten-, Schwellen-, Export- und Hilfetests ergänzen.
+31. [x] 86/86 Tests unter Python 3.10 und 3.12 erfolgreich ausführen.
+32. [x] Quick- und Standard-Abnahme mit jeweils 11/11 Kriterien ausführen.
+33. [x] Version und Pflichtdokumentation auf 0.13.0-alpha.1 synchronisieren.
 
 ## Noch offen
 
@@ -47,10 +48,11 @@
 
 ## Direkt folgender technischer Entwicklungsschritt
 
-Zeitreihen-Vorlagen entwickeln: häufig geprüfte relative Ordnerpfade lokal, validiert
-und überschreibgeschützt speichern und in der geführten Startseite auswählen.
+Geführte Vorlagenverwaltung entwickeln: Zeitreihen-Vorlagen auf der Startseite
+zusätzlich anzeigen, bewusst ersetzen und nach Namensprüfung bestätigt löschen können.
 
 ## Alternative Verbesserung mit hohem Nutzen und geringem Risiko
 
-Optionale rein lesende Trendgrenzen für starkes Größen- oder Dateiwachstum ergänzen und
-im Terminal sowie HTML immer mit Klartext und Begründung anzeigen.
+Mehrere ausgewählte relative Ordner rein lesend in einem gemeinsamen Zeitreihenbericht
+anzeigen – mit getrennten Linien, eindeutiger Legende und Hinweis auf überlappende
+rekursive Eltern- und Kindwerte.
