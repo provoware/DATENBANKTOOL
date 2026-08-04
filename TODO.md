@@ -26,7 +26,10 @@
 22. [x] `--all-pages` ohne Exportziel kontrolliert ablehnen.
 23. [x] Handler, `CommandPolicy` und Modulzuständigkeit automatisch prüfen.
 24. [x] Zeitreihen-, Sicherheits- und Vollständigkeitstests ergänzen.
-25. [x] 71 Tests unter Python 3.10 und 3.12 ausführen.
+25. [x] 71 Tests unter Python 3.10 und 3.12 erfolgreich ausführen.
+26. [x] Quick-Abnahme mit 600 Dateien und 11/11 Kriterien erneut ausführen.
+27. [x] Standard-Abnahme mit 10.000 Dateien und 11/11 Kriterien erneut ausführen.
+28. [x] Finale Abnahmeberichte und Prüfsummen im Projektregister dokumentieren.
 
 ## Noch offen
 
