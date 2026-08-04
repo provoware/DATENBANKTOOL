@@ -14,6 +14,8 @@
 | Automatische Originaldateiänderungen | **Gesperrt** |
 | Externe Laufzeitabhängigkeiten | **0** |
 | Automatisierte Tests | **71/71** unter Python 3.10 und 3.12 |
+| Quick-Abnahme | **600 Dateien · 11/11 bestanden** |
+| Standard-Abnahme | **10.000 Dateien · 11/11 bestanden** |
 | Reale Laienabnahme | **Noch offen** |
 
 ## Neu: Ordner-Zeitreihe über mehrere Scans
@@ -143,6 +145,18 @@ Profile:
 Die Abnahme erzeugt nur synthetische Daten in einem neuen Arbeitsordner, misst
 Laufzeit und Speicher, prüft ein Vorher-/Nachher-Manifest und erzeugt JSON-, Markdown-,
 CSV- sowie Laien-Checklistenberichte.
+
+## Finale Referenzprüfung auf dem 0.11-Head
+
+GitHub Actions auf Ubuntu 24.04 und Python 3.12:
+
+| Profil | Dateien | Kriterien | Laufzeit | Python-Spitzenspeicher |
+|---|---:|---:|---:|---:|
+| Quick | 600 | 11/11 | 1,131 s | 1.327.056 Byte |
+| Standard | 10.000 | 11/11 | 18,072 s | 13.396.733 Byte |
+
+Die Werte sind reproduzierbare CI-Referenzen und keine Garantie für identische
+Laufzeiten auf anderer Hardware. Beide Berichtspakete werden 14 Tage archiviert.
 
 ## Sicherheit
 
