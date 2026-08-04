@@ -1,9 +1,9 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "project": "DATENBANKTOOL",
-  "version": "0.1.0-alpha.1",
-  "phase": "foundation",
-  "development_progress_percent": 18,
+  "version": "0.2.0-alpha.1",
+  "phase": "persistent-index-and-reports",
+  "development_progress_percent": 36,
   "runtime": {
     "python": ">=3.10",
     "external_runtime_dependencies": []
@@ -12,14 +12,21 @@
     "filesystem_mode": "read-only",
     "follow_symlinks": false,
     "overwrite_reports": false,
+    "repair_backup": true,
     "destructive_actions_available": false
   },
   "modules": {
-    "scanner": "alpha",
-    "classification": "alpha",
-    "filename_checks": "alpha",
-    "exact_duplicate_detection": "alpha",
-    "persistent_index": "planned",
+    "scanner": "alpha-validated",
+    "classification": "alpha-validated",
+    "filename_checks": "alpha-validated",
+    "exact_duplicate_detection": "alpha-validated",
+    "persistent_index": "alpha-validated",
+    "schema_migrations": "alpha-validated",
+    "batch_import": "alpha-validated",
+    "resume": "alpha-validated",
+    "repair_mode": "alpha-validated",
+    "csv_reports": "alpha-validated",
+    "html_reports": "alpha-validated",
     "graphical_interface": "planned",
     "file_operations": "blocked-until-safety-contract"
   }
