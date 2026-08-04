@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "project": "DATENBANKTOOL",
-  "version": "0.9.0-alpha.1",
-  "phase": "read-only-folder-comparison",
-  "development_progress_percent": 96,
-  "completed_main_items": 43,
-  "open_main_items": 2,
+  "version": "0.10.0-alpha.1",
+  "phase": "folder-csv-and-reproducible-acceptance",
+  "development_progress_percent": 99,
+  "completed_main_items": 45,
+  "open_main_items": 1,
   "runtime": {
     "python": ">=3.10",
     "external_runtime_dependencies": []
@@ -31,9 +31,15 @@
     "restore_safety_backup": true,
     "search_modifies_database": false,
     "folder_analysis_modifies_database": false,
+    "folder_csv_modifies_database": false,
     "folder_comparison_modifies_database": false,
     "folder_comparison_requires_same_root": true,
     "comparison_reports_overwrite": false,
+    "acceptance_writes_only_new_workspace": true,
+    "acceptance_reuses_existing_workspace": false,
+    "acceptance_modifies_personal_files": false,
+    "acceptance_source_manifest_validation": true,
+    "manual_novice_acceptance_status": "pending-real-person",
     "fts_build_requires_explicit_flag": true,
     "colours_are_never_the_only_signal": true,
     "preset_delete_requires_confirmation": true,
@@ -67,10 +73,18 @@
     "change_reports": "alpha",
     "folder_statistics": "alpha",
     "folder_traffic_lights": "alpha",
+    "folder_csv_export": "alpha",
+    "all_page_folder_exports": "alpha",
     "folder_comparison": "alpha",
     "folder_growth_classification": "alpha",
     "folder_comparison_exports": "alpha",
     "folder_comparison_help": "alpha",
+    "acceptance_profiles": "alpha",
+    "synthetic_large_dataset": "alpha",
+    "performance_thresholds": "alpha",
+    "source_manifest_validation": "alpha",
+    "novice_acceptance_checklist": "alpha",
+    "ci_acceptance_artifacts": "alpha",
     "search_presets": "alpha",
     "accessible_colours": "alpha",
     "html_tooltips": "alpha",
@@ -87,6 +101,7 @@
     "modular_cli_search": "alpha",
     "modular_cli_reports": "alpha",
     "modular_cli_index": "alpha",
+    "modular_cli_acceptance": "alpha",
     "command_policy_contract": "alpha",
     "global_maintenance_rules": "enforced",
     "architecture_guardrails": "enforced",
@@ -100,10 +115,36 @@
     "cyclic_cli_imports_allowed": false
   },
   "validation": {
-    "python_3_10_tests": 59,
-    "python_3_12_tests": 59,
+    "python_3_10_tests": 66,
+    "python_3_12_tests": 66,
     "warnings_as_errors": true,
     "compileall": true,
-    "architecture_tests": 6
+    "architecture_tests": 6,
+    "quick_acceptance": {
+      "reference_commit": "1ebc892d83642d42516da76919cec0c69c036b32",
+      "file_count": 600,
+      "checks_passed": 11,
+      "checks_total": 11,
+      "duration_seconds": 1.086,
+      "peak_python_memory_bytes": 1326097,
+      "artifact_id": 8895038828
+    },
+    "standard_acceptance": {
+      "reference_commit": "1ebc892d83642d42516da76919cec0c69c036b32",
+      "file_count": 10000,
+      "checks_passed": 11,
+      "checks_total": 11,
+      "duration_seconds": 17.781,
+      "peak_python_memory_bytes": 13394783,
+      "artifact_id": 8895049504
+    },
+    "large_acceptance": {
+      "file_count": 100000,
+      "status": "available-not-run-on-target-hardware"
+    },
+    "manual_novice_acceptance": {
+      "status": "pending-real-person",
+      "checklist_generated": true
+    }
   }
 }
