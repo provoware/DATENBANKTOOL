@@ -10,3 +10,6 @@ def _read_version() -> str:
 
 
 __version__ = _read_version()
+"""DATENBANKTOOL package."""
+
+__version__ = "0.13.0-alpha.1"

@@ -1,0 +1,70 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - main
+      - "agent/**"
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12"]
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+      - name: Python einrichten
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Projekt installieren
+        run: python -m pip install --upgrade pip && python -m pip install -e .
+      - name: Syntax prüfen
+        run: python -m compileall -q src tests
+      - name: Tests ausführen
+        env:
+          PYTHONWARNINGS: error
+        run: python -m unittest discover -s tests -v
+      - name: Quick-Abnahme mit 600 Dateien
+        if: matrix.python-version == '3.12'
+        env:
+          PYTHONWARNINGS: error
+        run: datenbanktool acceptance --profile quick --workspace acceptance-quick
+      - name: Quick-Abnahmeberichte archivieren
+        if: always() && matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: datenbanktool-acceptance-quick
+          path: |
+            acceptance-quick/acceptance-result.json
+            acceptance-quick/acceptance-report.md
+            acceptance-quick/NOVICE_ACCEPTANCE_CHECKLIST.md
+            acceptance-quick/ordneruebersicht.csv
+          retention-days: 14
+          if-no-files-found: error
+      - name: Standard-Abnahme mit 10000 Dateien
+        if: matrix.python-version == '3.12'
+        env:
+          PYTHONWARNINGS: error
+        run: datenbanktool acceptance --profile standard --workspace acceptance-standard
+      - name: Standard-Abnahmeberichte archivieren
+        if: always() && matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: datenbanktool-acceptance-standard
+          path: |
+            acceptance-standard/acceptance-result.json
+            acceptance-standard/acceptance-report.md
+            acceptance-standard/NOVICE_ACCEPTANCE_CHECKLIST.md
+            acceptance-standard/ordneruebersicht.csv
+          retention-days: 14
+          if-no-files-found: error

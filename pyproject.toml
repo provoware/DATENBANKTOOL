@@ -4,19 +4,27 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "datenbanktool"
-dynamic = ["version"]
-description = "Schreibgeschützte Analyse lokaler SQLite-Datenbanken"
+version = "0.13.0a1"
+description = "Sicheres Linux-Werkzeug zum Prüfen und Strukturieren großer chaotischer Datensammlungen"
+readme = "README.md"
 requires-python = ">=3.10"
+authors = [{ name = "provoware" }]
 dependencies = []
 
 [project.scripts]
-datenbanktool = "datenbanktool.cli:main"
-
-[tool.setuptools.dynamic]
-version = {attr = "datenbanktool.__version__"}
-
-[tool.setuptools.package-dir]
-"" = "src"
+datenbanktool = "datenbanktool.entrypoint:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+packages = ["datenbanktool"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
