@@ -42,6 +42,7 @@ _ACTIONS = (
     MenuAction("7", "backup", "backup", True),
     MenuAction("8", "presets", "presets"),
     MenuAction("9", "explain", "explain"),
+    MenuAction("10", "folder-compare", "folder_compare"),
 )
 
 _FIELD_HELP = {
@@ -258,6 +259,9 @@ class TerminalHome:
     def _build_explain(self) -> list[str]:
         return ["help"]
 
+    def _build_folder_compare(self) -> list[str]:
+        return ["index", "folder-compare", self._database()]
+
     def _build_command(self, action: MenuAction) -> list[str]:
         builders: dict[str, Callable[[], list[str]]] = {
             "search": self._build_search,
@@ -269,6 +273,7 @@ class TerminalHome:
             "backup": self._build_backup,
             "presets": self._build_presets,
             "explain": self._build_explain,
+            "folder_compare": self._build_folder_compare,
         }
         try:
             return list(builders[action.builder_name]())
