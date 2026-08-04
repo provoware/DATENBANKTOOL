@@ -137,24 +137,24 @@
     "folder_timeline_tests": 3,
     "complete_comparison_export_tests": 2,
     "quick_acceptance_reference": {
-      "reference_commit": "900efee174464413e3b8216924081248294787c6",
+      "reference_commit": "278dde47b75b95cc3fa445ddd3e6a84d3413b7d9",
       "file_count": 600,
       "checks_passed": 11,
       "checks_total": 11,
-      "duration_seconds": 1.131,
-      "peak_python_memory_bytes": 1327056,
-      "artifact_id": 8896459989,
-      "artifact_sha256": "02a8210d8a9717565453b006634a69bfe0f558138f2c0d0df277296d32c8f3e4"
+      "duration_seconds": 1.085,
+      "peak_python_memory_bytes": 1327597,
+      "artifact_id": 8896682878,
+      "artifact_sha256": "ce9e7ca3ae074ffb9f64f22b5c6f9a3bb0d2306a7a8d16541c87633019df55e8"
     },
     "standard_acceptance_reference": {
-      "reference_commit": "900efee174464413e3b8216924081248294787c6",
+      "reference_commit": "278dde47b75b95cc3fa445ddd3e6a84d3413b7d9",
       "file_count": 10000,
       "checks_passed": 11,
       "checks_total": 11,
-      "duration_seconds": 18.072,
-      "peak_python_memory_bytes": 13396733,
-      "artifact_id": 8896470987,
-      "artifact_sha256": "c1b2fd570a89c4a34cd794a4d19cc394630b54c7710fc9727c6f229bfcf0ba40"
+      "duration_seconds": 18.718,
+      "peak_python_memory_bytes": 13396633,
+      "artifact_id": 8896694104,
+      "artifact_sha256": "24410db0850c99f7a4fe9167906f35b34780463fa4ad802176b21e8109c31f17"
     },
     "large_acceptance": {
       "file_count": 100000,
