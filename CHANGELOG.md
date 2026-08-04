@@ -1,89 +1,89 @@
 # Changelog
 
+## 0.13.0-alpha.1 – 2026-08-04
+
+### Zeitreihen-Vorlagen
+
+- Neuer Befehl `index timeline-presets` mit `list`, `show`, `save` und `delete`.
+- Gespeichert werden nur Name, validierter relativer Ordner, Beschreibung und
+  Zeitstempel; Datenbankpfade und Scan-Inhalte bleiben außerhalb der Vorlage.
+- Standardpfad unter `$XDG_CONFIG_HOME/datenbanktool/timeline-presets.json`.
+- Atomare JSON-Freigabe und Dateiberechtigung `0600`.
+- Namen 1–64 Zeichen, Beschreibungen höchstens 240 Zeichen.
+- Absolute Pfade und `..` werden abgelehnt.
+- Vorhandene Namen werden ohne `--replace` nicht überschrieben.
+- Löschen benötigt `--yes`.
+- `folder-timeline` akzeptiert `--preset` und optional `--preset-file`.
+- Positionaler Ordner und `--preset` schließen sich kontrolliert aus.
+
+### Geführte Bedienung
+
+- Startseitenpunkt 11 zeigt gespeicherte Vorlagen nummeriert mit Ordner und Beschreibung.
+- Auswahl per Nummer oder exaktem Namen; leere Auswahl wechselt zur manuellen Eingabe.
+- Gewählter Ordner bleibt vor dem Start sichtbar und kann bewusst angepasst werden.
+- Neuer Startseitenpunkt 12 speichert Vorlagen erst nach sichtbarer Befehlsprüfung und
+  ausdrücklicher Bestätigung.
+- Feldhilfe für Vorlagenauswahl, Name, Beschreibung und Warnschwellen.
+- Dezimalwerte akzeptieren Punkt oder deutsches Komma.
+- Beschädigte Vorlagendateien blockieren nicht die manuelle Zeitreiheneingabe.
+
+### Rein lesende Trendgrenzen
+
+- Neue Optionen `--warn-size-growth-percent` und `--warn-file-growth-percent`.
+- Vergleich erfolgt mit dem unmittelbar vorherigen sichtbaren Scan.
+- Nur positives Wachstum kann eine Warnschwelle erreichen.
+- Endliche Werte von 0 bis 1.000.000 Prozent werden akzeptiert.
+- Bei vorherigem Wert null bleibt der Prozentwert leer.
+- Treffer erscheinen als `ROT – Trendgrenze erreicht`.
+- Jede Warnung nennt Messwert, konfigurierte Schwelle und konkrete Begründung.
+- Klarer Zusatz: rein lesender Hinweis, keine Schadens- oder Löschentscheidung.
+- Verlaufsklassifikation und Warnstatus bleiben getrennte Felder.
+
+### Exporte und Barrierefreiheit
+
+- JSON enthält konfigurierte Grenzen, Datei- und Größenprozente sowie Warnbegründungen.
+- CSV enthält getrennte Spalten für Verlauf, Warnstatus, Rohwerte und Schwellen.
+- HTML zeigt aktive Grenzen, Trefferzahl und vollständige Klartextbegründungen.
+- SVG-Punkte mit Grenztreffer besitzen sichtbares Wort `Warnung`, eigene Klasse,
+  Tastaturfokus, Titel und genaue ARIA-Beschreibung.
+- HTML bleibt skriptfrei, vollständig lokal und ohne externe Ressourcen.
+
+### Architektur und Prüfung
+
+- Neue Module `core/timeline_presets.py` und `cli_timeline_presets.py`.
+- `CommandPolicy` deklariert Konfigurationsschreibzugriffe ausdrücklich.
+- CLI-Eigentümerschaft, Zeilengrenzen und Shell-Verbote erweitert geprüft.
+- 86/86 Tests unter Python 3.10 und Python 3.12 erfolgreich.
+- Tests mit `PYTHONWARNINGS=error` und erfolgreicher Kompilierung.
+- Quick-Abnahme: 600 Dateien, 11/11, 1,129 s, 1.324.226 Byte Python-Peak.
+- Standard-Abnahme: 10.000 Dateien, 11/11, 18,150 s,
+  13.398.233 Byte Python-Peak.
+- Quick-Artefakt: ID 8899780387,
+  SHA-256 `c3678cdd50d235b9819475d6f1f6660e0367833c3a80f7faa5dff7ce990b0c1b`.
+- Standard-Artefakt: ID 8899791444,
+  SHA-256 `846ebbd02d213bc336800d330a8a2612e2a069e17e13362f0a27f5aa4ed7571d`.
+
 ## 0.12.0-alpha.1 – 2026-08-04
 
-### Geführte Ordner-Zeitreihe
-
-- Neuer Startseitenpunkt `11. Ordner-Zeitreihe`.
-- Sicherer Dialog für Indexdatenbank, relativen Ordner, Scan-Grenzen, Zeitpunkte und
-  optionalen Bericht.
-- Feldhilfe über `?` für jede neue Eingabe.
-- Detailhilfe über `?11`.
-- Schritt-für-Schritt-Anleitung über `g11`.
-- Eigenständiges Hilfethema `folder-timeline` im Hilfezentrum.
-- Suche über Alltagsbegriffe wie Zeitreihe, Verlauf und Speicherentwicklung.
-- Zahlenvalidierung für Scan-IDs und 2 bis 500 Zeitpunkte vor dem Start.
-- Berichtsauswahl auf kein, JSON, CSV oder HTML begrenzt.
-- Geplanter Befehl wird sichtbar und als Argumentliste ohne Shell gestartet.
-- Zeitreihenspezifische Fehlerhilfe für fehlende Scans, unpassende Sitzungen,
-  unsichere Pfade und vorhandene Berichtszielen.
-
-### Barrierefreie Offline-Trendgrafiken
-
-- Zwei lokale SVG-Liniendiagramme im HTML-Zeitreihenbericht:
-  Größenverlauf und Dateizahlverlauf.
-- Kein JavaScript und keine externen Ressourcen.
-- `figure`, `figcaption`, SVG-`title`, SVG-`desc` und `aria-labelledby`.
-- Sichtbare Achsen-, Scan- und Wertbeschriftungen.
-- Jeder Datenpunkt ist fokussierbar und besitzt eine genaue zugängliche Beschreibung.
-- Textliche Zusammenfassung von Minimum, Maximum und Nettoänderung.
-- Vollständige Zeitreihenwertetabelle unter den Diagrammen.
-- Bei langen Verläufen werden nur sichtbare Beschriftungen reduziert; Datenpunkte und
-  Tabellenwerte bleiben vollständig.
-- Responsive Darstellung und Fokusmarkierung ohne Animation oder Skript.
-
-### Architektur und Sicherheit
-
-- Neues Modul `core/folder_timeline_help.py` für den vollständigen Hilfetextvertrag.
-- Neues Modul `core/folder_timeline_charts.py` für reine SVG-Erzeugung.
-- `core/guided_home.py` um validierte Zeitreiheneingaben erweitert.
-- `help_command.py` bindet das neue Hilfethema in Liste, Suche, JSON und alle
-  Hilfestufen ein.
-- `core/folder_timeline_exports.py` bleibt für atomare Formatausgabe zuständig.
-- Keine neue Laufzeitabhängigkeit.
-- Keine Shell-Auswertung, kein JavaScript und keine externen HTML-Ressourcen.
-- SQLite und Originaldateien bleiben unverändert.
-- `AGENTS.md` bleibt unverändert.
-
-### Automatische Prüfung
-
-- Gesamtumfang auf 77 Tests erweitert.
-- Menüpunkt, sichere Argumentliste und alle geführten Eingaben geprüft.
-- Detail-, Schritt-, Feld- und Fehlerhilfe geprüft.
-- Hilfesuche nach Alltagsbegriffen geprüft.
-- Zwei SVGs, Rollen, Titel, Beschreibungen und Tastaturpunkte geprüft.
-- Fehlende Skripte und externe HTTP-/HTTPS-Ressourcen geprüft.
-- Vollständige Tabelle unter den Diagrammen geprüft.
-- 77/77 Tests unter Python 3.10 und Python 3.12 erfolgreich.
-- Tests jeweils mit `PYTHONWARNINGS=error`.
-- Quick-Abnahme: 600 Dateien, 11/11 Kriterien, 1,015 Sekunden,
-  1.325.982 Byte Python-Spitzenspeicher.
-- Standard-Abnahme: 10.000 Dateien, 11/11 Kriterien, 16,116 Sekunden,
-  13.398.883 Byte Python-Spitzenspeicher.
-- Quick-Artefakt: ID 8898514789,
-  SHA-256 `72e26044b5d02b06c771f74c505b3719cc0cbf5219e8965d6dfb80e0e3b7955e`.
-- Standard-Artefakt: ID 8898524811,
-  SHA-256 `930f15a0d6e0c942a9dffe0f48e45715dd412db5d815b174b94cd37225ab2bab`.
+- Geführter Startseitenpunkt für die Ordner-Zeitreihe.
+- Detail-, Schritt-, Feld- und Fehlerhilfe.
+- Zwei vollständig lokale barrierefreie SVG-Trendgrafiken.
+- 77 Tests unter Python 3.10 und Python 3.12.
 
 ## 0.11.0-alpha.1 – 2026-08-04
 
 - Rein lesende Ordner-Zeitreihe über mehrere abgeschlossene Scans.
-- Rekursive Dateizahl, Größe, Differenzen, Prozentwerte und Zustände.
 - Atomare JSON-, Calc-CSV- und Offline-HTML-Berichte.
 - Vollständiger Ordnervergleichsexport über `--all-pages`.
-- 71 Tests unter Python 3.10 und Python 3.12.
 
 ## 0.10.0-alpha.1 – 2026-08-04
 
 - Ordnerübersicht als LibreOffice-kompatible CSV.
-- Vollständiger Ordnerexport über `--all-pages`.
 - Reproduzierbare Großbestandsabnahme mit quick, standard und large.
-- Laufzeit-, Speicher- und Quelldatenprüfung mit elf festen Kriterien.
 
 ## 0.9.0-alpha.1 – 2026-08-04
 
-- Rein lesender Ordnervergleich zwischen zwei abgeschlossenen Scans.
-- Filter, stabile Sortierung, Pagination und JSON-/CSV-/HTML-Berichte.
+- Rein lesender Ordnervergleich zwischen zwei Scans.
 
 ## 0.8.0-alpha.1 – 2026-08-04
 
