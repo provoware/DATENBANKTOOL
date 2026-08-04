@@ -38,3 +38,4 @@
 - Modulare CLI und maschinenlesbarer Seiteneffektvertrag.
 - Reproduzierbare Abnahmeprofile mit 600, 10.000 und 100.000 Dateien.
 - Laufzeit-, Speicher- und Quelldatenprüfung mit archivierten Berichten.
+- Finale 0.11-Prüfung mit 71 Tests je Python-Version sowie Quick und Standard 11/11.
