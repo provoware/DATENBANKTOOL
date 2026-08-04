@@ -2,39 +2,64 @@
 
 ## Ergebnis dieser Iteration
 
-Der gespeicherte SQLite-Index ist jetzt direkt nutzbar. Nutzer müssen keine langen JSON-Dateien mehr durchsuchen, sondern können mit einfachen Befehlen suchen, filtern, sortieren und durch Seiten blättern.
+Das Tool zeigt nicht mehr nur einzelne Dateien, sondern erklärt jetzt auch die Struktur ganzer Ordner. Speicherbedarf, Dateimengen, Namenshinweise, Duplikate und größte Einzeldateien werden verständlich zusammengeführt.
 
-## Entscheidungen für Laien
+## Vollständig gelöste Punkte
 
-1. Die Standardsuche benötigt nur Datenbank und Suchwort.
-2. Ohne Suchwort funktionieren Filter allein.
-3. Die Seitengröße ist begrenzt, damit Terminal und Speicher übersichtlich bleiben.
-4. Die Ausgabe nennt Trefferzahl, aktuelle Seite und den Befehl für die nächste Seite.
-5. Technische FTS5-Beschleunigung ist optional und muss bewusst aufgebaut werden.
-6. Fehlt FTS5, bleibt die normale Suche verfügbar.
-7. Änderungsarten werden im Terminal deutsch bezeichnet.
-8. JSON, CSV und HTML können gleichzeitig erzeugt werden.
-9. Vorhandene Berichte werden nicht ungefragt ersetzt.
+1. Ordnerwerte werden aus einem abgeschlossenen Snapshot rein lesend berechnet.
+2. Direkte Dateien und Dateien in Unterordnern werden getrennt ausgewiesen.
+3. Gesamtgrößen werden ohne Laden des gesamten Dateiinhalts ermittelt.
+4. Größte Platzfresser werden stabil nach Größe und Pfad sortiert.
+5. Große Ergebnislisten besitzen Filter, Seiten und feste Sortierungen.
+6. Ampeln enthalten Farbe, Farbnamen, Statuswort und Begründung.
+7. Farben können automatisch, dauerhaft oder gar nicht verwendet werden.
+8. `NO_COLOR` wird als etablierter Ausschalter respektiert.
+9. JSON-Ausgaben bleiben maschinenlesbar und frei von Farbcodes.
+10. HTML-Berichte besitzen echte Hover-Texte und ARIA-Beschriftungen.
+11. Terminalausgaben besitzen kontextbezogene Hinweise statt unzuverlässiger Maus-Tooltips.
+12. Funktionsbeschreibungen erklären Zweck, Wirkung, Schreibzugriffe, Risiko und Beispiel.
+13. Suchfilter können als verständlich benannte Vorlagen gespeichert werden.
+14. Vorlagen werden außerhalb des SQLite-Indexes gespeichert.
+15. Vorlagen werden atomar geschrieben und standardmäßig nur für den Benutzer freigegeben.
+16. Überschreiben und Löschen benötigen ausdrückliche Freigaben.
+17. Gespeicherte Filter können beim Start gezielt überschrieben werden.
+18. Originaldateien bleiben in allen neuen Funktionen unverändert.
 
-## Suchmodell
+## Fachliche Entscheidungen
 
-- Suche innerhalb einer unveränderlichen Scan-Sitzung.
-- Standardmäßig neueste abgeschlossene Sitzung.
-- Stabile Reihenfolge durch Hauptsortierung plus Pfad und Datei-ID.
-- SQL-Parameter statt zusammengesetzter Nutzereingaben.
-- `mode=ro` und `query_only` für normale Suchabfragen.
-- FTS5 nur als ausdrücklich erzeugter Zusatzindex.
+### Ampel statt versteckter Punktzahl
 
-## Änderungsmodell
+Eine undurchsichtige Bewertungspunktzahl wäre für Laien schwer nachvollziehbar. Deshalb zeigt jede Ampel direkt die erkannten Gründe. Die Ampel priorisiert nur die Reihenfolge der Prüfung.
 
-- `added` → Neu
-- `modified` → Geändert
-- `moved` → Verschoben
-- `removed` → Entfernt
-- `unchanged` → Unverändert
+### Farben niemals allein
 
-Der Bericht zeigt alten Pfad, neuen Pfad, Dateityp, Größe, Datum und technische Erkennungsdetails. Er verändert keine Datei.
+Farben können wegen Sehschwächen, Terminaleinstellungen oder Ausdrucken fehlen. Darum bleiben Klartext und Begründung immer erhalten.
+
+### Ordnerwerte aus dem Snapshot
+
+Die Übersicht greift auf denselben geprüften Snapshot wie Suche und Berichte zurück. Dadurch entstehen keine widersprüchlichen Ergebnisse durch einen parallel veränderten Dateibestand.
+
+### Vorlagen außerhalb der Datenbank
+
+Suchvorlagen sind persönliche Bedienkonfiguration. Sie werden getrennt vom gemeinsam nutzbaren Dateiindex gespeichert und können keinen Index beschädigen.
+
+### Tooltips passend zur Oberfläche
+
+HTML unterstützt verlässliche Hover-Tooltips. Ein Terminal unterstützt dies nicht einheitlich. Dort sind sichtbare Hinweise und der Befehl `explain` die robustere, barriereärmere Lösung.
+
+## Erkannte nächste Analysepunkte
+
+1. Ampelschwellen später als verständliche Profile konfigurierbar machen.
+2. Ordnerwachstum zwischen zwei Scan-Sitzungen anzeigen.
+3. CSV-Export für Ordnerübersichten ergänzen.
+4. Gleichzeitige Vorlagenänderungen mit einem kleinen Konfigurationslock absichern.
+5. Vorlagenexport und -import mit Versionsprüfung entwickeln.
+6. Ein nummeriertes Startmenü als Übergang zur grafischen Oberfläche bauen.
+7. Bedienabnahme mit vollständigen Linux-Laien durchführen.
+8. Ampeldarstellung in dunklen und hellen Terminalthemen prüfen.
+9. Sehr große Ordnerbestände mit Millionen Dateien messen.
+10. Spätere GUI-Tooltips aus denselben zentralen Hilfetexten speisen.
 
 ## Architektur-Fazit
 
-Der nächste sinnvolle Baustein ist keine Dateiänderung, sondern eine verständliche Ordnerübersicht. Nutzer sollen zuerst erkennen können, welche Ordner besonders groß, unübersichtlich oder auffällig sind.
+Die Bedienlogik ist jetzt deutlich verständlicher, ohne den Sicherheitsvertrag aufzuweichen. Farben, Ampeln und Vorlagen liegen über dem rein lesenden Datenkern. Automatische Originaldateiänderungen bleiben weiterhin korrekt blockiert.
