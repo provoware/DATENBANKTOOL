@@ -2,36 +2,43 @@
 
 ## Einfach verständliche nächste Verbesserungen
 
-1. **CSV für die normale Ordnerübersicht** – Dateizahl, Gesamtgröße,
-   Ampelgrund und Platzfresser direkt als Tabelle speichern.
-2. **Großbestandstest** – sehr große reale Sammlungen mit festen Laufzeit-,
-   Speicher- und Fehlergrenzen prüfen.
-3. **Laienabnahme** – typische Aufgaben mit Linux-Nutzern ohne Fachkenntnisse
-   durchführen und Verständlichkeitsprobleme protokollieren.
+1. **Ordner-Zeitreihe** – Größe und Dateizahl eines Ordners über mehrere
+   abgeschlossene Scans darstellen.
+2. **Vollständiger Vergleichsexport** – mit `--all-pages` alle gefilterten
+   Vergleichszeilen als JSON, CSV oder HTML speichern.
+3. **Reale Laienabnahme** – die erzeugte Checkliste mit einer unerfahrenen
+   Kubuntu-Testperson durchführen und konkrete Verständlichkeitsprobleme beheben.
+4. **100.000-Dateien-Zieltest** – das vorhandene `large`-Profil auf der vorgesehenen
+   Hardware ausführen und feste Zielwerte dokumentieren.
 
 ## Später mögliche Erweiterungen
 
-4. **Ordner-Zeitreihe** – Entwicklung eines Ordners über mehr als zwei Scans anzeigen.
-5. **Vollständiger Export** – wahlweise alle gefilterten Vergleichszeilen statt nur
-   der aktuellen Seite exportieren.
-6. **Grafische Oberfläche** – Schaltflächen und Dateiauswahlfenster statt Texteingaben.
-7. **Favoriten** – häufig verwendete Ordner und Indexdateien dauerhaft speichern.
-8. **Vorlagen übertragen** – Suchvorlagen exportieren und auf andere Rechner übernehmen.
-9. **HTML-Startbericht** – wichtige Ergebnisse auf einer lokalen Übersichtsseite bündeln.
+5. **Grafische Oberfläche** – Schaltflächen und Dateiauswahlfenster statt Texteingaben.
+6. **Favoriten** – häufig verwendete Ordner und Indexdateien lokal speichern.
+7. **Vorlagen übertragen** – Suchvorlagen exportieren und importieren.
+8. **HTML-Startbericht** – wichtige Ergebnisse auf einer lokalen Übersichtsseite bündeln.
+9. **Abnahmehistorie** – mehrere JSON-Abnahmeberichte vergleichen, ohne sie zu verändern.
+10. **Trendwarnungen** – rein lesend melden, wenn Laufzeit oder Speicher gegenüber einer
+    früheren Abnahme deutlich steigen.
 
 ## Bereits umgesetzt
 
-- Nummerierte Terminal-Startseite.
-- Sichere Argumentübergabe ohne Shell-Auswertung.
-- Ampeln mit Klartext und Begründung.
-- Ordnerübersicht mit Platzfressern.
-- Suchvorlagen.
-- Mehrschichtige Laienhilfe.
-- Modulare CLI-Fachmodule.
-- Maschinenlesbarer Seiteneffektvertrag.
-- Globale Wartungs- und Architekturregeln.
-- Rein lesender Ordnervergleich zwischen zwei abgeschlossenen Scans.
-- Automatische Auswahl eines passenden Vergleichspaars.
-- Erkennung von Wachstum, Rückgang, neuen und entfernten Ordnern.
-- JSON-, CSV- und HTML-Export des Ordnervergleichs.
-- Startseitenpunkt und vollständige Hilfe für den Ordnervergleich.
+- Rein lesender Scanner und SQLite-Index.
+- Inkrementeller Re-Scan, Änderungsberichte, Backup und Restore.
+- Suche, Filter, Pagination und optionale FTS5-Suche.
+- Ordnerübersicht mit Dateizahl, Gesamtgröße, Ampeln und Platzfressern.
+- Ordnerübersicht als LibreOffice-kompatible CSV.
+- Vollständiger Ordnerexport über `--all-pages`.
+- Suchvorlagen und mehrschichtige Laienhilfe.
+- Geführte Terminal-Startseite.
+- Modulare CLI und maschinenlesbarer Seiteneffektvertrag.
+- Rein lesender Ordnervergleich zwischen zwei Scans.
+- JSON-, CSV- und HTML-Berichte.
+- Reproduzierbare Profile mit 600, 10.000 und 100.000 synthetischen Dateien.
+- Laufzeit-, Phasen-, Python-Speicher- und Prozess-RSS-Messung.
+- Quelldaten-Manifest vor und nach der Abnahme.
+- Elf automatische Kriterien.
+- JSON-, Markdown-, CSV- und Laien-Checklistenberichte.
+- Quick-Abnahme mit 600 Dateien: 11/11 bestanden.
+- Standard-Abnahme mit 10.000 Dateien: 11/11 bestanden.
+- Archivierte GitHub-Actions-Abnahmeberichte.
