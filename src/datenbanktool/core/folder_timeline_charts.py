@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import html
 
-from datenbanktool.core.folder_timeline import FolderTimeline
+from datenbanktool.core.folder_timeline import FolderTimeline, FolderTimelinePoint
 
 _WIDTH = 960
 _HEIGHT = 360
@@ -43,6 +43,11 @@ def _metric_value(metric: str, value: int) -> str:
     return _human_size(value) if metric == "size" else str(value)
 
 
+def _metric_warnings(point: FolderTimelinePoint, metric: str) -> tuple[str, ...]:
+    prefix = "Größe " if metric == "size" else "Dateizahl "
+    return tuple(reason for reason in point.threshold_reasons if reason.startswith(prefix))
+
+
 def _chart(
     timeline: FolderTimeline,
     *,
@@ -81,21 +86,32 @@ def _chart(
     x_labels: list[str] = []
     points: list[str] = []
     coordinates: list[str] = []
+    warning_count = 0
     for index, point in enumerate(timeline.points):
         value = values[index]
         x = x_position(index)
         y = y_position(value)
         coordinates.append(f"{x:.2f},{y:.2f}")
         value_text = _metric_value(metric, value)
+        warnings = _metric_warnings(point, metric)
+        warning_count += bool(warnings)
+        warning_text = f" Warnung: {'; '.join(warnings)}." if warnings else ""
         accessible = html.escape(
-            f"Scan #{point.session_id}, {point.recorded_utc}: {value_text}",
+            f"Scan #{point.session_id}, {point.recorded_utc}: {value_text}.{warning_text}",
             quote=True,
         )
+        point_class = "data-point warning-point" if warnings else "data-point"
         points.append(
-            f'<circle class="data-point" cx="{x:.2f}" cy="{y:.2f}" r="5" '
+            f'<circle class="{point_class}" cx="{x:.2f}" cy="{y:.2f}" r="5" '
             f'tabindex="0" role="img" aria-label="{accessible}">'
             f'<title>{accessible}</title></circle>'
         )
+        if warnings:
+            warning_y = min(_TOP + _PLOT_HEIGHT - 8, y + 22)
+            points.append(
+                f'<text class="warning-label" x="{x:.2f}" y="{warning_y:.2f}" '
+                f'text-anchor="middle">Warnung</text>'
+            )
         if index in labels:
             x_labels.append(
                 f'<text class="axis-label" x="{x:.2f}" y="{_HEIGHT - 38}" '
@@ -115,10 +131,15 @@ def _chart(
     net_text = "unverändert" if net_value == 0 else (
         f"um {net} gestiegen" if net_value > 0 else f"um {net} gesunken"
     )
+    warning_summary = (
+        f" Die konfigurierte Warnschwelle wurde in {warning_count} Übergängen erreicht."
+        if warning_count
+        else " Keine konfigurierte Warnschwelle wurde in diesem Diagramm erreicht."
+    )
     summary = (
         f"{description} Minimum {minimum}, Maximum {maximum}; vom ersten bis zum "
-        f"letzten angezeigten Scan {net_text}. Die vollständigen Werte stehen in "
-        "der Tabelle unter den Diagrammen."
+        f"letzten angezeigten Scan {net_text}.{warning_summary} Die vollständigen "
+        "Werte und Begründungen stehen in der Tabelle unter den Diagrammen."
     )
     return f"""
 <figure class="chart-panel">
@@ -146,7 +167,8 @@ def render_timeline_charts(timeline: FolderTimeline) -> str:
         '<section class="charts" aria-labelledby="trend-heading">'
         '<h2 id="trend-heading">Trendgrafiken</h2>'
         '<p>Beide Diagramme sind textlich beschriftet. Jeder Datenpunkt besitzt eine '
-        'Tastaturmarke und eine genaue zugängliche Beschreibung.</p>'
+        'Tastaturmarke und eine genaue zugängliche Beschreibung. Erreichte '
+        'Trendgrenzen werden zusätzlich mit dem sichtbaren Wort Warnung markiert.</p>'
         + _chart(
             timeline,
             metric="size",
