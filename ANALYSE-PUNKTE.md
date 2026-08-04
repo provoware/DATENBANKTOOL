@@ -99,6 +99,18 @@ Die neue Testdatei prüft:
 Der Architekturtest bindet den neuen Befehl zusätzlich an sein CLI-Modul und seine
 `CommandPolicy`. Gesamtstand: 71 Tests unter Python 3.10 und 3.12.
 
+## Finale technische Referenzprüfung
+
+GitHub Actions auf Ubuntu 24.04 und Python 3.12:
+
+| Profil | Dateien | Kriterien | Laufzeit | Python-Spitzenspeicher |
+|---|---:|---:|---:|---:|
+| Quick | 600 | 11/11 | 1,131 s | 1.327.056 Byte |
+| Standard | 10.000 | 11/11 | 18,072 s | 13.396.733 Byte |
+
+Beide Berichtspakete wurden mit SHA-256-Prüfsumme archiviert. Die Werte dienen als
+CI-Referenz und sind keine Hardwaregarantie.
+
 ## Erkannte nächste Analysepunkte
 
 1. Zeitreihe als eigenen Punkt in die geführte Startseite aufnehmen.
