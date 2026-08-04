@@ -6,35 +6,81 @@
 
 | Bereich | Stand |
 |---|---|
-| Version | `0.5.0-alpha.1` |
+| Version | `0.6.0-alpha.1` |
 | SQLite-Schema | `3` |
-| Entwicklungsfortschritt | **77 %** |
-| Erledigte Hauptpunkte | **34** |
-| Offene Hauptpunkte | **10** |
+| Entwicklungsfortschritt | **84 %** |
+| Erledigte Hauptpunkte | **37** |
+| Offene Hauptpunkte | **7** |
 | Originaldateien verändern | **Nein** |
 | Standardmodus | **Rein lesend** |
 | Automatisches Löschen oder Verschieben | **Gesperrt** |
 
 ## Neu in dieser Version
 
-1. **Ordnerübersicht:** zeigt pro Ordner Dateizahl, Gesamtgröße und größte Platzfresser.
-2. **Ampelsystem:** Grün, Gelb und Rot zeigen den Prüfbedarf. Jede Farbe wird zusätzlich mit Text und Begründung erklärt.
-3. **Suchvorlagen:** häufige Suchfilter unter einem Namen speichern und später wieder starten.
-4. **Tooltip-Hilfe:** HTML-Berichte erklären Ampeln beim Darüberfahren mit der Maus.
-5. **Ausführliche Funktionshilfe:** `datenbanktool explain` beschreibt Zweck, Wirkung, Schreibzugriffe, Risiko und Beispiel.
-6. **Farben in der Kommandozeile:** automatisch, immer oder nie; `NO_COLOR` wird unterstützt.
+1. **Geführte Startseite:** Die wichtigsten Funktionen stehen als nummerierte Auswahl bereit.
+2. **Wirkung vor dem Start:** Jede Auswahl erklärt, ob nur gelesen oder eine Index-/Sicherungsdatei geschrieben wird.
+3. **Sichere Ausführung:** Eingaben werden als feste Argumentliste übergeben und nicht durch eine Shell ausgewertet.
+4. **Bestätigungsschutz:** Indexaufbau, Re-Scan und Sicherung starten erst nach einer zusätzlichen Bestätigung.
+5. **Robuster Programmstart:** Ohne Befehl öffnet sich das Menü nur in einem echten Terminal; Skripte und Umleitungen blockieren nicht.
+6. **Bessere Codequalität:** Startlogik, Menümodell und bestehende Befehlslogik sind klar getrennt und unabhängig testbar.
+
+## Geführte Startseite verwenden
+
+```bash
+datenbanktool start
+```
+
+In einem echten Terminal kann auch nur folgender Befehl verwendet werden:
+
+```bash
+datenbanktool
+```
+
+Die Startseite zeigt diese Bereiche:
+
+1. Dateien suchen
+2. Ordnerübersicht
+3. Änderungen anzeigen
+4. Indexstatus prüfen
+5. Neuen Index anlegen
+6. Ordner erneut prüfen
+7. Index sichern
+8. Suchvorlagen anzeigen
+9. Funktionen erklären
+0. Beenden
+
+### Bedienregeln
+
+- Eine angezeigte Nummer startet den geführten Dialog.
+- `q` bricht nur den aktuellen Schritt ab und führt zum Hauptmenü zurück.
+- `0` beendet die Startseite.
+- Der zuletzt verwendete Datenbank- und Ordnerpfad wird innerhalb derselben Sitzung vorgeschlagen.
+- Vor der Ausführung wird der vollständige geplante Befehl angezeigt.
+- Schreibende Index- und Sicherungsaktionen benötigen eine ausdrückliche Bestätigung.
+
+### Farben der Startseite steuern
+
+```bash
+datenbanktool start --color auto
+datenbanktool start --color always
+datenbanktool start --color never
+```
+
+Farbe ist nie das einzige Signal. Neben jeder Ampel stehen Farbnamen, Wirkung und Begründung im Klartext.
+
+### Sicherheitswirkung
+
+Die Startseite selbst verändert keine Datei. Sie führt ausschließlich vorhandene, getestete DATENBANKTOOL-Befehle aus. Nutzereingaben werden nicht als Shell-Befehl interpretiert. Pfade mit Leerzeichen bleiben deshalb sichere einzelne Argumente.
 
 ## Ampeln richtig verstehen
 
 | Ampel | Bedeutung |
 |---|---|
-| **GRÜN – Unauffällig** | Keine erkannten Hinweise in diesem Ergebnis. |
-| **GELB – Prüfen** | Es gibt zum Beispiel große Dateien, Namenshinweise oder Duplikate. |
-| **ROT – Dringend prüfen** | Mehrere oder besonders deutliche Hinweise wurden erkannt. |
+| **GRÜN – Nur lesen** | Index und Originaldateien bleiben unverändert. |
+| **GELB – Schreibt Index/Sicherung** | Nur die angekündigte SQLite- oder Sicherungsdatei wird geschrieben. |
+| **ROT – Dringend prüfen** | Wird in Auswertungen für besonders auffällige Ergebnisse verwendet. |
 
-Die Ampel sagt **nicht**, dass eine Datei beschädigt oder gefährlich ist. Sie hilft nur dabei, große Listen sinnvoll zu priorisieren.
-
-Farben sind niemals die einzige Information. Jede Ampel enthält zusätzlich den Farbnamen, eine klare Bezeichnung und eine Begründung.
+Die Ampel sagt **nicht**, dass eine Datei beschädigt oder gefährlich ist. Sie hilft nur dabei, Wirkung und Prüfbedarf schnell zu erkennen.
 
 ## Installation für die Entwicklung
 
@@ -51,7 +97,7 @@ Version prüfen:
 datenbanktool --version
 ```
 
-## 1. Ordnerübersicht anzeigen
+## Ordnerübersicht anzeigen
 
 ```bash
 datenbanktool index folders index.sqlite3
@@ -97,7 +143,7 @@ Der HTML-Bericht funktioniert offline. Beim Darüberfahren mit der Maus erklärt
 
 **Auswirkung:** Die Indexdatenbank und Originaldateien werden nur gelesen. Nur ausdrücklich gewählte Berichtsdateien werden erstellt.
 
-## 2. Suchvorlage speichern
+## Suchvorlage speichern
 
 Beispiel: große Audiodateien speichern:
 
@@ -153,12 +199,18 @@ datenbanktool index presets delete grosse-audios --yes
 
 **Auswirkung:** Suchvorlagen liegen standardmäßig in `~/.config/datenbanktool/search-presets.json`. Sie verändern weder Originaldateien noch den SQLite-Index. Überschreiben benötigt `--replace`, Löschen benötigt `--yes`.
 
-## 3. Funktionen und Auswirkungen erklären lassen
+## Funktionen und Auswirkungen erklären lassen
 
 Alle Hilfethemen anzeigen:
 
 ```bash
 datenbanktool explain
+```
+
+Startseite erklären:
+
+```bash
+datenbanktool explain start
 ```
 
 Ordnerübersicht erklären:
@@ -182,7 +234,7 @@ Die Erklärung enthält:
 - sinnvollen Anwendungsfall,
 - direkt nutzbares Beispiel.
 
-## 4. Farben steuern
+## Farben bestehender Befehle steuern
 
 Automatisch nur in einem geeigneten Terminal:
 
@@ -210,7 +262,7 @@ Kurze Hinweise ausschalten:
 datenbanktool --no-hints index search index.sqlite3 musik
 ```
 
-## 5. Bestehende Hauptfunktionen
+## Bestehende Hauptfunktionen
 
 ### Index erstellen
 
@@ -260,8 +312,23 @@ datenbanktool index restore index.sqlite3 --backup backup.sqlite3
 - Wiederherstellung erzeugt standardmäßig eine zusätzliche Rückfallsicherung.
 - Normale Suche und Ordnerauswertung öffnen SQLite rein lesend.
 - Der schnelle FTS5-Suchindex wird nur ausdrücklich aufgebaut.
+- Geführte Schreibaktionen benötigen eine zusätzliche Bestätigung.
+- Die Startseite verwendet keine Shell-Auswertung.
 - Keine automatische Löschung, Verschiebung oder Umbenennung.
 - Farben dienen nur der Orientierung und ersetzen niemals Klartext.
+
+## Codequalität
+
+Die Startseite wurde bewusst außerhalb der bereits großen `cli.py` umgesetzt:
+
+- `entrypoint.py` entscheidet nur zwischen Startseite und bestehender CLI.
+- `terminal_home.py` enthält Menümodell, Eingabeprüfung und geführte Dialoge.
+- Ein austauschbarer `command_runner` macht den Ablauf ohne echte Dateioperationen testbar.
+- Ein-/Ausgabeströme werden injiziert und können in Tests vollständig simuliert werden.
+- Menüeinträge liegen in einer unveränderlichen, zentralen Definition.
+- Doppelte Auswahlnummern werden beim Start erkannt.
+- Nicht-interaktive Aufrufe ohne Befehl blockieren nicht.
+- Alle neuen Quelldateien halten die konfigurierte maximale Zeilenlänge ein.
 
 ## Automatische Prüfungen
 
@@ -270,11 +337,12 @@ python -m compileall -q src tests
 PYTHONWARNINGS=error python -m unittest discover -s tests -v
 ```
 
-GitHub Actions prüft Python 3.10 und Python 3.12.
+GitHub Actions prüft Python 3.10 und Python 3.12. Aktuell bestehen **39 von 39 Tests** in beiden Umgebungen.
 
 ## Aktuelle Grenzen
 
 - Es gibt noch keine grafische Oberfläche mit echten Schaltflächen.
+- Die zentrale `cli.py` ist weiterhin groß und sollte schrittweise in kleinere Befehlsmodule zerlegt werden.
 - Terminalprogramme unterstützen keine verlässlichen Maus-Tooltips; dort übernehmen Klartexthinweise und `explain` diese Aufgabe.
 - Die Ordnerampel ist eine Priorisierungshilfe und keine automatische Lösch- oder Aufräumentscheidung.
 - Suchvorlagen sind derzeit lokal pro Benutzer gespeichert.
@@ -282,7 +350,7 @@ GitHub Actions prüft Python 3.10 und Python 3.12.
 
 ## Nächster einfacher Schritt
 
-Eine übersichtliche Startseite im Terminal bauen, die die wichtigsten Funktionen als nummeriertes Menü erklärt und startet.
+Den großen Befehlsblock in kleinere Bausteine teilen, damit einzelne Funktionen leichter geprüft und geändert werden können.
 
 ## Sichere Zusatzverbesserung
 
