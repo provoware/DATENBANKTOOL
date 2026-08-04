@@ -1,313 +1,311 @@
 # Entwicklerdokumentation
 
-## Architekturstand 0.8.0-alpha.1
+## Architekturstand 0.9.0-alpha.1
 
-Die Kommandozeilenoberfläche ist vollständig in klar begrenzte Fachmodule aufgeteilt.
-Die sichtbaren Befehle und Parameter bleiben unverändert.
+Die CLI bleibt modular. Der neue Ordnervergleich ist in drei klar getrennte Schichten
+aufgeteilt:
+
+1. `core/folder_compare.py` – reine Auswahl, Aggregation und Klassifizierung.
+2. `core/folder_compare_exports.py` – atomare JSON-, CSV- und HTML-Ausgabe.
+3. `cli_folder_compare.py` – Argumente, verständliche Terminaldarstellung und Dispatch.
+
+Die bestehenden Schichten bleiben unverändert:
+
+- `cli.py` – Zusammensetzung, Dispatch und zentrale Fehlergrenze,
+- `cli_scan.py` – einmaliger Scan,
+- `cli_search.py` – Suche und Suchvorlagen,
+- `cli_reports.py` – bisherige Berichte,
+- `cli_index.py` – Indexverwaltung,
+- `cli_help.py` – klassischer Erklärungsbefehl,
+- `cli_common.py` – gemeinsame Parser- und Ausgabehilfen,
+- `cli_contract.py` – Handler- und Seiteneffektvertrag,
+- `core/guided_home.py` – geführte Startseite,
+- `core/layered_help.py` – mehrschichtiger Hilfekatalog.
+
+## Öffentlicher Befehl
 
 ```text
-entrypoint.py
-    entscheidet zwischen direktem Befehl, Startseite und mehrschichtiger Hilfe
-
-cli.py
-    globale Parseroptionen, Zusammensetzung der Fachparser,
-    zentraler Dispatch und kontrollierte Fehlergrenze
-
-cli_contract.py
-    CommandPolicy, Handlerbindung und Rückgabecodeprüfung
-
-cli_common.py
-    gemeinsame Eingabevalidierung, Parserbausteine,
-    Größenformatierung, Fortschritt und atomare JSON-Ausgabe
-
-cli_scan.py
-    einmaliger rein lesender Scan
-
-cli_search.py
-    Suche, optionaler FTS5-Aufbau und Suchvorlagen
-
-cli_reports.py
-    Ordnerübersicht, Änderungsberichte und allgemeine Dateiberichte
-
-cli_index.py
-    Indexaufbau, Re-Scan, Status, Sitzungen,
-    Backup, Restore und Reparatur
-
-cli_help.py
-    kompatibler Befehl datenbanktool explain
-
-help_command.py
-    eigenständige mehrschichtige Hilfe datenbanktool help
+datenbanktool index folder-compare DATENBANK
 ```
 
-`cli.py` wurde von 1.409 auf rund 100 Zeilen reduziert. Fachlogik darf nicht wieder
-in den zentralen Einstieg verschoben werden.
+Optionale Sitzungswahl:
 
-## Registrierungsvertrag
+```text
+--from-session-id ID
+--to-session-id ID
+```
 
-Jeder Fachparser wird im zuständigen Modul angelegt und dort unmittelbar mit seinem
-Handler verbunden:
+Filter und Ausgabe:
+
+```text
+--type grown|shrunk|new|removed|changed|unchanged
+--contains TEXT
+--min-change-mib MIB
+--max-depth N
+--page N
+--page-size N
+--sort path|change|percent|files|current-size
+--descending / --no-descending
+--attention-growth-mib MIB
+--json PFAD
+--csv PFAD
+--html PFAD
+--overwrite-report
+--no-terminal
+```
+
+## `core/folder_compare.py`
+
+### Datenmodelle
+
+`FolderComparisonFilter` enthält:
+
+- gewünschte Zustände,
+- Pfadtext,
+- absolute Mindeständerung,
+- maximale Tiefe,
+- Seite und Seitengröße,
+- Sortierung und Richtung,
+- Warnschwelle für starkes Wachstum.
+
+`FolderComparisonRow` enthält:
+
+- Ordnerpfad und Tiefe,
+- technischen und sichtbaren Zustand,
+- Dateizahl vorher und nachher,
+- Dateidifferenz,
+- Größe vorher und nachher,
+- absolute Größenänderung,
+- prozentuale Größenänderung oder `None`,
+- Ampelstufe, Status und Begründung.
+
+`FolderComparisonPage` enthält:
+
+- Datenbankpfad,
+- Ausgangs- und Zielsitzung,
+- Stammordner,
+- Pagination,
+- ungefilterte Zustandszähler,
+- ausgewählte Zeilen.
+
+Alle öffentlichen Datenmodelle sind unveränderliche Dataclasses mit Slots.
+
+### Rein lesende Verbindung
+
+Die Funktion `_readonly_connection()`:
+
+1. normalisiert den Datenbankpfad,
+2. verlangt eine vorhandene Datei,
+3. öffnet SQLite über URI mit `mode=ro`,
+4. aktiviert `PRAGMA query_only=ON`,
+5. lehnt neuere unbekannte Schemaversionen ab,
+6. verlangt Schema 3 für Sitzungsbeziehungen.
+
+Der Vergleich führt kein `INSERT`, `UPDATE`, `DELETE`, `CREATE` oder `VACUUM` aus.
+
+### Auswahl der Zielsitzung
+
+Mit `--to-session-id` wird genau diese abgeschlossene Sitzung verwendet.
+
+Ohne Angabe wird die neueste abgeschlossene Sitzung gewählt, die entweder:
+
+- einen `parent_session_id` besitzt oder
+- einen älteren abgeschlossenen Scan desselben Stammordners besitzt.
+
+Dadurch wird nicht versehentlich ein einzelner isolierter Erstscan ausgewählt.
+
+### Auswahl der Ausgangssitzung
+
+Reihenfolge:
+
+1. explizite `--from-session-id`,
+2. direkter `parent_session_id` der Zielsitzung,
+3. vorherige abgeschlossene Sitzung desselben Stammordners.
+
+Danach gelten zwei harte Prüfungen:
+
+- Ausgangs-ID muss kleiner als Ziel-ID sein,
+- normalisierte Stammordner müssen übereinstimmen.
+
+### Rekursive Aggregation
+
+Für jede Datei einer Sitzung werden gespeichert:
+
+- Gesamtdateizahl,
+- Gesamtgröße in Byte.
+
+Die Werte werden dem direkten Elternordner und allen Vorfahren bis `.` zugerechnet.
+Ein Ordner ohne Dateien und ohne belegte Unterordner kann nicht entstehen, weil das
+aktuelle Schema keine eigenständigen Verzeichniszeilen speichert.
+
+### Klassifizierung
+
+Reihenfolge der Zustände:
+
+1. vorher 0 Dateien, nachher >0 → `new`,
+2. vorher >0 Dateien, nachher 0 → `removed`,
+3. positive Größendifferenz → `grown`,
+4. negative Größendifferenz → `shrunk`,
+5. gleiche Größe, andere Dateizahl → `changed`,
+6. sonst → `unchanged`.
+
+Neue Ordner erhalten `size_delta_percent=None`, da eine Division durch einen
+Ausgangswert von null keinen sinnvollen Prozentwert liefert.
+
+### Ampellogik
+
+- `grown` oberhalb der Warnschwelle → Rot / Stark gewachsen,
+- sonstiges `grown` → Gelb / Gewachsen,
+- `new` → Gelb / Neu,
+- `changed` → Gelb / Dateizahl geändert,
+- `shrunk` → Grün / Kleiner geworden,
+- `removed` → Grün / Nicht mehr vorhanden,
+- `unchanged` → Grün / Unverändert.
+
+Ampeln sind Darstellungsmetadaten. Die konkrete Begründung wird in jeder Ausgabe
+zusätzlich verwendet.
+
+### Filter und Sortierung
+
+Ohne `change_types` werden unveränderte Ordner ausgeblendet. Sobald mindestens ein
+Zustand angegeben ist, werden exakt diese Zustände verwendet.
+
+`min_change_bytes` arbeitet mit dem Absolutbetrag. Ein Rückgang um 500 MiB erfüllt
+damit dieselbe Mindestschwelle wie ein Wachstum um 500 MiB.
+
+Stabile Sortierungen besitzen immer Pfad-Fallbacks. Die Seitengröße ist auf 200
+begrenzt.
+
+## `core/folder_compare_exports.py`
+
+### Atomare Schreibweise
+
+Alle Formate werden zuerst in eine Prozess-spezifische temporäre Datei geschrieben und
+erst danach per `replace()` freigegeben. Bei Fehlern wird die temporäre Datei entfernt.
+Vorhandene Ziele benötigen `overwrite=True`.
+
+### JSON
+
+- UTF-8,
+- eingerückt,
+- vollständige Seitenmetadaten,
+- keine ANSI-Farben oder Bedienhinweise.
+
+### CSV
+
+- UTF-8 mit BOM,
+- Semikolon als Trennzeichen,
+- Rohwerte in Byte für verlässliche Berechnung,
+- Status, Ampel und Begründung als getrennte Spalten.
+
+### HTML
+
+- vollständig eigenständig und offline,
+- alle dynamischen Texte HTML-maskiert,
+- responsive Standardtabelle,
+- Farbklasse plus sichtbarer Status,
+- `title`-Tooltip und `aria-label`,
+- Scan-IDs und Stammordner im Kopf.
+
+Die Exporte enthalten die Zeilen der übergebenen `FolderComparisonPage`, also die
+aktuell gefilterte Seite.
+
+## `cli_folder_compare.py`
+
+Das Modul registriert Parser und Handler gemeinsam und erfüllt damit Regel G-002.
+
+Die Richtlinie lautet:
 
 ```python
-bind_handler(parser, handler, CommandPolicy(...))
+CommandPolicy("index.folder-compare", writes_reports=True)
 ```
 
-Dadurch liegen zusammen:
+`writes_original_files` und `writes_index` bleiben `False`.
 
-- sichtbare Befehlsbeschreibung,
-- Argumentdefinitionen,
-- Ausführungsfunktion,
-- Lese- und Schreibwirkung,
-- Rückgabecodevertrag.
+Der Handler:
 
-Der zentrale Einstieg kennt nur die Reihenfolge, in der Fachmodule ihre Parser
-registrieren. Er enthält keine Such-, Scan-, Berichts- oder Datenbanklogik.
+1. prüft `--no-terminal` gegen vorhandene Exportziele,
+2. übersetzt MiB-Werte in Byte,
+3. ruft den Vergleichskern auf,
+4. gibt Sitzungsnummern und Zustandszähler aus,
+5. rendert jede Zeile mit Ampel, Klartext und Differenzen,
+6. erzeugt gewählte Berichte,
+7. liefert Rückgabecode 0 bei Erfolg.
 
-## `CommandPolicy`
+## Startseite und Hilfe
 
-`CommandPolicy` beschreibt maschinenlesbar:
+`core/guided_home.py` besitzt die neue Aktion:
 
-- Befehlsname,
-- Lesen gescannter Originaldateien,
-- Schreiben gescannter Originaldateien,
-- Schreiben des SQLite-Indexes,
-- Schreiben von Berichten,
-- Schreiben von Sicherungen,
-- Schreiben von Benutzerkonfigurationen.
+```python
+MenuAction("10", "folder-compare", "folder_compare")
+```
 
-### Sicherheitsprüfung
-
-`CommandPolicy.validate()` weist jede Richtlinie mit
-`writes_original_files=True` sofort ab. Damit kann kein neuer CLI-Befehl still als
-Originaldatei-Schreiber registriert werden.
-
-Optionale Schreibmöglichkeiten werden konservativ deklariert. Die Suche besitzt zum
-Beispiel einen möglichen Indexschreibzugriff, weil `--build-fulltext-index` den
-optionalen FTS5-Metadatenindex aufbauen kann. Ein normaler Suchaufruf bleibt dennoch
-rein lesend.
-
-## Zentraler Dispatch
-
-`dispatch(arguments)` prüft vor der Ausführung:
-
-1. Ein aufrufbarer Handler ist registriert.
-2. Eine gültige `CommandPolicy` ist vorhanden.
-3. Die Sicherheitsrichtlinie erlaubt keinen Originaldatei-Schreibzugriff.
-4. Der Handler liefert einen echten ganzzahligen Rückgabecode.
-5. Der Rückgabecode liegt zwischen 0 und 255.
-
-Vereinbarte Rückgabecodes:
-
-- `0`: erfolgreich,
-- `1`: fachlich abgeschlossen, aber unvollständig oder mit erkannten Problemen,
-- `2`: kontrollierter Eingabe-, Datei-, SQLite- oder Sicherheitsfehler.
-
-Die zentrale Fehlergrenze in `cli.py` behandelt weiterhin:
-
-- fehlende Dateien oder Ordner,
-- vorhandene geschützte Zieldateien,
-- SQLite-Fehler,
-- gesperrte Indexprozesse,
-- Fach- und Validierungsfehler.
-
-## Modulzuständigkeiten
-
-### `cli_scan.py`
-
-Enthält ausschließlich:
-
-- Parserregistrierung für `datenbanktool scan`,
-- Aufbau von `ScanOptions`,
-- Terminalausgabe des Ergebnisses,
-- optionalen atomaren JSON-Bericht.
-
-### `cli_search.py`
-
-Enthält:
-
-- `index search`,
-- Zusammenführung direkter Suchwerte mit Suchvorlagen,
-- optionalen FTS5-Aufbau,
-- Darstellung gefundener Dateien,
-- `index presets list|show|save|delete`.
-
-Das Modul liegt nahe am globalen Höchstwert von 500 Zeilen. Bei der nächsten größeren
-Such- oder Vorlagenfunktion wird es in getrennte Module geteilt.
-
-### `cli_reports.py`
-
-Enthält:
-
-- `index folders`,
-- `index changes`,
-- `report`,
-- Parser und Ausführung der zugehörigen JSON-, CSV- und HTML-Ausgaben.
-
-Die zugrunde liegende Fachlogik bleibt weiterhin in den Core-Modulen. Das CLI-Modul
-übersetzt ausschließlich Argumente und präsentiert Ergebnisse.
-
-### `cli_index.py`
-
-Enthält:
-
-- `index build`,
-- `index rescan`,
-- `index status`,
-- `index sessions`,
-- `index backup`,
-- `index restore`,
-- `index repair`.
-
-Zusätzliche größere Verwaltungsfunktionen lösen künftig eine weitere Teilung in
-Scanverwaltung und Indexadministration aus.
-
-### `cli_common.py`
-
-Gemeinsam genutzt werden ausschließlich stabile Querschnittsfunktionen:
-
-- positive und nichtnegative Zahlenvalidierung,
-- Dateikategorien und Änderungsbezeichnungen,
-- gemeinsame Scan- und Fortschrittsoptionen,
-- Farbmodus und Bedienhinweise,
-- Fortschrittsereignisse,
-- menschenlesbare Dateigrößen,
-- atomare JSON-Ausgabe.
-
-Fachentscheidungen gehören nicht in dieses Modul.
-
-## Globale Wartungsregeln
-
-Die verständliche Fassung liegt in:
+Sie benötigt keine Bestätigung, da der direkte Vergleich rein lesend ist. Der Builder
+übergibt nur eine sichere Argumentliste:
 
 ```text
-MAINTENANCE_RULES.md
+index folder-compare DATENBANK
 ```
 
-Die maschinenlesbare Fassung liegt in:
+`core/layered_help.py` bietet:
 
-```text
-maintenance_rules.json
-```
+- Soforthilfe in der Menüzeile,
+- Detailhilfe über `?10`,
+- geführte Hilfe über `g10`,
+- Fehlerhilfe bei Rückgabecode ungleich null,
+- direkte Hilfe über `datenbanktool help folder-compare`.
 
-Das JSON-Manifest ist versioniert und enthält:
-
-- eindeutige Regelkennungen,
-- Anforderungen,
-- vorgesehene Prüfmechanismen,
-- Modulgrößenlimits,
-- verbotene CLI-Aufrufsmuster,
-- Zielwert für externe Laufzeitabhängigkeiten.
-
-### Erzwungene Kernregeln
-
-1. Öffentliche Befehle bleiben kompatibel.
-2. Parser und Handler liegen im selben Fachmodul.
-3. CLI-Fachmodule importieren nicht zurück aus `cli.py`.
-4. Jeder öffentliche Befehl besitzt eine Seiteneffektrichtlinie.
-5. Originaldatei-Schreibzugriffe bleiben gesperrt.
-6. Ersetzbare Dateien werden atomar geschrieben.
-7. Vorhandene Ziele werden nicht still überschrieben.
-8. Shell-Auswertung, `eval`, `exec` und `os.system` sind verboten.
-9. Maschinenformate bleiben frei von ANSI-Codes und Bedienhinweisen.
-10. `cli.py` bleibt unter 150 Zeilen.
-11. CLI-Fachmodule bleiben unter 500 Zeilen.
-12. Änderungen erhalten vollständige Regressionstests.
-13. Pflichtdokumente und Registry werden gemeinsam aktualisiert.
-14. Neue Laufzeitabhängigkeiten benötigen eine dokumentierte Begründung.
-
-Nicht jede textliche Regel lässt sich vollständig automatisieren. Deshalb ergänzen
-sich maschinenlesbare Prüfungen und dokumentierte Reviewpflichten.
-
-## Architekturtests
-
-`tests/test_cli_architecture.py` prüft:
-
-1. Regelmanifest, Version und eindeutige Regelkennungen.
-2. Zeilenlimits für zentralen Einstieg und Fachmodule.
-3. Verbotene Importe und Shell-Ausführungsfunktionen über den Python-AST.
-4. Handler- und `CommandPolicy`-Registrierung aller öffentlichen Befehle.
-5. Technische Ablehnung einer Originaldatei-Schreibrichtlinie.
-6. Zuständigkeit ausgewählter Befehle für das vorgesehene Fachmodul.
-
-Diese Prüfungen laufen bei jedem GitHub-Actions-Durchlauf unter Python 3.10 und 3.12.
-
-## Rückwärtskompatibilität
-
-Unverändert bleiben unter anderem:
-
-```text
-datenbanktool scan
-datenbanktool report
-datenbanktool explain
-datenbanktool index build
-datenbanktool index rescan
-datenbanktool index status
-datenbanktool index sessions
-datenbanktool index search
-datenbanktool index folders
-datenbanktool index changes
-datenbanktool index presets
-datenbanktool index backup
-datenbanktool index restore
-datenbanktool index repair
-```
-
-Auch globale Optionen wie `--color` und `--hints` bleiben an derselben Position und
-mit derselben Wirkung erhalten. Die Startseite ruft weiterhin `cli.main()` mit einer
-strukturierten Argumentliste auf.
-
-## Schreib- und Ausgabegrundsätze
-
-- Scan und Suche lesen Originaldateien beziehungsweise Indexdaten nur im vorgesehenen
-  Modus.
-- Berichte und Konfigurationen werden atomar freigegeben.
-- Überschreiben benötigt eine ausdrückliche Option.
-- JSON-Ausgaben enthalten keine Farben oder Bedienhinweise.
-- Fortschritts-JSONL wird auf `stderr` ausgegeben.
-- Startseite und direkte CLI führen keine Shell-Zeichenkette aus.
-- Automatisches Löschen, Verschieben und Umbenennen bleibt nicht verfügbar.
+`core/help_system.py` hält zusätzlich den kompatiblen Befehl
+`datenbanktool explain folder-compare` bereit.
 
 ## Automatische Prüfungen
 
-```bash
-python -m compileall -q src tests
-PYTHONWARNINGS=error python -m unittest discover -s tests -v
-```
+`tests/test_folder_compare.py` prüft:
 
-Aktueller Gesamtstand:
+1. Wachstum,
+2. Größenrückgang,
+3. neue Ordner,
+4. nicht mehr vorhandene Ordner,
+5. unveränderte Ordner auf ausdrückliche Anforderung,
+6. automatische Sitzungswahl,
+7. explizite Sitzungswahl,
+8. bytegenau unveränderte Datenbank,
+9. Ablehnung unterschiedlicher Stammordner,
+10. Terminalausgabe,
+11. JSON-, CSV- und HTML-Export,
+12. UTF-8-BOM des CSV-Exports,
+13. Pflicht eines Exports bei `--no-terminal`,
+14. Verbindung zu Startseite und mehrschichtiger Hilfe.
 
-- Python 3.10: 54 von 54 Tests erfolgreich,
-- Python 3.12: 54 von 54 Tests erfolgreich,
-- Warnungen werden als Fehler behandelt,
-- sechs zusätzliche Architekturprüfungen,
-- keine externe Laufzeitabhängigkeit.
+`tests/test_cli_architecture.py` prüft zusätzlich Handler, `CommandPolicy`,
+Modulzuständigkeit, Größenlimits und Shell-Verbote.
+
+Gesamtstand:
+
+- 59 Tests unter Python 3.10,
+- 59 Tests unter Python 3.12,
+- `PYTHONWARNINGS=error`,
+- vollständige Kompilierung von `src` und `tests`.
 
 ## Bekannte technische Grenzen
 
-- `cli_search.py` und `cli_index.py` liegen nahe am Fachmodullimit und müssen bei
-  größeren Erweiterungen weiter aufgeteilt werden.
-- `argparse.Namespace` ist dynamisch; streng typisierte Befehlsmodelle könnten später
-  zusätzliche statische Sicherheit bieten.
-- Statische AST-Prüfungen ersetzen keine manuelle fachliche Sicherheitsprüfung.
-- Das Regelmanifest kann Dokumentationssynchronität nicht vollständig automatisch
-  garantieren.
-- Ordnerübersichten besitzen noch keinen CSV-Export.
-- Ordnerwachstum zwischen zwei Sitzungen wird noch nicht direkt berechnet.
-- Vor einem stabilen Release fehlen reale Großbestands- und Laienabnahmen.
+- Vergleich von genau zwei Sitzungen, keine Zeitreihe.
+- Keine leeren Ordner ohne Dateieinträge.
+- Rekursive Elternwerte überlappen Kindwerte bewusst.
+- Export der aktuellen Seite, nicht automatisch aller gefilterten Treffer.
+- Praktische Ressourcenmessung mit sehr großen Beständen steht noch aus.
 
-## Nächster einfacher Entwicklungsblock
+## Nächster Entwicklungsblock
 
-Die Ordnerübersicht zusätzlich als CSV exportieren. Die Tabelle soll Dateizahl,
-Gesamtgröße, Ampelstufe, Ampelgrund und größte Platzfresser enthalten und denselben
-Filter-, Sortier- und Überschreibschutz wie Terminal, JSON und HTML verwenden.
+CSV-Export der normalen Ordnerübersicht mit denselben Filtern, stabiler Sortierung,
+UTF-8-BOM, atomarem Schreiben und Überschreibschutz ergänzen.
 
 ## Sichere Zusatzverbesserung
 
-Einen rein lesenden Ordnervergleich zwischen zwei abgeschlossenen Scan-Sitzungen
-entwickeln. Er zeigt Wachstum und Rückgang, ohne Originaldateien oder bestehende
-Snapshots zu verändern.
+Reproduzierbare Großbestands- und Laienabnahme vorbereiten, ohne automatische
+Originaldateioperationen freizuschalten.
 
 ## Unverändert
 
-`AGENTS.md` wird nicht verändert. Originaldatei-Schreibfunktionen bleiben bis zu
-einem separaten versionierten Sicherheitsvertrag gesperrt.
+`AGENTS.md` wird nicht verändert. Die globalen Wartungsregeln und das Verbot
+automatischer Originaldatei-Schreibzugriffe bleiben vollständig wirksam.
