@@ -129,13 +129,10 @@ jeweilige Grenze.
 `FolderTimelinePoint` enthält zusätzlich:
 
 ```python
-file_delta_percent
-treshold_triggered  # fachlich: threshold_triggered
-threshold_reasons
+file_delta_percent: float | None
+threshold_triggered: bool
+threshold_reasons: tuple[str, ...]
 ```
-
-Der tatsächlich verwendete Feldname lautet `threshold_triggered`; die obige
-Aufstellung verdeutlicht den Vertrag und ist keine zweite API.
 
 `FolderTimeline` enthält die konfigurierten Grenzen und `threshold_trigger_count`.
 
