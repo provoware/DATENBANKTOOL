@@ -1,38 +1,28 @@
 # Analyse-Punkte
 
-Stand: Version 0.13.0-alpha.1 gemäß `project_registry.json` und `registry.json`
-
-## Aktueller Status
+Stand: Projektversion 0.13.0-alpha.1 / Paketversion 0.13.0a1
 
 | Bereich | Befund | Maßnahme / Status |
 | --- | --- | --- |
-| Schwachstellen | Originaldateien bleiben schreibgeschützt | Schreibende Dateioperationen bleiben gesperrt |
-| Fehlerfreiheit | Validierung, Parser, Handler und Exportpfade sind automatisiert geprüft | 86/86 Tests je Python-Version und Warnungen als Fehler |
-| Inkonsistenzen | Versionsstände waren zwischen Registry und Pflichtdokumenten uneinheitlich | Kopfstände sind auf `0.13.0-alpha.1` vereinheitlicht |
-| Redundanzen | Alte MVP-Statusblöcke standen neben aktuellem Alpha-Status | Historische Abschnitte sind getrennt oder entfernt |
-| Vereinheitlichung | Offene Punkte waren unterschiedlich benannt | Vier offene Punkte sind dokumentübergreifend gleich geführt |
-| Wartbarkeit | CLI, Kernlogik, Hilfen, Exporte und Tests sind getrennt | Modulgrenzen bleiben Bestandteil der Entwicklerdoku |
-| Komplexität | Neue Funktionen bleiben rein lesend oder klar bestätigte Konfigurationsschreibzugriffe | Keine zusätzlichen Versprechen ohne Registry-Eintrag |
-| Prüfungsqualität | Zielhardware- und reale Nutzungsprüfung fehlen noch | `large`-Profil und Laienabnahme bleiben offen |
-| Erscheinungsbild | Terminal- und HTML-Ausgaben sind ruhig und lokal | GUI bleibt späteres Upgrade |
-| Barrierefreiheit | Hilfesystem und SVG-Berichte sind zugänglich aufgebaut | Reale Laienabnahme muss Verständlichkeit bestätigen |
-| Nutzerfreundlichkeit | Vorlagen sind verfügbar, aber Verwaltung ist noch nicht vollständig geführt | Geführte Vorlagenverwaltung bleibt offen |
-| Stabilität | Zeitreihen arbeiten je Bericht mit einem relativen Ordner | Mehrordner-Zeitreihe bleibt offen |
-| Laienfreundlichkeit | Automatische Tests ersetzen keine Beobachtung einer unerfahrenen Person | Reale Laienabnahme bleibt offen |
-| Abhängigkeiten | Keine externen Laufzeitabhängigkeiten | Abhängigkeitssituation bleibt stabil |
+| Schwachstellen | Beliebige Dateien könnten als Datenbank übergeben werden | Signatur, Existenz und Dateityp werden validiert |
+| Fehlerfreiheit | SQLite-Fehler waren nicht behandelt | Einheitlicher `DatabaseError` und Exitcode 2 |
+| Inkonsistenzen | Zuvor gab es keine definierte Ausgabe | Stabile Text- und JSON-Strukturen eingeführt |
+| Redundanzen | Pfadprüfung könnte je Befehl doppelt entstehen | Zentral in `validate_database` gebündelt |
+| Vereinheitlichung | Zwei Versionsschreibweisen können driften | `registry.json` führt PEP-440-Version und Anzeigeversion; Drift-Test gleicht CLI, Doku und Projektregistry ab |
+| Wartbarkeit | Kein Quellcodeaufbau vorhanden | CLI, Kernlogik, Konfiguration und Tests getrennt |
+| Komplexität | Zusätzliche Treiber würden den MVP überladen | Bewusst auf SQLite und Standardbibliothek begrenzt |
+| Prüfungsqualität | Keine Prüfungen vorhanden | Erfolgs-, Validierungs- und JSON-Fehlerfälle getestet |
+| Erscheinungsbild | Keine Oberfläche vorhanden | Ruhige, einheitliche Textausgabe; GUI bleibt Upgrade |
+| Barrierefreiheit | CLI ist screenreader-tauglich, aber nicht geführt | Einfache Begriffe und vollständige `--help`-Texte |
+| Nutzerfreundlichkeit | Fehler könnten technische Details zeigen | Handlungsnahe deutsche Fehlermeldungen |
+| Stabilität | Schreibzugriff wäre ein Datenrisiko | SQLite-Verbindung erzwingt `mode=ro` |
+| Laienfreundlichkeit | Fachbegriff „SQLite“ bleibt nötig | README erklärt Zweck und Beispiele knapp |
+| Abhängigkeiten | Externe Pakete erhöhen Pflegeaufwand | Keine Laufzeitabhängigkeiten |
+| Inkonsistenzen | Alter README-MVP-Block widersprach dem aktuellen 0.13-Status | Startstatus, offene Hauptpunkte und aktuelle Einstiegspunkte konsolidiert |
 
-## Einheitlich offene Punkte
+## Nächste Analyse
 
-1. reale Laienabnahme,
-2. `large`-Profil auf Zielhardware,
-3. geführte Vorlagenverwaltung,
-4. Mehrordner-Zeitreihe.
-
-## Historischer MVP-Status
-
-Der frühe SQLite-MVP mit schreibgeschützter Strukturansicht ist abgeschlossen und wird
-nicht mehr als aktueller Projektstatus geführt.
-
+Vor dem CSV-Export sind Formel-Injektion in Tabellenprogrammen, Überschreiben vorhandener Dateien und große Ergebnismengen zu bewerten.
 ## Ergebnis dieser Iteration
 
 DATENBANKTOOL besitzt jetzt sichere lokale Zeitreihen-Vorlagen und optionale,
@@ -130,8 +120,8 @@ Die neuen Tests decken ab:
 
 Gesamtstand:
 
-- 86 Tests unter Python 3.10,
-- 86 Tests unter Python 3.12,
+- 87 Tests unter Python 3.10,
+- 87 Tests unter Python 3.12,
 - Warnungen als Fehler,
 - Quick-Abnahme 11/11,
 - Standard-Abnahme 11/11.
@@ -148,14 +138,17 @@ Run `30927676213`, Funktionscommit
 
 ## Erkannte nächste Analysepunkte
 
-1. reale Laienabnahme,
-2. `large`-Profil auf Zielhardware,
-3. geführte Vorlagenverwaltung,
-4. Mehrordner-Zeitreihe.
+1. Geführtes Anzeigen, Ersetzen und Löschen der Vorlagen ergänzen.
+2. Mehrere Ordner in einem klar getrennten Trendbericht darstellen.
+3. Reale Zeitabstände optional auf der x-Achse abbilden.
+4. Reale Laienabnahme auf Kubuntu durchführen.
+5. `large`-Profil auf Zielhardware vermessen.
+6. Später grafische Pfadauswahldialoge ergänzen.
+7. Bei der nächsten Release-Erhöhung zuerst `registry.json`, `project_registry.json` und `pyproject.toml` gemeinsam aktualisieren.
 
 ## Fazit
 
-Beide Aufträge sind vollständig umgesetzt und automatisch abgesichert. Vorlagen
+Die Versionierung ist jetzt zusätzlich gegen Drift abgesichert. Beide vorherigen Fachaufträge bleiben vollständig umgesetzt und automatisch abgesichert. Vorlagen
 reduzieren wiederholte Eingaben, ohne sensible oder unnötige Pfade zu speichern.
 Trendgrenzen erhöhen die Sichtbarkeit auffälligen Wachstums, bleiben aber strikt
 rein lesend und frei von automatischen Entscheidungen. Offen bleibt bewusst nur die

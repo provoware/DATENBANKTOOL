@@ -1,29 +1,73 @@
 # DATENBANKTOOL
 
-**Erledigt:** sicherer Scanner, versionierter SQLite-Index, Suche, Ordnerberichte, Vergleiche, Zeitreihen, Vorlagen, Warnschwellen, Hilfesystem und automatisierte Quick-/Standard-Abnahme.
-
-**Offen:** reale Laienabnahme, `large`-Profil auf Zielhardware, geführte Vorlagenverwaltung und Mehrordner-Zeitreihe.
-
-**Entwicklungsfortschritt:** **99 %** (Alpha-Funktionsstand `0.13.0-alpha.1`).
-
-**Mögliche Upgrades aus dem [Upgrade-Pool](UPGRADE_POOL.md):** geführte Vorlagenverwaltung, Mehrordner-Zeitreihe, reale Laienabnahme und `large`-Profil-Zieltest.
-
-Das DATENBANKTOOL ist ein sicheres Linux-Werkzeug zum Finden, Prüfen und übersichtlichen Strukturieren großer Dateisammlungen. Es benötigt Python 3.10 oder neuer und keine zusätzlichen Laufzeitpakete.
-
 > Sicheres Linux-Werkzeug zum Finden, Prüfen und übersichtlichen Strukturieren großer Dateisammlungen.
 
 ## Projektstatus
 
 | Bereich | Stand |
 |---|---|
-| Version | `0.13.0-alpha.1` |
-| SQLite-Schema | `3` |
+| Aktuelle Version | `0.13.0-alpha.1` |
 | Entwicklungsfortschritt | **99 %** |
-| Erledigte Hauptpunkte | **51** |
-| Offene Hauptpunkte | **1** |
+| Erledigte Hauptpunkte | **51** – Scanner, SQLite-Index, Re-Scan, Suche, Berichte, Ordnervergleich, Zeitreihe, Vorlagen, Trendgrenzen, Hilfe und Abnahmeprofile |
+| Offene Hauptpunkte | **1** – reale Laienabnahme auf einem Zielsystem durchführen |
+| Nächste Upgrades aus `UPGRADE_POOL.md` | Geführte Vorlagenverwaltung, Mehrordner-Zeitreihe, reale Laienabnahme, 100.000-Dateien-Zieltest |
+| SQLite-Schema | `3` |
 | Automatische Originaldateiänderungen | **Gesperrt** |
 | Externe Laufzeitabhängigkeiten | **0** |
 | Automatisierte Tests | **86/86** unter Python 3.10 und 3.12 |
+| Quick-Abnahme | **600 Dateien · 11/11 bestanden** |
+| Standard-Abnahme | **10.000 Dateien · 11/11 bestanden** |
+**Erledigt:** schreibgeschützte SQLite-Analyse, Zeitreihen-/Vorlagenfunktionen, verbindlicher Registry-Versionsvertrag und Drift-Test.
+
+**Offen:** reale Laienabnahme, 100.000-Dateien-Zieltest, geführte Vorlagenverwaltung und grafische Oberfläche.
+
+**Entwicklungsfortschritt:** **99 %** (Alpha-Funktionsstand mit abgesicherter Versionierung).
+
+**Mögliche Upgrades:** geführte Vorlagenverwaltung und Mehrordner-Zeitreihe; Details stehen im [Upgrade-Pool](UPGRADE_POOL.md).
+
+Das DATENBANKTOOL arbeitet standardmäßig rein lesend. Es erstellt einen lokalen, versionierten SQLite-Index und zeigt Dateibestände, Änderungen, Suchen, Ordnerberichte, Zeitreihen und sichere Exportberichte, ohne Originaldateien zu verändern. Es benötigt Python 3.10 oder neuer und keine zusätzlichen Laufzeitpakete.
+
+## Installation
+
+```bash
+python -m pip install -e .
+```
+
+## Verwendung
+
+Aktuelle Einstiegspunkte:
+
+```bash
+datenbanktool start
+datenbanktool help
+datenbanktool index build ~/Daten --database index.sqlite3
+datenbanktool index status index.sqlite3
+```
+
+`start` öffnet die geführte Terminal-Bedienung. `help` erklärt Themen in einfacher Sprache. `index build` erstellt einen lokalen Index für einen Ordner. `index status` zeigt den Zustand eines vorhandenen Index. Weitere aktuelle Indexbefehle sind unter anderem `search`, `folders`, `changes`, `folder-compare`, `folder-timeline`, `presets` und `timeline-presets`. Eingabefehler enden mit Statuscode `2`.
+
+## Entwicklung
+
+```bash
+PYTHONPATH=src python -m unittest discover -s tests -v
+```
+
+Die technische Paketversion wird als PEP 440 in `registry.json` gepflegt (`0.13.0a1`). Die menschenlesbare Projektversion lautet `0.13.0-alpha.1`. Architektur und Qualitätsregeln beschreibt die [Entwicklerdokumentation](ENTWICKLERDOKU.md).
+> Sicheres Linux-Werkzeug zum Finden, Prüfen und übersichtlichen Strukturieren großer Dateisammlungen.
+
+## Projektstatus
+
+| Bereich | Stand |
+|---|---|
+| Projektversion | `0.13.0-alpha.1` |
+| Paketversion | `0.13.0a1` |
+| SQLite-Schema | `3` |
+| Entwicklungsfortschritt | **99 %** |
+| Erledigte Hauptpunkte | **52** |
+| Offene Hauptpunkte | **1** |
+| Automatische Originaldateiänderungen | **Gesperrt** |
+| Externe Laufzeitabhängigkeiten | **0** |
+| Automatisierte Tests | **87/87** unter Python 3.10 und 3.12 |
 | Quick-Abnahme | **600 Dateien · 11/11 bestanden** |
 | Standard-Abnahme | **10.000 Dateien · 11/11 bestanden** |
 | Reale Laienabnahme | **Noch offen** |

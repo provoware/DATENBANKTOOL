@@ -1,4 +1,10 @@
 {
   "name": "datenbanktool",
-  "version": "0.13.0-alpha.1"
+  "version": "0.13.0a1",
+  "display_version": "0.13.0-alpha.1",
+  "version_scheme": {
+    "package_version": "PEP 440",
+    "display_version": "human-readable prerelease",
+    "alpha_conversion": "'-alpha.' in display_version maps to 'a' in package_version"
+  }
 }

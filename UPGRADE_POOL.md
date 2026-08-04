@@ -51,4 +51,5 @@ Upgrades werden erst umgesetzt, wenn Eingaben, Ausgaben, Fehlerfälle und der pa
 - Begründete Warnungen in Terminal, JSON, CSV, HTML und SVG.
 - Trennung von Verlaufsklassifikation und Warnstatus.
 - Reproduzierbare Abnahmeprofile mit 600, 10.000 und 100.000 Dateien.
-- 0.13-Funktionsprüfung mit 86 Tests je Python-Version sowie Quick und Standard 11/11.
+- 0.13-Funktionsprüfung mit 87 Tests je Python-Version sowie Quick und Standard 11/11.
+- Verbindlicher Versionsvertrag mit PEP-440-Paketversion und menschenlesbarer Projektversion.

@@ -10,9 +10,25 @@ Stand: Version 0.13.0-alpha.1
 4. [ ] Mehrordner-Zeitreihe.
 
 ## Historisch erledigter MVP-Status
+## Offene Hauptpunkte
+
+- [ ] Reale Laienabnahme auf einem Zielsystem durchführen und die erzeugte
+  `NOVICE_ACCEPTANCE_CHECKLIST.md` durch eine unerfahrene Testperson ausfüllen lassen.
+
+## Erledigte Hauptpunkte
+
+- [x] 51 Hauptpunkte bis Version `0.13.0-alpha.1` umgesetzt, darunter Scanner,
+  SQLite-Index, Re-Scan, Suche, Berichte, Ordnervergleich, Zeitreihe, Vorlagen,
+  Trendgrenzen, Hilfesystem und Abnahmeprofile.
 
 Der frühe SQLite-MVP ist abgeschlossen. Seine Punkte werden nicht mehr als aktuelle
 Offenliste geführt, damit der Status nicht doppelt erscheint.
+
+1. Geführte Vorlagenverwaltung weiter ausbauen.
+2. Mehrere Ordner in einem gemeinsamen, klar getrennten Zeitreihenbericht anzeigen.
+3. `large`-Profil mit 100.000 Dateien auf geeigneter Zielhardware ausführen.
+4. Erst nach geklärtem Bedarf weitere Datenbanktreiber auswählen.
+5. Vor einer GUI die barrierefreie Bedienung und Tastaturnavigation spezifizieren.
 
 ## In dieser Iteration erledigt
 
@@ -49,6 +65,7 @@ Offenliste geführt, damit der Status nicht doppelt erscheint.
 31. [x] 86/86 Tests unter Python 3.10 und 3.12 erfolgreich ausführen.
 32. [x] Quick- und Standard-Abnahme mit jeweils 11/11 Kriterien ausführen.
 33. [x] Version und Pflichtdokumentation auf 0.13.0-alpha.1 synchronisieren.
+34. [x] PEP-440-Paketversion 0.13.0a1 verbindlich in Registry und Drift-Test absichern.
 
 ## Noch offen
 
@@ -56,3 +73,21 @@ Offenliste geführt, damit der Status nicht doppelt erscheint.
 2. [ ] `large`-Profil auf Zielhardware,
 3. [ ] geführte Vorlagenverwaltung,
 4. [ ] Mehrordner-Zeitreihe.
+1. [ ] Reale Laienabnahme auf einem Zielsystem durchführen und die erzeugte
+   `NOVICE_ACCEPTANCE_CHECKLIST.md` durch eine unerfahrene Testperson ausfüllen lassen.
+
+## Zusätzliche, nicht blockierende Zielsystemprüfung
+
+- [ ] `large`-Profil mit 100.000 Dateien auf geeigneter Zielhardware ausführen und
+  Referenzwerte dokumentieren.
+
+## Direkt folgender technischer Entwicklungsschritt
+
+Nächster logischer Schritt: Geführte Vorlagenverwaltung entwickeln: Zeitreihen-Vorlagen auf der Startseite
+zusätzlich anzeigen, bewusst ersetzen und nach Namensprüfung bestätigt löschen können.
+
+## Alternative Verbesserung mit hohem Nutzen und geringem Risiko
+
+Mehrere ausgewählte relative Ordner rein lesend in einem gemeinsamen Zeitreihenbericht
+anzeigen – mit getrennten Linien, eindeutiger Legende und Hinweis auf überlappende
+rekursive Eltern- und Kindwerte.

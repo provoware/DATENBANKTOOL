@@ -2,9 +2,9 @@
   "schema_version": 1,
   "project": "DATENBANKTOOL",
   "version": "0.13.0-alpha.1",
-  "phase": "timeline-presets-and-read-only-growth-thresholds",
+  "phase": "version-registry-drift-guard",
   "development_progress_percent": 99,
-  "completed_main_items": 51,
+  "completed_main_items": 52,
   "open_main_items": 1,
   "runtime": {
     "python": ">=3.10",
@@ -137,8 +137,8 @@
   "validation": {
     "functional_reference_commit": "8ded929533f806c739a7139b47d16379a788cfb0",
     "workflow_run_id": 30927676213,
-    "python_3_10_tests": 86,
-    "python_3_12_tests": 86,
+    "python_3_10_tests": 87,
+    "python_3_12_tests": 87,
     "warnings_as_errors": true,
     "compileall": true,
     "architecture_tests": 6,
@@ -172,6 +172,8 @@
     "manual_novice_acceptance": {
       "status": "pending-real-person",
       "checklist_generated": true
-    }
-  }
+    },
+    "version_drift_test": true
+  },
+  "package_version": "0.13.0a1"
 }
