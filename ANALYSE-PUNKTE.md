@@ -2,128 +2,146 @@
 
 ## Ergebnis dieser Iteration
 
-DATENBANKTOOL besitzt jetzt eine rein lesende Ordner-Zeitreihe über mehrere
-abgeschlossene Scans. Zusätzlich kann der bestehende Ordnervergleich sämtliche
-gefilterten JSON-, CSV- und HTML-Zeilen exportieren, ohne die Dateidaten für jede
-Terminalseite erneut zu aggregieren.
+DATENBANKTOOL führt Nutzer jetzt vollständig durch die rein lesende Ordner-Zeitreihe.
+Der neue Startseitenpunkt 11 besitzt Detail-, Schritt-, Feld- und Fehlerhilfe. Der
+Offline-HTML-Bericht stellt Größe und Dateizahl zusätzlich in zwei barrierefreien,
+skriptfreien SVG-Trendgrafiken dar.
 
-## Vollständig gelöste Zeitreihenpunkte
+## Vollständig gelöste Bedienungspunkte
 
-1. Neuer öffentlicher Befehl `index folder-timeline`.
-2. Standardordner `.` bildet den gesamten Stammordner ab.
-3. Relative Unterordner werden einschließlich ihrer Unterordner ausgewertet.
-4. Dateizahl und Gesamtgröße werden pro abgeschlossenem Scan berechnet.
-5. Scan-ID, UTC-Zeitpunkt und Scan-Modus werden dokumentiert.
-6. Datei- und Größendifferenz zum vorherigen Zeitpunkt werden berechnet.
-7. Prozentwerte werden nur bei vorhandenem positiven Ausgangswert berechnet.
-8. Ausgangswert, Wachstum, Rückgang, Neu, Entfernt, Dateizahländerung und
-   Unverändert werden getrennt klassifiziert.
-9. Ampel, Status und konkrete Begründung erscheinen gemeinsam.
-10. Ausgangs- und Zielsitzung können ausdrücklich begrenzt werden.
-11. Ohne Zielangabe wird der neueste abgeschlossene Scan gewählt.
-12. `--limit` begrenzt transparent auf 2 bis 500 neueste Zeitpunkte.
-13. Mindestens zwei passende Scans werden verlangt.
-14. Unterschiedliche Stammordner werden nicht vermischt.
-15. Absolute Pfade und `..` werden abgelehnt.
-16. SQLite wird mit `mode=ro` und `PRAGMA query_only=ON` geöffnet.
-17. JSON wird atomar und ohne ANSI-Ausgaben geschrieben.
-18. CSV besitzt UTF-8-BOM, Semikolon und numerische Rohwerte.
-19. HTML funktioniert vollständig offline, maskiert Nutzerdaten und besitzt ARIA.
-20. Vorhandene Ziele werden nicht still überschrieben.
+1. Eigener Startseitenpunkt `11. Ordner-Zeitreihe`.
+2. Vorhandene Indexdatenbank wird schrittweise abgefragt.
+3. Relativer Ordnerpfad besitzt verständliche Feldhilfe.
+4. `.` wird als gesamter Stammordner erklärt.
+5. Optionale älteste Scan-ID wird als positive Ganzzahl validiert.
+6. Optionale neueste Scan-ID wird als positive Ganzzahl validiert.
+7. Zeitpunkte werden vor dem Start auf 2 bis 500 begrenzt.
+8. Berichtsauswahl akzeptiert nur kein, JSON, CSV oder HTML.
+9. Berichtspfad besitzt eigene Feldhilfe und sichtbare Wirkungserklärung.
+10. Der geplante vollständige Befehl wird vor dem Start angezeigt.
+11. Dispatch erfolgt als Argumentliste ohne Shell-Auswertung.
+12. Detailhilfe ist über `?11` erreichbar.
+13. Schritt-für-Schritt-Hilfe ist über `g11` erreichbar.
+14. Jede neue Eingabe kann mit `?` erklärt werden.
+15. `datenbanktool help folder-timeline` unterstützt alle drei Hilfestufen.
+16. Die Hilfesuche findet Verlauf, Trend und Speicherentwicklung.
+17. Fehlerhilfe erklärt fehlende Scans, unpassende Sitzungen, unsichere Pfade,
+    leere Ergebnisse und vorhandene Berichte.
+18. Die Startseite selbst verändert keine Daten.
 
-## Vollständig gelöste Vergleichsexportpunkte
+## Vollständig gelöste Grafikpunkte
 
-21. `folder-compare` akzeptiert jetzt `--all-pages`.
-22. JSON, CSV und HTML enthalten damit alle gefilterten und sortierten Treffer.
-23. Das Terminal bleibt auf der gewählten Seite paginiert.
-24. `compare_folders(..., all_rows=True)` erzeugt die vollständige Menge einmal.
-25. `paginate_folder_comparison()` schneidet daraus die Terminalseite.
-26. Ohne `--all-pages` bleibt das bisherige Seitenverhalten unverändert.
-27. `--all-pages` ohne Exportziel wird kontrolliert abgelehnt.
-28. Vollständigkeit über mehrere Seiten wird für alle drei Formate geprüft.
-29. Die SQLite-Datenbank bleibt bei beiden Funktionen bytegenau unverändert.
-30. Handler, `CommandPolicy`, Modulzuständigkeit und Zeilengrenzen werden geprüft.
+19. Größenverlauf wird als eigenes SVG-Liniendiagramm erzeugt.
+20. Dateizahlverlauf wird als eigenes SVG-Liniendiagramm erzeugt.
+21. Beide Diagramme sind vollständig lokal eingebettet.
+22. HTML enthält kein JavaScript.
+23. HTML enthält keine externen HTTP- oder HTTPS-Ressourcen.
+24. Jedes Diagramm besitzt `figure` und `figcaption`.
+25. Jedes SVG besitzt `role="img"`, `title`, `desc` und `aria-labelledby`.
+26. Achsen, Scan-IDs und ausgewählte Werte sind sichtbar beschriftet.
+27. Jeder Datenpunkt besitzt Tastaturfokus, `role="img"`, `aria-label` und `title`.
+28. Minimum, Maximum und Nettoänderung werden textlich zusammengefasst.
+29. Farben werden nie als alleinige Information verwendet.
+30. Die vollständige Wertetabelle bleibt unter den Diagrammen erhalten.
+31. Lange Zeitreihen reduzieren nur sichtbare Labels, niemals Datenpunkte oder Werte.
+32. Darstellung reagiert auf kleinere Bildschirmbreiten.
+33. Fokusmarkierung bleibt deutlich sichtbar.
 
-## Zentrale Architekturentscheidungen
+## Architekturentscheidungen
 
-### Zeitreihe aus gespeicherten Snapshots
+### Hilfethema als getrennte Erweiterung
 
-Die Zeitreihe liest ausschließlich abgeschlossene Sitzungen und deren Dateizeilen.
-Sie führt keinen neuen Dateisystemscan aus. Dadurch bleibt das Ergebnis reproduzierbar
-und verändert weder Index noch Originaldateien.
+`core/folder_timeline_help.py` enthält den vollständigen Hilfetextvertrag. Dadurch muss
+der bereits große allgemeine Hilfekatalog nicht erneut mit umfangreicher Fachlogik
+belastet werden. `guided_home.py` und `help_command.py` binden dieselbe Quelle ein.
+Detail-, Schritt- und Fehlerhilfe können dadurch nicht unabhängig auseinanderlaufen.
 
-### Rekursive Präfixauswertung
+### Validierung vor dem Dispatch
 
-Für einen relativen Ordner `Musik` werden alle Pfade mit dem sicheren Präfix
-`Musik/` gezählt. Dadurch werden Unterordner erfasst, ohne ähnliche Pfade wie
-`Musik-Alt/` versehentlich einzubeziehen.
+Der Startseitendialog validiert Integerwerte und erlaubte Berichtstypen bereits vor dem
+Aufruf des CLI-Parsers. Der zentrale Parser validiert weiterhin ein zweites Mal. Diese
+bewusste doppelte Grenze verbessert die Fehlermeldung für Laien, ohne den eigentlichen
+Sicherheitsvertrag vom Dialog abhängig zu machen.
 
-### Strenger Pfad- und Stammordnervertrag
+### Argumentliste statt Befehlszeichenkette
 
-Ordnerangaben bleiben relativ. Absolute Pfade und Elternnavigation werden verworfen.
-Ausgangs- und Zielsitzungen müssen abgeschlossen sein und denselben normalisierten
-Stammordner besitzen.
+Der angezeigte Befehl dient nur der Transparenz. Tatsächlich wird eine Liste einzelner
+Argumente an den internen Runner übergeben. Leerzeichen in Pfaden oder Ordnernamen
+können dadurch nicht als Shell-Syntax interpretiert werden.
 
-### Zustand pro Übergang
+### SVG-Erzeugung in eigenem Modul
 
-Der erste sichtbare Punkt ist ein Ausgangswert. Jeder weitere Punkt wird gegenüber
-dem direkten vorherigen sichtbaren Scan klassifiziert. Das liefert eine verständliche
-Chronologie statt nur einer Gesamtdifferenz.
+`core/folder_timeline_charts.py` erhält ausschließlich das geprüfte Zeitreihenmodell und
+liefert statisches SVG-Markup. Dateischreiben, JSON, CSV und HTML-Rahmen bleiben im
+Exportmodul. Das hält Berechnung, Visualisierung und Dateifreigabe getrennt testbar.
 
-### Berechnung und Export getrennt
+### Zwei Diagramme statt Doppelachse
 
-`core/folder_timeline.py` enthält Auswahl und Messwerte.
-`core/folder_timeline_exports.py` enthält ausschließlich die atomaren Formate.
-`cli_folder_timeline.py` übernimmt Parser und menschenlesbare Ausgabe.
+Größe und Dateizahl besitzen unterschiedliche Einheiten. Zwei getrennte Diagramme sind
+für Laien und Screenreader verständlicher als eine kombinierte Doppelachse. Beide
+verwenden dieselbe Scan-Reihenfolge und stehen direkt oberhalb derselben Wertetabelle.
 
-### Vollständiger Vergleich ohne doppelte Aggregation
+### Vollständigkeit trotz reduzierter Beschriftung
 
-Bei `--all-pages` entsteht eine vollständige sortierte `FolderComparisonPage`.
-Die Terminalseite wird daraus nachträglich ausgeschnitten. Export und Bildschirm
-verwenden damit dieselbe geprüfte Ergebnismenge.
+Bis zwölf Punkte werden vollständig sichtbar beschriftet. Bei längeren Reihen werden
+sechs repräsentative Achsenpositionen gewählt. Alle Punkte bleiben fokussierbar und
+beschrieben; die Tabelle enthält weiterhin jede Zeile. Übersichtlichkeit reduziert
+somit keine Information.
+
+### Skriptfreiheit als Sicherheits- und Portabilitätsmerkmal
+
+Die Grafiken benötigen weder JavaScript noch Bibliotheken, Netzwerkzugriff oder
+Schriftdateien. Dadurch bleibt der Bericht auch beim ersten netzlosen Start stabil und
+enthält keine aktive Ausführungsfläche.
 
 ## Automatische Prüfqualität
 
-Die neue Testdatei prüft:
+Die Tests prüfen zusätzlich:
 
-- drei chronologische Scans mit Wachstum und Rückgang,
-- rekursive Dateizahl und Größe,
-- Datenbank-Unverändertheit,
-- JSON-, Calc-CSV- und Offline-HTML-Ausgabe,
-- CLI-Ausgabe,
-- Ablehnung von `..`,
-- Mindestanzahl von zwei Scans,
-- vollständige Vergleichsexporte über mehrere Seiten,
-- kontrollierten Fehler ohne Exportziel.
+- eindeutigen Startseitenpunkt 11,
+- vollständige Argumentliste mit Scan-Grenzen und HTML-Ziel,
+- Feldhilfe innerhalb des Dialogs,
+- Ablehnung von Zeitpunkten außerhalb 2 bis 500,
+- Detail- und Schrittanleitung ohne Aktionsstart,
+- zeitreihebezogene Fehlerhilfe,
+- eigenständige Hilfe und Alltagswortsuche,
+- genau zwei SVG-Elemente,
+- zugängliche Rollen, Titel und Beschreibungen,
+- Tastaturfokus für Datenpunkte,
+- vollständige Wertetabelle,
+- Abwesenheit von Skripten und externen URLs.
 
-Der Architekturtest bindet den neuen Befehl zusätzlich an sein CLI-Modul und seine
-`CommandPolicy`. Gesamtstand: 71 Tests unter Python 3.10 und 3.12.
+Gesamtstand der Funktionsreferenz:
 
-## Finale technische Referenzprüfung
+- 77 Tests unter Python 3.10,
+- 77 Tests unter Python 3.12,
+- Warnungen als Fehler,
+- Quick-Abnahme 11/11,
+- Standard-Abnahme 11/11.
 
-GitHub Actions auf Ubuntu 24.04 und Python 3.12:
+## 0.12-Funktionsreferenz
+
+Commit `b27e678259474ae459f08751ba0b386cccb653a3`:
 
 | Profil | Dateien | Kriterien | Laufzeit | Python-Spitzenspeicher |
 |---|---:|---:|---:|---:|
-| Quick | 600 | 11/11 | 1,131 s | 1.327.056 Byte |
-| Standard | 10.000 | 11/11 | 18,072 s | 13.396.733 Byte |
-
-Beide Berichtspakete wurden mit SHA-256-Prüfsumme archiviert. Die Werte dienen als
-CI-Referenz und sind keine Hardwaregarantie.
+| Quick | 600 | 11/11 | 1,015 s | 1.325.982 Byte |
+| Standard | 10.000 | 11/11 | 16,116 s | 13.398.883 Byte |
 
 ## Erkannte nächste Analysepunkte
 
-1. Zeitreihe als eigenen Punkt in die geführte Startseite aufnehmen.
-2. Mehrschichtige Detail-, Schritt-, Feld- und Fehlerhilfe ergänzen.
-3. Barrierefreie SVG-Liniengrafiken im Offline-HTML erzeugen.
+1. Häufig geprüfte relative Ordner als sichere Zeitreihen-Vorlagen speichern.
+2. Optionale Trendgrenzen für starkes Größen- oder Dateiwachstum definieren.
+3. Diagrammpunkte optional nach realem Zeitabstand positionieren.
 4. Mehrere ausgewählte Ordner gemeinsam darstellen.
-5. Warnschwellen für starkes Wachstum optional ergänzen.
-6. Reale Laienabnahme auf Kubuntu durchführen.
-7. `large`-Profil auf Zielhardware vermessen.
+5. Reale Laienabnahme auf Kubuntu durchführen.
+6. `large`-Profil auf Zielhardware vermessen.
+7. Später grafische Pfadauswahldialoge ergänzen.
 
 ## Fazit
 
-Beide technischen Aufträge sind umgesetzt und automatisch abgesichert. Nutzer können
-einen Ordner über mehrere Scans nachvollziehen und Vergleichsberichte ohne Seitenverlust
-exportieren. Alle neuen Wege bleiben offline, nachvollziehbar und rein lesend; der
-einzige offene Hauptpunkt bleibt die tatsächlich menschliche Laienabnahme.
+Beide Aufträge sind umgesetzt und automatisch abgesichert. Die Zeitreihe ist ohne
+Befehlskenntnis erreichbar, jede Eingabe wird erklärt und vorvalidiert, und Fehler
+führen zu konkreten Lösungsschritten. Die HTML-Trends sind lokal, skriptfrei,
+tastaturzugänglich und durch eine vollständige Tabelle abgesichert. Offen bleibt
+bewusst nur die tatsächlich menschliche Laienabnahme.
