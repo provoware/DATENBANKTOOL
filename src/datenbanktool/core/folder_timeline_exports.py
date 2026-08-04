@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from datenbanktool.core.folder_timeline import FolderTimeline
+from datenbanktool.core.folder_timeline_charts import render_timeline_charts
 
 
 @dataclass(frozen=True, slots=True)
@@ -145,25 +146,43 @@ def export_folder_timeline(
             if timeline.truncated
             else f"Alle {len(timeline.points)} passenden Scans werden gezeigt."
         )
+        charts = render_timeline_charts(timeline)
         document = f"""<!doctype html>
-<html lang=\"de\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\">
+<html lang=\"de\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">
 <title>DATENBANKTOOL – Ordner-Zeitreihe</title>
 <style>
-body{{font-family:system-ui,sans-serif;margin:1.5rem;background:#f6f7f9;color:#15171a}}
-.hint{{background:#e8f4ff;padding:.8rem;border-radius:.5rem}}table{{width:100%;border-collapse:collapse;background:white;margin-top:1rem}}
+:root{{color-scheme:light}}*{{box-sizing:border-box}}
+body{{font-family:system-ui,sans-serif;margin:0;background:#f6f7f9;color:#15171a;line-height:1.5}}
+main{{max-width:1180px;margin:auto;padding:1.5rem}}
+.hint{{background:#e8f4ff;padding:.8rem;border-left:.35rem solid #176b87;border-radius:.35rem}}
+.charts{{margin-top:2rem}}.chart-panel{{background:white;border:1px solid #c8ccd0;border-radius:.6rem;padding:1rem;margin:1rem 0}}
+.chart-panel figcaption{{font-size:1.25rem;font-weight:750}}.chart-summary{{margin:.35rem 0 1rem}}
+.timeline-chart{{display:block;width:100%;height:auto;min-height:18rem;color:#164f68;background:#fff;border:1px solid #d9dde1;border-radius:.35rem}}
+.grid{{stroke:#d7dce0;stroke-width:1}}.axis{{stroke:#30363b;stroke-width:2}}
+.data-line{{fill:none;stroke:currentColor;stroke-width:3;stroke-linejoin:round;stroke-linecap:round}}
+.data-point{{fill:white;stroke:currentColor;stroke-width:3}}.data-point:focus{{outline:none;stroke-width:6}}
+.axis-label{{font-size:13px;fill:#343a40}}.axis-title{{font-size:15px;font-weight:700;fill:#202428}}
+.value-label{{font-size:12px;font-weight:700;fill:#202428;paint-order:stroke;stroke:white;stroke-width:4px;stroke-linejoin:round}}
+.table-wrap{{overflow-x:auto;margin-top:1.5rem}}table{{width:100%;border-collapse:collapse;background:white;min-width:760px}}
+caption{{text-align:left;font-size:1.25rem;font-weight:750;padding:.5rem 0}}
 th,td{{padding:.6rem;border:1px solid #c8ccd0;text-align:left;vertical-align:top}}
 th{{background:#e9ecef;position:sticky;top:0}}.light{{font-weight:700}}
-.green{{color:#176b2c}}.yellow{{color:#7a5600}}.red{{color:#a11b1b}}
-</style></head><body>
+.green{{color:#176b2c}}.yellow{{color:#6b4c00}}.red{{color:#941919}}
+@media (max-width:640px){{main{{padding:.8rem}}.chart-panel{{padding:.55rem}}.timeline-chart{{min-height:14rem}}}}
+@media (prefers-reduced-motion:reduce){{*{{scroll-behavior:auto!important}}}}
+</style></head><body><main>
 <h1>Ordner-Zeitreihe</h1>
 <p>Stammordner: {html.escape(timeline.root)}<br>Ordner: {html.escape(timeline.folder)}<br>
 Scans: #{timeline.first_session_id} bis #{timeline.last_session_id}</p>
 <p class=\"hint\">Reine Auswertung gespeicherter Scans. {html.escape(truncation)}
-Elternordner enthalten ihre Unterordner. Farben werden immer durch Klartext ergänzt.</p>
-<table><thead><tr><th>Scan</th><th>Zeitpunkt UTC</th><th>Modus</th><th>Status</th>
-<th>Dateien</th><th>Δ Dateien</th><th>Größe</th><th>Δ Größe</th><th>Δ Prozent</th></tr></thead>
-<tbody>{''.join(rows)}</tbody></table>
-</body></html>
+Elternordner enthalten ihre Unterordner. Farben werden immer durch Klartext ergänzt.
+Die Trendgrafiken benötigen weder Internet noch JavaScript.</p>
+{charts}
+<div class=\"table-wrap\"><table><caption>Vollständige Zeitreihenwerte</caption><thead><tr>
+<th scope=\"col\">Scan</th><th scope=\"col\">Zeitpunkt UTC</th><th scope=\"col\">Modus</th><th scope=\"col\">Status</th>
+<th scope=\"col\">Dateien</th><th scope=\"col\">Δ Dateien</th><th scope=\"col\">Größe</th><th scope=\"col\">Δ Größe</th><th scope=\"col\">Δ Prozent</th>
+</tr></thead><tbody>{''.join(rows)}</tbody></table></div>
+</main></body></html>
 """
         html_result = _atomic_bytes(
             html_path,
