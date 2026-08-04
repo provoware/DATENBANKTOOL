@@ -231,6 +231,7 @@ def analyse_folders(
     *,
     filters: FolderFilter = FolderFilter(),
     session_id: int | None = None,
+    all_rows: bool = False,
 ) -> FolderPage:
     filters.validate()
     with closing(_readonly_connection(database_path)) as connection:
@@ -328,6 +329,17 @@ def analyse_folders(
         }[filters.sort_by]
         output.sort(key=key, reverse=filters.descending)
         total_rows = len(output)
+        if all_rows:
+            return FolderPage(
+                database=str(normalise_database_path(database_path)),
+                session_id=selected_session_id,
+                root=str(session["root"]),
+                page=1,
+                page_size=max(1, total_rows),
+                total_rows=total_rows,
+                total_pages=1,
+                rows=tuple(output),
+            )
         total_pages = max(1, math.ceil(total_rows / filters.page_size))
         start = (filters.page - 1) * filters.page_size
         selected = tuple(output[start : start + filters.page_size])
@@ -341,6 +353,32 @@ def analyse_folders(
             total_pages=total_pages,
             rows=selected,
         )
+
+
+def paginate_folder_page(
+    complete_page: FolderPage,
+    *,
+    page: int,
+    page_size: int,
+) -> FolderPage:
+    if page < 1:
+        raise ValueError("Seite muss mindestens 1 sein")
+    if not 1 <= page_size <= _MAX_PAGE_SIZE:
+        raise ValueError(f"Seitengröße muss zwischen 1 und {_MAX_PAGE_SIZE} liegen")
+    if len(complete_page.rows) != complete_page.total_rows:
+        raise ValueError("Pagination benötigt eine vollständige Ordnerauswertung")
+    total_pages = max(1, math.ceil(complete_page.total_rows / page_size))
+    start = (page - 1) * page_size
+    return FolderPage(
+        database=complete_page.database,
+        session_id=complete_page.session_id,
+        root=complete_page.root,
+        page=page,
+        page_size=page_size,
+        total_rows=complete_page.total_rows,
+        total_pages=total_pages,
+        rows=tuple(complete_page.rows[start : start + page_size]),
+    )
 
 
 def _write_atomic(path: Path, content: str, *, overwrite: bool) -> str:
