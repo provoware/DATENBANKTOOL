@@ -19,6 +19,7 @@ from datenbanktool.cli_reports import (
 )
 from datenbanktool.cli_scan import register_scan_parser
 from datenbanktool.cli_search import register_preset_parsers, register_search_parser
+from datenbanktool.cli_timeline_presets import register_timeline_preset_parsers
 from datenbanktool.core.index_database import IndexErrorBase
 from datenbanktool.core.index_lock import IndexLockedError
 from datenbanktool.core.presentation import paint
@@ -75,6 +76,7 @@ def build_parser() -> argparse.ArgumentParser:
     register_folder_compare_parser(index_subparsers)
     register_folder_timeline_parser(index_subparsers)
     register_preset_parsers(index_subparsers)
+    register_timeline_preset_parsers(index_subparsers)
     register_admin_parsers(index_subparsers)
 
     register_report_parser(subparsers)
