@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.6.0-alpha.1 – 2026-08-04
+
+### Hinzugefügt
+
+- Geführte Terminal-Startseite über `datenbanktool start`.
+- Automatischer Start der Menüansicht bei einem interaktiven Aufruf ohne Unterbefehl.
+- Nummerierte Auswahl für Suche, Ordnerübersicht, Änderungen, Status, Indexaufbau, Re-Scan, Sicherung, Vorlagen und Hilfe.
+- Schrittweise Abfrage benötigter Ordner-, Datenbank- und Suchwerte.
+- Vorschau des vollständig geplanten Befehls vor der Ausführung.
+- Zusätzliche Bestätigung vor Indexaufbau, Re-Scan und Sicherung.
+- Ampel- und Klartextbeschreibung der Wirkung jeder Menüfunktion.
+- Neues Hilfethema `datenbanktool explain start`.
+
+### Codequalität
+
+- Neuer schmaler Programmeinstieg `entrypoint.py` trennt Startlogik von der bestehenden CLI.
+- Neues testbares Modul `terminal_home.py` enthält Menümodell und Eingabeabläufe.
+- Vorhandene `cli.py` wurde nicht weiter vergrößert.
+- Ausführung erfolgt als feste Argumentliste ohne Shell-Auswertung.
+- Ein-/Ausgabeströme und Befehlsausführung sind für Tests austauschbar.
+- Menüdefinition ist unveränderlich und prüft doppelte Auswahlnummern.
+- Nicht-interaktive Aufrufe ohne Befehl beenden sich ohne Warteschleife.
+- Pfade mit Leerzeichen bleiben sichere einzelne Argumente.
+
+### Validiert
+
+- Installierbares Paket `datenbanktool-0.6.0a1` erfolgreich gebaut.
+- Kompilierung unter Python 3.10 und 3.12 erfolgreich.
+- 39 von 39 automatisierten Tests unter beiden Python-Versionen erfolgreich.
+- Testlauf mit `PYTHONWARNINGS=error` erfolgreich.
+- Ungültige Menüauswahl, Abbruch, geschlossene Eingabe und Bestätigungsschutz geprüft.
+- Sichere Argumentübergabe für Pfade und Suchtexte mit Leerzeichen geprüft.
+- Nicht-interaktiver Leerstart ohne Blockierung geprüft.
+
 ## 0.5.0-alpha.1 – 2026-08-04
 
 ### Hinzugefügt
