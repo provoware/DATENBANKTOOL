@@ -1,213 +1,324 @@
 # Entwicklerdokumentation
 
-## Architekturstand 0.11.0-alpha.1
+## Architekturstand 0.12.0-alpha.1
 
-Diese Iteration ergänzt zwei getrennte Funktionen:
+Diese Iteration ergänzt:
 
-1. rein lesende Ordner-Zeitreihe über mehrere abgeschlossene Scans,
-2. vollständiger Export aller gefilterten Ordnervergleichszeilen.
+1. eine vollständig geführte Bedienung der Ordner-Zeitreihe,
+2. mehrschichtige Detail-, Schritt-, Feld- und Fehlerhilfe,
+3. zwei lokale barrierefreie SVG-Trendgrafiken im Offline-HTML.
 
 Neue Fachmodule:
 
-- `core/folder_timeline.py` – Pfadprüfung, Sitzungsauswahl, Messwerte und Zustände,
-- `core/folder_timeline_exports.py` – atomare JSON-, CSV- und HTML-Berichte,
-- `cli_folder_timeline.py` – Parser, Terminaldarstellung und Dispatch,
-- `tests/test_folder_timeline_and_compare_exports.py` – Funktions-, Sicherheits-
-  und Vollständigkeitstests.
+- `core/folder_timeline_help.py` – vollständiger Hilfetext- und Fehlerhilfevertrag,
+- `core/folder_timeline_charts.py` – skriptfreie SVG-Erzeugung für Größe und Dateizahl.
 
-Bestehende Vergleichsmodule wurden gezielt erweitert:
+Gezielt erweiterte Module:
 
-- `core/folder_compare.py` – vollständige Ergebnismenge und nachträgliche Pagination,
-- `cli_folder_compare.py` – sichtbarer `--all-pages`-Schalter.
+- `core/guided_home.py` – Menüpunkt 11, validierte Eingaben und sicherer Dispatch,
+- `help_command.py` – Hilfeliste, Stichwortsuche und alle Hilfestufen,
+- `core/folder_timeline_exports.py` – SVG-Einbettung und vollständige HTML-Tabelle.
 
-`cli.py` registriert nur das neue Fachmodul und bleibt unter dem globalen Limit.
-
-## Öffentlicher Zeitreihenbefehl
+## Geführter Startseitenpunkt
 
 ```text
-datenbanktool index folder-timeline DATENBANK [ORDNER]
+11. Ordner-Zeitreihe
 ```
 
-Optionen:
-
-```text
---from-session-id ID
---to-session-id ID
---limit 2..500
---json PFAD
---csv PFAD
---html PFAD
---overwrite-report
---no-terminal
-```
-
-Ohne `ORDNER` wird `.` verwendet. Dieser Wert steht für den gesamten gespeicherten
-Stammordner.
-
-## Datenmodelle
-
-### `FolderTimelineOptions`
-
-Enthält relativen Ordnerpfad, optionale Ausgangs- und Zielsitzung sowie das Limit.
-Sitzungs-IDs müssen mindestens 1 und das Limit zwischen 2 und 500 liegen.
-
-### `FolderTimelinePoint`
-
-Ein Zeitpunkt enthält Scan-ID, UTC-Zeit, Scan-Modus, Dateizahl, Größe, Differenzen,
-Prozentwert, Status sowie Ampelmetadaten. Der erste sichtbare Punkt ist `baseline` und
-besitzt keine Differenz.
-
-### `FolderTimeline`
-
-Die gesamte Zeitreihe enthält Datenbank, Stammordner, relativen Ordner, verfügbare und
-sichtbare Sitzungen, Kürzungsstatus, Nettoänderungen, Minimum, Maximum und Punkte.
-
-## Sichere Pfadnormalisierung
-
-`normalise_folder()`:
-
-1. entfernt äußere Leerzeichen,
-2. wandelt Backslashes in `/` um,
-3. behandelt leer, `.`, `./` als Stammordner,
-4. lehnt absolute Pfade ab,
-5. lehnt jedes Segment `..` ab,
-6. liefert einen kanonischen relativen POSIX-Pfad.
-
-## Rein lesender SQLite-Vertrag
-
-`_readonly_connection()`:
-
-1. normalisiert den Datenbankpfad,
-2. verlangt eine vorhandene Datei,
-3. öffnet SQLite mit `mode=ro`,
-4. aktiviert `PRAGMA query_only=ON`,
-5. lehnt unbekannte neuere Schemata ab,
-6. verlangt Schema 3.
-
-Die Zeitreihe führt keine schreibende SQL-Anweisung und keinen neuen Dateisystemscan
-aus.
-
-## Sitzungsauswahl
-
-- `--to-session-id` wählt eine konkrete abgeschlossene Zielsitzung.
-- Ohne Ziel wird die neueste abgeschlossene Sitzung gewählt.
-- `--from-session-id` setzt eine inklusive untere Grenze.
-- Ausgang und Ziel müssen denselben normalisierten Stammordner besitzen.
-- Alle passenden Sitzungen werden chronologisch sortiert.
-- Bei mehr Punkten als `limit` werden die neuesten verwendet und die Kürzung gemeldet.
-- Weniger als zwei Punkte führen zu einem kontrollierten Fehler.
-
-## Rekursive Ordneraggregation
-
-Für `.` werden alle Dateizeilen einer Sitzung gezählt und summiert. Für Unterordner
-wird ein Präfix mit abschließendem `/` verwendet. Dadurch zählt `Musik/` die Dateien
-in `Musik/Live/`, aber nicht versehentlich `Musik-Alt/`.
-
-## Zustandslogik
-
-1. vorher 0 Dateien, jetzt mehr als 0 → `new`,
-2. vorher Dateien, jetzt 0 → `removed`,
-3. Größe gestiegen → `grown`,
-4. Größe gesunken → `shrunk`,
-5. Größe gleich, Dateizahl anders → `changed`,
-6. sonst → `unchanged`.
-
-Bei vorheriger Größe 0 bleibt der Prozentwert `None`.
-
-## Zeitreihenexporte
-
-### JSON
-
-UTF-8, eingerückt, vollständige Metadaten und keine ANSI-Ausgaben.
-
-### CSV
-
-UTF-8-BOM, Semikolon, numerische Rohwerte, getrennte Status- und Begründungsspalten.
-
-### HTML
-
-Vollständig offline, HTML-maskiert, sichtbare Tabelle, Tooltip und `aria-label`.
-
-### Atomarer Schreibvertrag
-
-Alle Formate werden in eine Prozess-spezifische temporäre Datei geschrieben und per
-`replace()` freigegeben. Vorhandene Ziele benötigen `overwrite=True`.
-
-## Vollständiger Ordnervergleichsexport
-
-`compare_folders()` besitzt jetzt `all_rows: bool = False`.
-
-- `False`: bisherige paginierte Seite,
-- `True`: vollständige gefilterte und sortierte Ergebnismenge.
-
-`paginate_folder_comparison()` erzeugt aus der vollständigen Menge die sichtbare
-Terminalseite. Die Aggregation beider Snapshots erfolgt nur einmal.
-
-`--all-pages` ist nur mit JSON, CSV oder HTML zulässig. Ohne Schalter bleibt das
-bisherige Seitenverhalten kompatibel.
-
-## CommandPolicy
+`MenuAction`:
 
 ```python
-CommandPolicy("index.folder-timeline", writes_reports=True)
-CommandPolicy("index.folder-compare", writes_reports=True)
+MenuAction("11", "folder-timeline", "folder_timeline")
 ```
 
-Originaldatei-, Index-, Backup-, Konfigurations- und Testdatenschreibzugriffe bleiben
-für beide Befehle falsch.
+Die Aktion benötigt keine Bestätigung, weil sie nur SQLite liest und optional einen
+neuen Bericht schreibt. Vorhandene Berichtszielen werden weiterhin nicht still ersetzt.
 
-## Automatische Tests
+## Dialogzustand
 
-Die neue Testdatei prüft:
+`HomeSession` speichert zusätzlich:
 
-1. drei chronologische Scans,
-2. rekursive Dateien und Größen,
-3. Wachstum und Rückgang,
-4. Nettoänderung,
-5. bytegenau unveränderte Datenbank,
-6. JSON-, CSV- und HTML-Ausgabe,
-7. UTF-8-BOM,
-8. direkten CLI-Befehl,
-9. Ablehnung von `../`,
-10. Mindestanzahl von zwei Scans,
-11. vollständigen Vergleichsexport über mehrere Seiten,
-12. identische Zeilenzahl in JSON, CSV und HTML,
-13. kontrollierten Fehler bei `--all-pages` ohne Exportziel.
+```text
+last_timeline_folder
+```
 
-Der Architekturtest prüft Handler, `CommandPolicy`, Modulzuständigkeit, Zeilengrenzen,
-Importgrenzen und Shell-Verbote.
+Standardwert ist `.`. Dadurch kann ein Nutzer mehrere Zeitreihenläufe durchführen,
+ohne denselben relativen Ordner jedes Mal erneut einzutragen.
 
-## Finale Validierung
+## Geführte Eingaben
 
-Referenzcommit `900efee174464413e3b8216924081248294787c6`:
+`_build_folder_timeline()` erzeugt folgende Argumentstruktur:
 
-- Paket `datenbanktool-0.11.0a1` gebaut,
-- 71/71 Tests unter Python 3.10,
-- 71/71 Tests unter Python 3.12,
-- Warnungen als Fehler,
-- Quick: 600 Dateien, 11/11, 1,131 s, 1.327.056 Byte Python-Peak,
-- Standard: 10.000 Dateien, 11/11, 18,072 s, 13.396.733 Byte Python-Peak,
-- getrennte Artefakte mit SHA-256-Prüfsummen.
+```text
+index folder-timeline DATENBANK ORDNER
+[--from-session-id ID]
+[--to-session-id ID]
+[--limit 2..500]
+[--json|--csv|--html ZIEL]
+```
+
+Abgefragt werden:
+
+1. Indexdatenbank,
+2. relativer Ordner,
+3. optionale Ausgangssitzung,
+4. optionale Zielsitzung,
+5. Limit mit Standard 100,
+6. optionales Exportformat,
+7. neuer Berichtspfad.
+
+## Vorvalidierung
+
+### `_optional_integer()`
+
+- akzeptiert leere Eingabe für optionale Werte,
+- wandelt ausschließlich ganze Zahlen um,
+- prüft Mindestwert,
+- prüft optionalen Höchstwert,
+- wiederholt das Feld bei Fehlern,
+- zeigt Feldhilfe über `?`.
+
+Sitzungs-IDs benötigen mindestens 1. Das Zeitreihenlimit benötigt 2 bis 500.
+
+### `_report_format()`
+
+Akzeptierte Werte:
+
+```text
+kein
+json
+csv
+html
+```
+
+Zusätzliche verständliche Aliase wie leer, ohne oder none werden intern auf kein
+normalisiert. Andere Werte werden vor dem Dispatch abgelehnt.
+
+### Doppelte Validierungsgrenze
+
+Die geführte Oberfläche verbessert die unmittelbare Fehlermeldung. Der öffentliche
+CLI-Parser und `FolderTimelineOptions.validate()` bleiben die maßgebliche zweite
+Sicherheitsgrenze. Ein direkter CLI-Aufruf ist somit genauso streng wie der Dialog.
+
+## Sicherer Dispatch
+
+Der Dialog baut eine `list[str]`. Der sichtbare Befehl wird nur über `shlex.join()`
+formatiert. Der Runner erhält die ursprüngliche Argumentliste; es gibt keine
+Shell-Auswertung und keine Interpretation von Sonderzeichen in Pfaden.
+
+## Hilfearchitektur
+
+### `FOLDER_TIMELINE_TOPIC`
+
+Das Hilfethema enthält:
+
+- Kurzerklärung,
+- Zweck,
+- Schreibwirkung,
+- Risiko,
+- sinnvolle Einsatzfälle,
+- Vorbedingungen,
+- sieben geführte Schritte,
+- Erfolgskriterien,
+- sechs typische Probleme mit Lösungen,
+- CLI-Beispiel,
+- Suchbegriffe.
+
+### Gemeinsame Quelle
+
+`guided_home.py` und `help_command.py` verwenden dieselbe Instanz. Dadurch stimmen
+`?11`, `g11`, eigenständige Hilfe, JSON-Hilfe, Suchergebnisse und Fehlerhilfe fachlich
+überein.
+
+### Feldhilfe
+
+Eigene Hilfetexte existieren für:
+
+- relativen Ordner,
+- Ausgangssitzung,
+- Zielsitzung,
+- Zeitreihenlimit,
+- Berichtstyp,
+- Berichtspfad.
+
+### Fehlerhilfe
+
+`timeline_error_help()` erklärt kontrolliert:
+
+- weniger als zwei Scans,
+- unpassende Scan-Sitzungen,
+- absolute Pfade oder `..`,
+- Ordner ohne gespeicherte Dateien,
+- vorhandene Berichtszielen.
+
+Sie bestätigt zusätzlich, dass Startseite, Index und Originaldateien nicht automatisch
+verändert wurden.
+
+## SVG-Diagrammmodul
+
+`render_timeline_charts(timeline)` erzeugt genau zwei Diagramme:
+
+1. `Größenverlauf`,
+2. `Dateizahlverlauf`.
+
+### Koordinatensystem
+
+Feste logische ViewBox:
+
+```text
+960 × 360
+```
+
+Die tatsächliche Anzeige skaliert responsiv über CSS. Die Plotfläche reserviert feste
+Innenränder für y-Achse, x-Achse und Beschriftungen.
+
+### X-Achse
+
+Zeitpunkte werden nach ihrer chronologischen Scan-Reihenfolge gleichmäßig verteilt.
+Bei einem einzelnen Punkt wäre keine Zeitreihe zulässig; das Kernmodell verlangt
+mindestens zwei Punkte.
+
+### Y-Achse
+
+`_bounds()` verwendet Minimum und Maximum des sichtbaren Messwerts. Bei identischen
+Werten wird ein sicherer positiver Bereich ergänzt, damit keine Division durch null
+entsteht. Vier Intervalle erzeugen fünf beschriftete horizontale Rasterlinien.
+
+### Sichtbare Beschriftung
+
+- bis zwölf Punkte: jeder Punkt erhält sichtbare Scan- und Wertbeschriftung,
+- darüber: sechs repräsentative Indexpositionen werden sichtbar beschriftet.
+
+Die Datenmenge wird nicht reduziert. Sämtliche Kreise, ARIA-Texte und Tabellenzeilen
+bleiben vorhanden.
+
+### Barrierefreiheit
+
+Jedes Diagramm besitzt:
+
+```html
+<figure>
+<figcaption>…</figcaption>
+<svg role="img" aria-labelledby="…">
+<title>…</title>
+<desc>…</desc>
+```
+
+Jeder Punkt besitzt:
+
+```html
+<circle tabindex="0" role="img" aria-label="Scan …">
+<title>…</title>
+```
+
+Zusätzlich stehen Minimum, Maximum und Nettoänderung als normaler Absatz sowie alle
+Rohwerte in einer Tabelle mit `caption` und `scope="col"` zur Verfügung.
+
+### Skript- und Netzwerkfreiheit
+
+Der erzeugte Bericht enthält:
+
+- kein `<script>`,
+- keine HTTP- oder HTTPS-Adresse,
+- keine externen Stylesheets,
+- keine externen Schriftdateien,
+- keine externen Bilder,
+- keine Laufzeitbibliothek.
+
+Das SVG-Markup ist vollständig im HTML-Dokument enthalten.
+
+## HTML-Struktur
+
+```text
+main
+├── Überschrift und Scan-Metadaten
+├── Sicherheits- und Vollständigkeitshinweis
+├── section.charts
+│   ├── figure Größenverlauf
+│   └── figure Dateizahlverlauf
+└── vollständige Zeitreihentabelle
+```
+
+Die Tabelle bleibt die verbindliche vollständige Datendarstellung. Die Diagramme sind
+eine zusätzliche visuelle Form, ersetzen aber keine Werte.
+
+## Tests
+
+### Geführte Bedienung
+
+Geprüft werden:
+
+- eindeutiger Menüpunkt 11,
+- richtiges Hilfethema und Builder,
+- rein lesende Einstufung ohne Bestätigungsdialog,
+- vollständige Argumentliste,
+- Scan-Grenzen,
+- Limit,
+- HTML-Ziel,
+- Feldhilfe,
+- Korrektur eines ungültigen Limits.
+
+### Hilfesystem
+
+Geprüft werden:
+
+- `?11`,
+- `g11`,
+- eigenständige geführte Hilfe,
+- Stichwortsuche nach Speicherentwicklung,
+- spezifische Fehlerhilfe,
+- kein unbeabsichtigter Aktionsstart bei reiner Hilfe.
+
+### SVG und Offline-Vertrag
+
+Geprüft werden:
+
+- genau zwei SVGs,
+- beide Diagrammtitel,
+- `role="img"`,
+- `aria-labelledby`,
+- SVG-`desc`,
+- fokussierbare Datenpunkte,
+- vollständige Wertetabelle,
+- kein Script,
+- keine HTTP-/HTTPS-Ressource.
+
+## Automatische Referenzprüfung
+
+Commit `b27e678259474ae459f08751ba0b386cccb653a3`:
+
+- 77/77 Tests unter Python 3.10,
+- 77/77 Tests unter Python 3.12,
+- `PYTHONWARNINGS=error`,
+- Quick: 600 Dateien, 11/11, 1,015 s, 1.325.982 Byte Python-Peak,
+- Standard: 10.000 Dateien, 11/11, 16,116 s, 13.398.883 Byte Python-Peak.
+
+Artefakte:
+
+| Profil | ID | SHA-256 |
+|---|---:|---|
+| Quick | 8898514789 | `72e26044b5d02b06c771f74c505b3719cc0cbf5219e8965d6dfb80e0e3b7955e` |
+| Standard | 8898524811 | `930f15a0d6e0c942a9dffe0f48e45715dd412db5d815b174b94cd37225ab2bab` |
 
 ## Bekannte Grenzen
 
-- Noch kein eigener Startseitenpunkt für die Zeitreihe.
-- Noch keine mehrschichtige Feld- und Fehlerhilfe in der Startseite.
-- HTML besitzt noch keine SVG-Liniengrafik.
-- Zeitreihe zeigt jeweils einen relativen Ordner.
-- Leere Ordner ohne Dateieintrag bleiben unsichtbar.
-- Reale Laienabnahme und 100.000-Dateien-Zieltest bleiben offen.
+- Diagramme verwenden Scan-Reihenfolge statt proportionalem Zeitabstand.
+- 500 Punkte erzeugen 500 fokussierbare Elemente je Diagramm.
+- Sichtbare Wertelabels werden bei langen Reihen reduziert.
+- Je Lauf wird ein relativer Ordner dargestellt.
+- Geführter Dialog besitzt noch keine gespeicherten Zeitreihen-Vorlagen.
+- Reale Laienabnahme und Zielhardwaretest bleiben offen.
 
 ## Direkt folgender Entwicklungsblock
 
-Zeitreihe in die geführte Startseite und das mehrschichtige Hilfesystem integrieren.
+Validierte lokale Zeitreihen-Vorlagen entwickeln und in Startseite sowie Hilfe
+integrieren.
 
 ## Sichere Alternative
 
-Zwei barrierefreie lokale SVG-Liniengrafiken für Größe und Dateizahl im HTML-Bericht
-ergänzen.
+Rein lesende Trendgrenzen für auffälliges Größen- oder Dateiwachstum ergänzen.
 
 ## Unverändert
 
-`AGENTS.md` wird nicht verändert. Externe Laufzeitabhängigkeiten bleiben bei null, und
-automatische Schreibzugriffe auf gescannte Originaldateien bleiben gesperrt.
+`AGENTS.md` wird nicht verändert. Externe Laufzeitabhängigkeiten bleiben bei null.
+Automatische Schreibzugriffe auf gescannte Originaldateien bleiben gesperrt.
