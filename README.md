@@ -6,239 +6,273 @@
 
 | Bereich | Stand |
 |---|---|
-| Version | `0.9.0-alpha.1` |
+| Version | `0.10.0-alpha.1` |
 | SQLite-Schema | `3` |
-| Entwicklungsfortschritt | **96 %** |
-| Erledigte Hauptpunkte | **43** |
-| Offene Hauptpunkte | **2** |
+| Entwicklungsfortschritt | **99 %** |
+| Erledigte Hauptpunkte | **45** |
+| Offene Hauptpunkte | **1** |
 | Automatische Originaldateiänderungen | **Gesperrt** |
 | Externe Laufzeitabhängigkeiten | **0** |
-| Automatisierte Tests | **59/59** unter Python 3.10 und 3.12 |
+| Automatisierte Tests | **66/66** unter Python 3.10 und 3.12 |
+| Quick-Abnahme | **600 Dateien · 11/11 bestanden** |
+| Standard-Abnahme | **10.000 Dateien · 11/11 bestanden** |
+| Reale Laienabnahme | **Noch offen** |
 
-## Neu: Ordner zwischen zwei Scans vergleichen
+## Neu: Ordnerübersicht als CSV für LibreOffice Calc
 
-Der Ordnervergleich zeigt verständlich, wo Speicher hinzugekommen oder weggefallen ist.
-Er arbeitet ausschließlich mit zwei bereits gespeicherten, abgeschlossenen Scans.
+Die normale Ordnerübersicht kann jetzt direkt als Tabelle gespeichert werden:
+
+```bash
+datenbanktool index folders index.sqlite3 \
+  --csv ordneruebersicht.csv
+```
+
+Für **alle** passenden Ordner statt nur der sichtbaren Terminalseite:
+
+```bash
+datenbanktool index folders index.sqlite3 \
+  --csv ordneruebersicht.csv \
+  --all-pages
+```
+
+Die Terminalanzeige bleibt dabei paginiert. Das Tool nennt ausdrücklich, wie viele
+Ordner vollständig exportiert wurden.
+
+### CSV-Spalten
+
+Die CSV enthält:
+
+- Ampelstufe,
+- Ampelstatus,
+- Ampelbegründung,
+- Ordnerpfad und Ordnertiefe,
+- Dateizahl direkt im Ordner,
+- Dateizahl einschließlich Unterordnern,
+- direkte Größe in Byte,
+- Gesamtgröße in Byte,
+- Anzahl der Namenshinweise,
+- Dateien in Duplikatgruppen,
+- Pfad und Größe der gewählten größten Platzfresser.
+
+Technische Eigenschaften:
+
+- UTF-8 mit BOM,
+- Semikolon als Trennzeichen,
+- stabile Spalten,
+- Rohgrößen in Byte für Formeln und Sortierung,
+- atomare Dateifreigabe,
+- kein stilles Überschreiben,
+- vollständig offline.
+
+Vorhandene Berichte werden nur ausdrücklich ersetzt:
+
+```bash
+datenbanktool index folders index.sqlite3 \
+  --csv ordneruebersicht.csv \
+  --all-pages \
+  --overwrite-report
+```
+
+`--all-pages` ist nur zusammen mit JSON, CSV oder HTML zulässig. Dadurch kann keine
+unbeabsichtigte, wirkungslose Vollauswertung gestartet werden.
+
+## Neu: reproduzierbare Großbestandsabnahme
+
+Der neue Befehl erzeugt ausschließlich synthetische Testdaten in einem neuen
+Arbeitsordner:
+
+```bash
+datenbanktool acceptance \
+  --profile quick \
+  --workspace ./abnahme-quick
+```
+
+Verfügbare Profile:
+
+| Profil | Dateien | Ordner | Standard-Zeitgrenze | Python-Speichergrenze |
+|---|---:|---:|---:|---:|
+| `quick` | 600 | 24 | 30 Sekunden | 256 MiB |
+| `standard` | 10.000 | 250 | 600 Sekunden | 1.024 MiB |
+| `large` | 100.000 | 1.000 | 3.600 Sekunden | 4.096 MiB |
+
+Realistischer Standardlauf:
+
+```bash
+datenbanktool acceptance \
+  --profile standard \
+  --workspace ./abnahme-standard
+```
+
+Das `large`-Profil ist für ein geeignetes Zielsystem vorgesehen und wird nicht bei
+jedem normalen Testlauf ausgeführt.
+
+### Elf feste automatische Kriterien
+
+1. Testbestand vollständig erzeugt.
+2. Indexstatus `complete`.
+3. Alle Testdateien importiert.
+4. Keine Indexfehler.
+5. Ordnerauswertung vorhanden.
+6. CSV enthält alle Ordnerzeilen.
+7. CSV besitzt UTF-8-BOM.
+8. Quelldateien nach der Auswertung unverändert.
+9. CSV- und `--all-pages`-Hilfe vorhanden.
+10. Laufzeit innerhalb der Profilgrenze.
+11. Python-Spitzenspeicher innerhalb der Profilgrenze.
+
+Vor und nach der Auswertung wird jede Testdatei über Pfad, Größe und
+Nanosekunden-Änderungszeit verglichen.
+
+### Erzeugte Abnahmedateien
+
+Im neuen Arbeitsordner entstehen:
+
+```text
+acceptance-result.json
+acceptance-report.md
+NOVICE_ACCEPTANCE_CHECKLIST.md
+ordneruebersicht.csv
+index.sqlite3
+dataset/
+```
+
+Ein vorhandener Arbeitsordner wird vollständig abgelehnt. Es wird nichts gelöscht,
+bereinigt oder wiederverwendet.
+
+## Nachgewiesene Referenzläufe
+
+GitHub Actions auf Ubuntu 24.04 und Python 3.12:
+
+| Profil | Dateien | Kriterien | Laufzeit | Python-Spitzenspeicher |
+|---|---:|---:|---:|---:|
+| Quick | 600 | 11/11 | 1,086 s | 1.326.097 Byte |
+| Standard | 10.000 | 11/11 | 17,781 s | 13.394.783 Byte |
+
+Die Ergebnisse sind reproduzierbare Referenzwerte der CI-Umgebung und keine Garantie
+für identische Laufzeiten auf anderer Hardware.
+
+Die Berichte beider Profile werden als GitHub-Actions-Artefakte 14 Tage archiviert.
+
+## Reale Laienabnahme
+
+Automatische Prüfungen können keine unerfahrene Testperson ersetzen. Deshalb erzeugt
+jedes Profil eine `NOVICE_ACCEPTANCE_CHECKLIST.md` mit Aufgaben zu:
+
+- Startseite und Orientierung,
+- Ordnerübersicht,
+- vollständigem CSV-Export,
+- mehrschichtiger Hilfe,
+- Sicherheitsverständnis,
+- kontrolliertem Überschreibfehler,
+- Zeitmessung und Verständlichkeitsbewertung.
+
+Die reale Laienabnahme bleibt ausdrücklich **offen**, bis eine reale Person die
+Checkliste auf einem Zielsystem ausgefüllt hat.
+
+## Ordnervergleich
+
+Der vorhandene rein lesende Vergleich bleibt verfügbar:
 
 ```bash
 datenbanktool index folder-compare index.sqlite3
 ```
 
-Ohne weitere Angaben wählt das Tool automatisch:
+Er zeigt gewachsene, kleiner gewordene, neue, entfernte und unveränderte Ordner zwischen
+zwei abgeschlossenen Scans desselben Stammordners.
 
-1. den neuesten abgeschlossenen Scan mit einer passenden Vergleichsbasis,
-2. dessen direkten Vorgänger oder den vorherigen abgeschlossenen Scan desselben Stammordners.
-
-Explizite Auswahl:
+## Hilfe
 
 ```bash
-datenbanktool index folder-compare index.sqlite3 \
-  --from-session-id 3 \
-  --to-session-id 7
-```
+# CSV und vollständiger Export
+datenbanktool help folders --level guided
 
-Beide Sitzungen müssen abgeschlossen sein, dieselbe Ordnerwurzel besitzen und in der
-richtigen zeitlichen Reihenfolge liegen.
+# Abnahmeprofile
+datenbanktool help acceptance --level guided
 
-### Verständliche Zustände
-
-| Zustand | Bedeutung |
-|---|---|
-| **Gewachsen** | Gesamtgröße des Ordners ist gestiegen |
-| **Kleiner geworden** | Gesamtgröße ist gesunken |
-| **Neu** | Ordner enthält erstmals Dateien |
-| **Nicht mehr vorhanden** | Im neueren Scan liegen dort keine Dateien mehr |
-| **Dateizahl geändert** | Größe gleich, aber Anzahl der Dateien anders |
-| **Unverändert** | Größe und Dateizahl sind gleich |
-
-Unveränderte Ordner werden standardmäßig ausgeblendet. Sie können gezielt angezeigt
-werden:
-
-```bash
-datenbanktool index folder-compare index.sqlite3 --type unchanged
-```
-
-### Filter und Sortierung
-
-```bash
-# Nur gewachsene Ordner
-datenbanktool index folder-compare index.sqlite3 --type grown
-
-# Nur Änderungen ab 100 MiB
-datenbanktool index folder-compare index.sqlite3 --min-change-mib 100
-
-# Nur zwei Ordnerebenen
-datenbanktool index folder-compare index.sqlite3 --max-depth 2
-
-# Nach Pfad sortieren
-datenbanktool index folder-compare index.sqlite3 --sort path --no-descending
-```
-
-Weitere Sortierungen:
-
-- `change` – größte absolute Speicheränderung,
-- `percent` – größte prozentuale Änderung,
-- `files` – größte Änderung der Dateizahl,
-- `current-size` – aktuelle Ordnergröße,
-- `path` – Ordnername.
-
-### Sichere Exporte
-
-```bash
-datenbanktool index folder-compare index.sqlite3 \
-  --json ordnervergleich.json \
-  --csv ordnervergleich.csv \
-  --html ordnervergleich.html
-```
-
-- CSV verwendet UTF-8 mit BOM und Semikolon und ist für LibreOffice Calc geeignet.
-- HTML funktioniert vollständig offline und besitzt Klartext, Ampeln und Tooltips.
-- JSON ist maschinenlesbar und enthält keine Farbcodes.
-- Vorhandene Berichte werden nur mit `--overwrite-report` ersetzt.
-- Exportiert wird die aktuell gefilterte und ausgewählte Seite.
-
-## Startseite und Hilfe
-
-Der Vergleich ist als Punkt **10** in der geführten Startseite erreichbar:
-
-```bash
-datenbanktool start
-```
-
-```text
-1   Dateien suchen
-2   Ordnerübersicht
-3   Änderungen anzeigen
-4   Indexstatus prüfen
-5   Neuen Index anlegen
-6   Ordner erneut prüfen
-7   Index sichern
-8   Suchvorlagen anzeigen
-9   Funktionen erklären
-10  Ordner vergleichen
-h   Hilfezentrum
-0   Beenden
-```
-
-Mehrschichtige Hilfe:
-
-```text
-?10   ausführliche Erklärung
-g10   vollständige Schritt-für-Schritt-Anleitung
-```
-
-Direkter Hilfebefehl:
-
-```bash
+# Ordnervergleich
 datenbanktool help folder-compare --level guided
-datenbanktool explain folder-compare
 ```
 
-## Ampeln beim Ordnervergleich
+In der Startseite:
 
-| Ampel | Bedeutung |
-|---|---|
-| **ROT – Stark gewachsen** | Zunahme überschreitet die gewählte Warnschwelle |
-| **GELB – Gewachsen/Neu** | Veränderung verdient Aufmerksamkeit |
-| **GRÜN – Kleiner/Entfernt/Unverändert** | kein Speicherwachstum erkannt |
-
-Die Ampel bewertet nur die Größenentwicklung. Sie sagt nicht, dass Dateien beschädigt,
-gefährlich oder überflüssig sind. Farbe, Status und Begründung werden immer gemeinsam
-angezeigt.
-
-## Modulare CLI-Struktur
-
-| Modul | Zuständigkeit |
-|---|---|
-| `cli.py` | Zusammensetzung, Dispatch und zentrale Fehlergrenze |
-| `cli_scan.py` | einmalige Scans |
-| `cli_search.py` | Suche und Suchvorlagen |
-| `cli_reports.py` | Ordner-, Änderungs- und Dateiberichte |
-| `cli_folder_compare.py` | Ordnervergleich |
-| `cli_index.py` | Indexaufbau, Re-Scan, Status, Backup, Restore und Reparatur |
-| `cli_help.py` | klassischer Erklärungsbefehl |
-| `cli_common.py` | gemeinsame Eingabeprüfung und Ausgabe |
-| `cli_contract.py` | Handler- und Seiteneffektvertrag |
-
-Globale Regeln stehen in `MAINTENANCE_RULES.md` und `maintenance_rules.json`.
-Automatische Tests erzwingen unter anderem Größenlimits, Importgrenzen, Handler- und
-Sicherheitsrichtlinien sowie das Verbot von Shell-Auswertung.
-
-## Wichtige Direktbefehle
-
-```bash
-# Index aufbauen
-datenbanktool index build ~/Daten --database index.sqlite3
-
-# Ordner erneut prüfen
-datenbanktool index rescan ~/Daten --database index.sqlite3
-
-# Ordner vergleichen
-datenbanktool index folder-compare index.sqlite3
-
-# Dateien suchen
-datenbanktool index search index.sqlite3 urlaub
-
-# Ordnerübersicht
-datenbanktool index folders index.sqlite3
-
-# Dateiänderungen anzeigen
-datenbanktool index changes index.sqlite3
-
-# Index sichern
-datenbanktool index backup index.sqlite3 --output backup.sqlite3
+```text
+?2   ausführliche Ordnerhilfe
+g2   Ordnerübersicht Schritt für Schritt
+?10  ausführliche Vergleichshilfe
+g10  Ordnervergleich Schritt für Schritt
 ```
 
 ## Sicherheitsgrundsätze
 
-- Der Ordnervergleich öffnet SQLite mit `mode=ro` und `PRAGMA query_only=ON`.
-- Er liest nicht erneut den aktuellen Dateisystemstand.
-- Originaldateien werden nicht geöffnet, gelöscht, verschoben oder verändert.
-- Die SQLite-Indexdatenbank bleibt während des Vergleichs unverändert.
-- Berichte werden atomar geschrieben und nicht still überschrieben.
-- Unterschiedliche Stammordner werden nicht miteinander vermischt.
-- Jeder CLI-Befehl deklariert seine Seiteneffekte über `CommandPolicy`.
+- Normale Scans und Auswertungen verändern keine Originaldateien.
+- CSV-, JSON- und HTML-Berichte werden atomar geschrieben.
+- Vorhandene Berichte werden nicht still überschrieben.
+- Vollständige Exporte benötigen den sichtbaren Schalter `--all-pages`.
+- Abnahmetests schreiben nur in einen neuen Arbeitsordner.
+- Vorhandene Arbeitsordner werden nicht wiederverwendet.
+- Persönliche Dateien werden nicht als Abnahmedaten verwendet.
+- Jede CLI-Funktion besitzt eine maschinenlesbare `CommandPolicy`.
 - Shell-Auswertung, `eval`, `exec` und `os.system` bleiben verboten.
-- Externe Laufzeitabhängigkeiten bleiben bei null.
+- Automatisches Löschen, Verschieben und Umbenennen bleibt gesperrt.
 
-## Installation für die Entwicklung
+## Modulare Struktur
+
+| Modul | Zuständigkeit |
+|---|---|
+| `core/folder_csv.py` | LibreOffice-kompatibler Ordner-CSV-Export |
+| `core/acceptance.py` | Profile, Datensatz, Messung und Berichte |
+| `cli_acceptance.py` | sicherer öffentlicher Abnahmebefehl |
+| `cli_reports.py` | Ordner-, Änderungs- und Dateiberichte |
+| `cli_folder_compare.py` | Ordnervergleich |
+| `cli.py` | Zusammensetzung und zentrale Fehlergrenze |
+
+Globale Regeln stehen in `MAINTENANCE_RULES.md` und `maintenance_rules.json`.
+
+## Entwicklung und Prüfungen
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -e .
-```
-
-## Prüfungen
-
-```bash
 python -m compileall -q src tests
 PYTHONWARNINGS=error python -m unittest discover -s tests -v
 ```
 
-GitHub Actions prüft Python 3.10 und 3.12 sowie Architekturgrenzen,
-Seiteneffektverträge und verbotene Shell-Funktionen.
+GitHub Actions prüft:
+
+- Python 3.10 und 3.12,
+- 66 Tests mit Warnungen als Fehler,
+- Quick-Profil mit 600 Dateien,
+- Standard-Profil mit 10.000 Dateien,
+- Archivierung der Abnahmeberichte.
 
 ## Aktuelle Grenzen
 
-- Es werden immer genau zwei Scan-Sitzungen verglichen, noch keine längere Zeitreihe.
-- Leere Ordner ohne Dateien können nicht erscheinen, weil der Index Dateien speichert.
-- Elternordner enthalten bewusst die Werte ihrer Unterordner; Zeilen dürfen deshalb
-  nicht addiert werden.
-- Der Vergleich zeigt gespeicherte Scanstände und nicht automatisch den heutigen
-  Dateisystemzustand.
-- Exporte enthalten die aktuelle gefilterte Seite, nicht automatisch alle Treffer.
-- Die normale Ordnerübersicht besitzt weiterhin JSON und HTML, aber noch keinen CSV-Export.
-- Vor einem stabilen Release fehlt eine Abnahme mit sehr großen realistischen Beständen
-  und Linux-Laien.
+- Die reale Laienabnahme ist noch nicht durchgeführt.
+- Das `large`-Profil mit 100.000 Dateien ist implementiert, aber noch nicht auf der
+  vorgesehenen Zielhardware ausgeführt.
+- Leere Ordner ohne Dateien erscheinen weiterhin nicht im Index.
+- Elternordner enthalten bewusst die Werte ihrer Unterordner.
+- Der Ordnervergleich zeigt genau zwei Sitzungen, noch keine Zeitreihe.
+- Vergleichsexporte enthalten derzeit die gewählte Seite und besitzen noch keinen
+  eigenen `--all-pages`-Schalter.
+- Die Oberfläche bleibt terminalbasiert.
 
-## Nächster einfacher Entwicklungsschritt
+## Mögliche weitere Upgrades
 
-**Ordnerübersicht als CSV speichern:** Dateizahl, Gesamtgröße, Ampelgrund und größte
-Platzfresser sollen direkt in LibreOffice Calc geöffnet werden können.
+- Größenentwicklung eines Ordners über mehr als zwei Scans als Zeitreihe anzeigen.
+- Vollständigen `--all-pages`-Export auch für den Ordnervergleich ergänzen.
+- Reale Laienabnahme auf Kubuntu durchführen und Befunde dokumentieren.
+- `large`-Profil mit 100.000 Dateien auf der Zielhardware vermessen.
+- Grafische Oberfläche mit Dateiauswahldialogen entwickeln.
 
-## Sichere Zusatzverbesserung
+## Direkt folgender technischer Entwicklungsschritt
 
-**Großbestands- und Laienabnahme:** Einen realistischen Testbestand mit festen Laufzeit-,
-Speicher- und Bedienkriterien prüfen, ohne Originaldateioperationen freizuschalten.
+**Ordner-Zeitreihe:** Die Größenentwicklung eines Ordners über mehrere abgeschlossene
+Scans rein lesend anzeigen.
+
+## Alternative Verbesserung mit hohem Nutzen und geringem Risiko
+
+**Vollständiger Vergleichsexport:** JSON, CSV und HTML des Ordnervergleichs mit einem
+sichtbaren `--all-pages`-Schalter über alle Filtertreffer exportieren.
