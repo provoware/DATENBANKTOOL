@@ -1,42 +1,36 @@
-# Schwachstellen und aktuelle Grenzen
+# Schwachstellen
 
-## Kritisch vor Freigabe schreibender Funktionen
+## Aktuelle technische Grenzen
 
-1. **Noch kein Transaktionsjournal** – Änderungen könnten nach Abbruch nicht sicher rekonstruiert werden.
-2. **Noch kein Undo-Manifest** – Umbenennen, Verschieben und Löschen bleiben deshalb gesperrt.
-3. **Noch keine Zielkonfliktprüfung** – Namenskollisionen und Dateisystemgrenzen sind noch nicht vollständig modelliert.
-4. **Noch keine Quarantäne** – Direktlöschung darf nicht eingeführt werden.
-5. **Noch kein persistenter Index** – sehr große Sammlungen müssen bei jedem Lauf neu gelesen werden.
+1. **Checkpointdatei entfernt:** Wiederaufnahme bricht kontrolliert ab, wenn der gespeicherte Pfad nicht mehr auffindbar ist.
+2. **Kein inkrementeller Re-Scan:** Abgeschlossene Sitzungen werden noch nicht differenziell aktualisiert.
+3. **Kein Prozesslock:** Zwei parallele Indexprozesse können konkurrieren; SQLite schützt Transaktionen, aber nicht die fachliche Sitzungsauswahl.
+4. **Keine Hash-Pause:** Hashing kann nach Prozessabbruch fortgesetzt werden, besitzt aber noch keinen Nutzerknopf für Pause.
+5. **Fehlgeschlagener Hash wird nicht automatisch erneut versucht:** Der Fehler bleibt sichtbar; ein neuer Scan oder gezielte Reparaturstrategie ist nötig.
+6. **WAL-Nebenwirkungen:** Lesen über den normalen Datenbankzugang kann SQLite-WAL-Dateien erzeugen.
+7. **Reparaturgrenze:** Physisch stark beschädigte SQLite-Dateien können nicht garantiert geheilt werden.
+8. **HTML-Skalierung:** Millionen Tabellenzeilen sind für eine einzelne Browserdatei ungeeignet.
+9. **Keine Volltextsuche:** Der Index enthält derzeit Metadaten, keine Textinhalte.
+10. **Keine Medienvalidierung:** Endungen werden klassifiziert; Codec, Container und tatsächlicher Inhalt werden noch nicht geprüft.
+11. **Keine Dateisystemidentität:** Mountwechsel, Gerät und Inode werden noch nicht gespeichert.
+12. **Keine automatische Sitzungslöschung:** Alte Sitzungen können die Datenbank langfristig vergrößern.
+13. **Kein verschlüsselter Index:** Dateipfade liegen lokal im Klartext in der SQLite-Datenbank.
+14. **Ruff/MyPy nicht ausgeführt:** Beide Werkzeuge waren in der lokalen Prüfungsumgebung nicht installiert.
+15. **Noch keine reale Langzeitlastprüfung:** Tests verwenden kleine künstliche Bestände.
 
-## Hohe Priorität
+## Behobene Schwachstellen
 
-6. Der Scanner ist synchron und noch nicht pausierbar.
-7. Der aktuelle Bericht hält alle Datensätze im Arbeitsspeicher.
-8. Mountwechsel und Bind-Mounts werden noch nicht gesondert erkannt.
-9. Parallel veränderte Dateien können zwischen `stat` und Hashing abweichen.
-10. Duplikaterkennung erkennt nur bitgenau gleiche Dateien, keine inhaltlich ähnlichen Medien.
-11. Dateitypen werden bisher hauptsächlich über Endungen erkannt.
-12. Es fehlen echte Medienintegritätsprüfungen über ffprobe oder MediaInfo.
-13. Archive werden noch nicht inhaltlich inventarisiert.
-14. Textinhalte und Kodierungen werden noch nicht geprüft.
-15. Codeprojektgrenzen und Buildreste werden noch nicht erkannt.
-
-## Bedienung
-
-16. Noch keine grafische Oberfläche.
-17. Noch keine Touch- und Mobilansicht.
-18. Noch keine Vorschau für Medien und Texte.
-19. Noch keine geführten Assistenten für Laien.
-20. Fehlermeldungen der CLI sind funktional, aber noch nicht vollständig kategorisiert.
-
-## Qualität
-
-21. Basisprüfungen sind vorhanden, aber Coverage-Grenze fehlt.
-22. Ruff, MyPy, Bandit und pip-audit sind konfiguriert beziehungsweise vorgesehen, aber noch nicht als CI-Gate aktiv.
-23. Tests auf echten großen Datenträgern, NTFS, exFAT und schreibgeschützten Medien fehlen.
-24. Lasttests mit Millionen Dateien fehlen.
-25. Paketierung und Doppelklick-Start fehlen.
+1. Flüchtige Scanergebnisse ohne Persistenz.
+2. Fehlende Schema-Versionierung.
+3. Fehlende Migration.
+4. Import ohne Batchgrenzen.
+5. Kein Wiederaufnahmezustand.
+6. Keine Datenbankreparatur.
+7. Keine Sicherheitskopie vor Reparatur.
+8. Keine CSV-/HTML-Berichte.
+9. Keine Filter nach Typ, Größe, Namensproblemen und Duplikaten.
+10. Potenziell halbfertige Mehrfachausgabe ohne Vorprüfung.
 
 ## Sicherheitsfazit
 
-Der aktuelle Stand ist als rein lesender Analyse-Prototyp vertretbar. Er ist ausdrücklich noch nicht für produktive Dateiänderungen freigegeben. Schreibende Funktionen dürfen erst nach vollständig geprüfter Vorschau-, Journal-, Konflikt-, Undo- und Wiederherstellungslogik aktiviert werden.
+Der Index- und Berichtskern ist für Alpha-Nutzung belastbar und nicht destruktiv. Eine Freigabe für schreibende Dateioperationen wäre weiterhin verfrüht und bleibt blockiert.
