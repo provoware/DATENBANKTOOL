@@ -14,6 +14,7 @@ from datenbanktool.cli_contract import CommandPolicy, bind_handler
 from datenbanktool.core.folder_compare import (
     FolderComparisonFilter,
     compare_folders,
+    paginate_folder_comparison,
 )
 from datenbanktool.core.folder_compare_exports import export_folder_comparison
 from datenbanktool.core.presentation import traffic_text
@@ -93,6 +94,11 @@ def register_folder_compare_parser(
     compare.add_argument("--json", dest="json_path", type=Path)
     compare.add_argument("--csv", dest="csv_path", type=Path)
     compare.add_argument("--html", dest="html_path", type=Path)
+    compare.add_argument(
+        "--all-pages",
+        action="store_true",
+        help="Alle gefilterten Zeilen exportieren; Terminal bleibt paginiert",
+    )
     compare.add_argument("--overwrite-report", action="store_true")
     compare.add_argument("--no-terminal", action="store_true")
     bind_handler(
@@ -115,22 +121,35 @@ def run_folder_compare(arguments: argparse.Namespace) -> int:
         raise ValueError(
             "Ohne Terminalanzeige muss mindestens JSON, CSV oder HTML gewählt werden"
         )
+    if arguments.all_pages and not has_export:
+        raise ValueError("--all-pages benötigt mindestens ein Exportziel")
     mib = 1024 * 1024
-    page = compare_folders(
+    filters = FolderComparisonFilter(
+        change_types=tuple(arguments.change_types),
+        contains=arguments.contains,
+        min_change_bytes=arguments.min_change_mib * mib,
+        max_depth=arguments.max_depth,
+        page=arguments.page,
+        page_size=arguments.page_size,
+        sort_by=arguments.sort,
+        descending=arguments.descending,
+        attention_growth_bytes=arguments.attention_growth_mib * mib,
+    )
+    result = compare_folders(
         arguments.database,
         from_session_id=arguments.from_session_id,
         to_session_id=arguments.to_session_id,
-        filters=FolderComparisonFilter(
-            change_types=tuple(arguments.change_types),
-            contains=arguments.contains,
-            min_change_bytes=arguments.min_change_mib * mib,
-            max_depth=arguments.max_depth,
+        filters=filters,
+        all_rows=arguments.all_pages,
+    )
+    page = (
+        paginate_folder_comparison(
+            result,
             page=arguments.page,
             page_size=arguments.page_size,
-            sort_by=arguments.sort,
-            descending=arguments.descending,
-            attention_growth_bytes=arguments.attention_growth_mib * mib,
-        ),
+        )
+        if arguments.all_pages
+        else result
     )
     if not arguments.no_terminal:
         print(f"Ordner: {page.root}")
@@ -166,8 +185,9 @@ def run_folder_compare(arguments: argparse.Namespace) -> int:
             "oder verändert keine Originaldateien.",
         )
     if has_export:
+        export_page = result if arguments.all_pages else page
         exported = export_folder_comparison(
-            page,
+            export_page,
             json_path=arguments.json_path,
             csv_path=arguments.csv_path,
             html_path=arguments.html_path,
