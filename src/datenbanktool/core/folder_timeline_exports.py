@@ -54,6 +54,33 @@ def _signed_size(value: int | None) -> str:
     return ("+" if value > 0 else "−") + _human_size(value)
 
 
+def _percent(value: float | None) -> str:
+    return "–" if value is None else f"{value:+.2f} %"
+
+
+def _threshold_summary(timeline: FolderTimeline) -> str:
+    thresholds: list[str] = []
+    if timeline.warn_size_growth_percent is not None:
+        thresholds.append(
+            f"Größenwachstum ab {timeline.warn_size_growth_percent:.2f} %"
+        )
+    if timeline.warn_file_growth_percent is not None:
+        thresholds.append(
+            f"Dateizahlwachstum ab {timeline.warn_file_growth_percent:.2f} %"
+        )
+    if not thresholds:
+        return (
+            "Trendgrenzen sind nicht aktiviert. Die Ampeln beschreiben nur den "
+            "gespeicherten Verlauf."
+        )
+    return (
+        "Aktive rein lesende Trendgrenzen: "
+        + "; ".join(thresholds)
+        + f". Erreicht in {timeline.threshold_trigger_count} Übergängen. "
+        "Eine Warnung ist keine Schadens- oder Löschentscheidung."
+    )
+
+
 def export_folder_timeline(
     timeline: FolderTimeline,
     *,
@@ -80,14 +107,18 @@ def export_folder_timeline(
                 "Scan-ID",
                 "Zeitpunkt UTC",
                 "Scan-Modus",
-                "Status",
+                "Verlaufsstatus",
+                "Warnstatus",
+                "Warnbegründung",
+                "Trendgrenze erreicht",
                 "Dateien",
                 "Dateidifferenz",
+                "Dateidifferenz Prozent",
                 "Größe Byte",
                 "Größendifferenz Byte",
                 "Größendifferenz Prozent",
-                "Ampel",
-                "Begründung",
+                "Warnschwelle Dateizahl Prozent",
+                "Warnschwelle Größe Prozent",
                 "Ordner",
                 "Stammordner",
             )
@@ -99,13 +130,25 @@ def export_folder_timeline(
                     point.recorded_utc,
                     point.scan_mode,
                     point.status_label,
+                    point.traffic_label,
+                    point.traffic_reason,
+                    "ja" if point.threshold_triggered else "nein",
                     point.file_count,
                     "" if point.file_delta is None else point.file_delta,
+                    "" if point.file_delta_percent is None else point.file_delta_percent,
                     point.size_bytes,
                     "" if point.size_delta_bytes is None else point.size_delta_bytes,
                     "" if point.size_delta_percent is None else point.size_delta_percent,
-                    point.traffic_label,
-                    point.traffic_reason,
+                    (
+                        ""
+                        if timeline.warn_file_growth_percent is None
+                        else timeline.warn_file_growth_percent
+                    ),
+                    (
+                        ""
+                        if timeline.warn_size_growth_percent is None
+                        else timeline.warn_size_growth_percent
+                    ),
                     timeline.folder,
                     timeline.root,
                 )
@@ -118,26 +161,23 @@ def export_folder_timeline(
     if html_path is not None:
         rows: list[str] = []
         for point in timeline.points:
-            percent = (
-                "–"
-                if point.size_delta_percent is None
-                else f"{point.size_delta_percent:+.2f} %"
-            )
-            file_delta = "–" if point.file_delta is None else f"{point.file_delta:+d}"
             tooltip = html.escape(point.traffic_reason, quote=True)
             rows.append(
                 "<tr>"
                 f"<td>#{point.session_id}</td>"
                 f"<td>{html.escape(point.recorded_utc)}</td>"
                 f"<td>{html.escape(point.scan_mode)}</td>"
+                f"<td>{html.escape(point.status_label)}</td>"
                 f"<td><span class=\"light {point.traffic_level}\" "
                 f"title=\"{tooltip}\" aria-label=\"{html.escape(point.traffic_label)}: "
-                f"{tooltip}\">● {html.escape(point.traffic_label)}</span></td>"
+                f"{tooltip}\">● {html.escape(point.traffic_label)}</span>"
+                f"<small>{tooltip}</small></td>"
                 f"<td>{point.file_count}</td>"
-                f"<td>{file_delta}</td>"
+                f"<td>{'–' if point.file_delta is None else f'{point.file_delta:+d}'}</td>"
+                f"<td>{_percent(point.file_delta_percent)}</td>"
                 f"<td>{_human_size(point.size_bytes)}</td>"
                 f"<td>{_signed_size(point.size_delta_bytes)}</td>"
-                f"<td>{percent}</td>"
+                f"<td>{_percent(point.size_delta_percent)}</td>"
                 "</tr>"
             )
         truncation = (
@@ -147,6 +187,7 @@ def export_folder_timeline(
             else f"Alle {len(timeline.points)} passenden Scans werden gezeigt."
         )
         charts = render_timeline_charts(timeline)
+        threshold_summary = _threshold_summary(timeline)
         document = f"""<!doctype html>
 <html lang=\"de\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">
 <title>DATENBANKTOOL – Ordner-Zeitreihe</title>
@@ -154,19 +195,23 @@ def export_folder_timeline(
 :root{{color-scheme:light}}*{{box-sizing:border-box}}
 body{{font-family:system-ui,sans-serif;margin:0;background:#f6f7f9;color:#15171a;line-height:1.5}}
 main{{max-width:1180px;margin:auto;padding:1.5rem}}
-.hint{{background:#e8f4ff;padding:.8rem;border-left:.35rem solid #176b87;border-radius:.35rem}}
+.hint,.threshold-summary{{padding:.8rem;border-radius:.35rem}}
+.hint{{background:#e8f4ff;border-left:.35rem solid #176b87}}
+.threshold-summary{{background:#fff8df;border-left:.35rem solid #8a6500;margin-top:1rem}}
 .charts{{margin-top:2rem}}.chart-panel{{background:white;border:1px solid #c8ccd0;border-radius:.6rem;padding:1rem;margin:1rem 0}}
 .chart-panel figcaption{{font-size:1.25rem;font-weight:750}}.chart-summary{{margin:.35rem 0 1rem}}
 .timeline-chart{{display:block;width:100%;height:auto;min-height:18rem;color:#164f68;background:#fff;border:1px solid #d9dde1;border-radius:.35rem}}
 .grid{{stroke:#d7dce0;stroke-width:1}}.axis{{stroke:#30363b;stroke-width:2}}
 .data-line{{fill:none;stroke:currentColor;stroke-width:3;stroke-linejoin:round;stroke-linecap:round}}
 .data-point{{fill:white;stroke:currentColor;stroke-width:3}}.data-point:focus{{outline:none;stroke-width:6}}
+.warning-point{{fill:#fff1f1;stroke:#941919;stroke-width:5}}
+.warning-label{{font-size:11px;font-weight:800;fill:#941919}}
 .axis-label{{font-size:13px;fill:#343a40}}.axis-title{{font-size:15px;font-weight:700;fill:#202428}}
 .value-label{{font-size:12px;font-weight:700;fill:#202428;paint-order:stroke;stroke:white;stroke-width:4px;stroke-linejoin:round}}
-.table-wrap{{overflow-x:auto;margin-top:1.5rem}}table{{width:100%;border-collapse:collapse;background:white;min-width:760px}}
+.table-wrap{{overflow-x:auto;margin-top:1.5rem}}table{{width:100%;border-collapse:collapse;background:white;min-width:980px}}
 caption{{text-align:left;font-size:1.25rem;font-weight:750;padding:.5rem 0}}
 th,td{{padding:.6rem;border:1px solid #c8ccd0;text-align:left;vertical-align:top}}
-th{{background:#e9ecef;position:sticky;top:0}}.light{{font-weight:700}}
+th{{background:#e9ecef;position:sticky;top:0}}.light{{font-weight:700}}td small{{display:block;margin-top:.25rem}}
 .green{{color:#176b2c}}.yellow{{color:#6b4c00}}.red{{color:#941919}}
 @media (max-width:640px){{main{{padding:.8rem}}.chart-panel{{padding:.55rem}}.timeline-chart{{min-height:14rem}}}}
 @media (prefers-reduced-motion:reduce){{*{{scroll-behavior:auto!important}}}}
@@ -177,10 +222,13 @@ Scans: #{timeline.first_session_id} bis #{timeline.last_session_id}</p>
 <p class=\"hint\">Reine Auswertung gespeicherter Scans. {html.escape(truncation)}
 Elternordner enthalten ihre Unterordner. Farben werden immer durch Klartext ergänzt.
 Die Trendgrafiken benötigen weder Internet noch JavaScript.</p>
+<p class=\"threshold-summary\"><strong>Trendgrenzen:</strong> {html.escape(threshold_summary)}</p>
 {charts}
 <div class=\"table-wrap\"><table><caption>Vollständige Zeitreihenwerte</caption><thead><tr>
-<th scope=\"col\">Scan</th><th scope=\"col\">Zeitpunkt UTC</th><th scope=\"col\">Modus</th><th scope=\"col\">Status</th>
-<th scope=\"col\">Dateien</th><th scope=\"col\">Δ Dateien</th><th scope=\"col\">Größe</th><th scope=\"col\">Δ Größe</th><th scope=\"col\">Δ Prozent</th>
+<th scope=\"col\">Scan</th><th scope=\"col\">Zeitpunkt UTC</th><th scope=\"col\">Modus</th>
+<th scope=\"col\">Verlauf</th><th scope=\"col\">Warnstatus und Begründung</th>
+<th scope=\"col\">Dateien</th><th scope=\"col\">Δ Dateien</th><th scope=\"col\">Δ Dateien %</th>
+<th scope=\"col\">Größe</th><th scope=\"col\">Δ Größe</th><th scope=\"col\">Δ Größe %</th>
 </tr></thead><tbody>{''.join(rows)}</tbody></table></div>
 </main></body></html>
 """
