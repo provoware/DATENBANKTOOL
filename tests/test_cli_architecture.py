@@ -83,6 +83,7 @@ class CliArchitectureTests(unittest.TestCase):
             ["index", "sessions", "/tmp/index.sqlite3"],
             ["index", "search", "/tmp/index.sqlite3"],
             ["index", "folders", "/tmp/index.sqlite3"],
+            ["index", "folder-compare", "/tmp/index.sqlite3"],
             ["index", "changes", "/tmp/index.sqlite3"],
             ["index", "presets", "list"],
             ["index", "presets", "show", "beispiel"],
@@ -120,6 +121,11 @@ class CliArchitectureTests(unittest.TestCase):
             ("scan", "/tmp"): "datenbanktool.cli_scan",
             ("index", "search", "/tmp/index.sqlite3"): "datenbanktool.cli_search",
             ("index", "folders", "/tmp/index.sqlite3"): "datenbanktool.cli_reports",
+            (
+                "index",
+                "folder-compare",
+                "/tmp/index.sqlite3",
+            ): "datenbanktool.cli_folder_compare",
             (
                 "index",
                 "build",
