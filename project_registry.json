@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "project": "DATENBANKTOOL",
-  "version": "0.3.0-alpha.1",
-  "phase": "persistent-incremental-index",
-  "development_progress_percent": 52,
-  "completed_main_items": 23,
-  "open_main_items": 21,
+  "version": "0.4.0-alpha.1",
+  "phase": "search-and-change-reporting",
+  "development_progress_percent": 66,
+  "completed_main_items": 29,
+  "open_main_items": 15,
   "runtime": {
     "python": ">=3.10",
     "external_runtime_dependencies": []
@@ -17,7 +17,9 @@
     "migrations": true,
     "incremental_rescan": true,
     "process_lock": "fcntl-flock",
-    "backup_restore": true
+    "backup_restore": true,
+    "read_only_search": true,
+    "optional_fts5_metadata_index": true
   },
   "safety_defaults": {
     "filesystem_mode": "read-only",
@@ -25,6 +27,8 @@
     "overwrite_reports": false,
     "overwrite_backups": false,
     "restore_safety_backup": true,
+    "search_modifies_database": false,
+    "fts_build_requires_explicit_flag": true,
     "destructive_actions_available": false
   },
   "modules": {
@@ -40,8 +44,14 @@
     "session_management": "alpha",
     "backup_restore": "alpha",
     "csv_html_reports": "alpha",
+    "search_layer": "alpha",
+    "pagination": "alpha",
+    "stable_sorting": "alpha",
+    "combined_search_filters": "alpha",
+    "optional_fts5_search": "alpha",
+    "change_reports": "alpha",
     "graphical_interface": "planned",
-    "search_engine": "planned",
+    "folder_statistics": "planned",
     "file_operations": "blocked-until-safety-contract"
   }
 }
