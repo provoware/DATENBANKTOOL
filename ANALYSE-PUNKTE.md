@@ -2,146 +2,130 @@
 
 ## Ergebnis dieser Iteration
 
-DATENBANKTOOL führt Nutzer jetzt vollständig durch die rein lesende Ordner-Zeitreihe.
-Der neue Startseitenpunkt 11 besitzt Detail-, Schritt-, Feld- und Fehlerhilfe. Der
-Offline-HTML-Bericht stellt Größe und Dateizahl zusätzlich in zwei barrierefreien,
-skriptfreien SVG-Trendgrafiken dar.
+DATENBANKTOOL besitzt jetzt sichere lokale Zeitreihen-Vorlagen und optionale,
+rein lesende Trendgrenzen. Häufig geprüfte relative Ordner sind direkt auf der
+Startseite auswählbar. Auffälliges Größen- oder Dateizahlwachstum erscheint in
+Terminal und Berichten mit Messwert, Warnschwelle und konkreter Begründung.
 
-## Vollständig gelöste Bedienungspunkte
+## Vollständig gelöste Vorlagenpunkte
 
-1. Eigener Startseitenpunkt `11. Ordner-Zeitreihe`.
-2. Vorhandene Indexdatenbank wird schrittweise abgefragt.
-3. Relativer Ordnerpfad besitzt verständliche Feldhilfe.
-4. `.` wird als gesamter Stammordner erklärt.
-5. Optionale älteste Scan-ID wird als positive Ganzzahl validiert.
-6. Optionale neueste Scan-ID wird als positive Ganzzahl validiert.
-7. Zeitpunkte werden vor dem Start auf 2 bis 500 begrenzt.
-8. Berichtsauswahl akzeptiert nur kein, JSON, CSV oder HTML.
-9. Berichtspfad besitzt eigene Feldhilfe und sichtbare Wirkungserklärung.
-10. Der geplante vollständige Befehl wird vor dem Start angezeigt.
-11. Dispatch erfolgt als Argumentliste ohne Shell-Auswertung.
-12. Detailhilfe ist über `?11` erreichbar.
-13. Schritt-für-Schritt-Hilfe ist über `g11` erreichbar.
-14. Jede neue Eingabe kann mit `?` erklärt werden.
-15. `datenbanktool help folder-timeline` unterstützt alle drei Hilfestufen.
-16. Die Hilfesuche findet Verlauf, Trend und Speicherentwicklung.
-17. Fehlerhilfe erklärt fehlende Scans, unpassende Sitzungen, unsichere Pfade,
-    leere Ergebnisse und vorhandene Berichte.
-18. Die Startseite selbst verändert keine Daten.
+1. Eigene Vorlagendomäne getrennt von Suchvorlagen.
+2. Speicherung ohne Datenbankpfad oder Scan-Inhalte.
+3. Gemeinsame relative Ordnerprüfung mit der Zeitreihenlogik.
+4. Ablehnung absoluter Pfade und Elternnavigation.
+5. Normalisierte Namen und begrenzte Beschreibungen.
+6. Atomare JSON-Freigabe.
+7. Linux-Dateiberechtigung `0600`.
+8. Überschreibschutz ohne `--replace`.
+9. Bestätigtes Löschen über `--yes`.
+10. CLI-Funktionen list, show, save und delete.
+11. Zeitreihenaufruf über `--preset`.
+12. Kontrollierter Ausschluss gleichzeitiger Ordner- und Vorlagenangabe.
+13. Nummerierte Auswahl auf Startseitenpunkt 11.
+14. Auswahl per Nummer oder exaktem Namen.
+15. Manueller Rückfall bei leerer oder nicht lesbarer Vorlagenliste.
+16. Bestätigter Startseitenpunkt 12 zum Speichern.
+17. Detail-, Schritt-, Feld- und Fehlerhilfe.
 
-## Vollständig gelöste Grafikpunkte
+## Vollständig gelöste Trendgrenzenpunkte
 
-19. Größenverlauf wird als eigenes SVG-Liniendiagramm erzeugt.
-20. Dateizahlverlauf wird als eigenes SVG-Liniendiagramm erzeugt.
-21. Beide Diagramme sind vollständig lokal eingebettet.
-22. HTML enthält kein JavaScript.
-23. HTML enthält keine externen HTTP- oder HTTPS-Ressourcen.
-24. Jedes Diagramm besitzt `figure` und `figcaption`.
-25. Jedes SVG besitzt `role="img"`, `title`, `desc` und `aria-labelledby`.
-26. Achsen, Scan-IDs und ausgewählte Werte sind sichtbar beschriftet.
-27. Jeder Datenpunkt besitzt Tastaturfokus, `role="img"`, `aria-label` und `title`.
-28. Minimum, Maximum und Nettoänderung werden textlich zusammengefasst.
-29. Farben werden nie als alleinige Information verwendet.
-30. Die vollständige Wertetabelle bleibt unter den Diagrammen erhalten.
-31. Lange Zeitreihen reduzieren nur sichtbare Labels, niemals Datenpunkte oder Werte.
-32. Darstellung reagiert auf kleinere Bildschirmbreiten.
-33. Fokusmarkierung bleibt deutlich sichtbar.
+18. Optionale Größenwachstumsgrenze.
+19. Optionale Dateizahlwachstumsgrenze.
+20. Vergleich mit dem vorherigen sichtbaren Scan.
+21. Prüfung ausschließlich positiven Wachstums.
+22. Sichere Behandlung eines Null-Ausgangswerts.
+23. Endlichkeits- und Bereichsvalidierung.
+24. Getrennte Datei- und Größenprozente.
+25. Getrennter fachlicher Verlauf und Warnstatus.
+26. ROT ausschließlich bei erreichter konfigurierter Schwelle.
+27. Messwert und Schwelle in jeder Begründung.
+28. Ausdrücklicher Hinweis gegen Schadens- oder Löschinterpretation.
+29. Konsistente Terminal-, JSON-, CSV- und HTML-Darstellung.
+30. Sichtbare SVG-Markierung mit dem Wort `Warnung`.
+31. Zugängliche ARIA-Beschreibung jedes ausgelösten Punktes.
 
 ## Architekturentscheidungen
 
-### Hilfethema als getrennte Erweiterung
+### Vorlagen getrennt von Suchfiltern
 
-`core/folder_timeline_help.py` enthält den vollständigen Hilfetextvertrag. Dadurch muss
-der bereits große allgemeine Hilfekatalog nicht erneut mit umfangreicher Fachlogik
-belastet werden. `guided_home.py` und `help_command.py` binden dieselbe Quelle ein.
-Detail-, Schritt- und Fehlerhilfe können dadurch nicht unabhängig auseinanderlaufen.
+`core/timeline_presets.py` besitzt ein eigenes Schema. Dadurch können Suchfilter und
+Zeitreihenordner nicht versehentlich vermischt werden. Vorlagen bleiben klein und
+enthalten keine Pfade zur SQLite-Datenbank.
 
-### Validierung vor dem Dispatch
+### Doppelte Validierung
 
-Der Startseitendialog validiert Integerwerte und erlaubte Berichtstypen bereits vor dem
-Aufruf des CLI-Parsers. Der zentrale Parser validiert weiterhin ein zweites Mal. Diese
-bewusste doppelte Grenze verbessert die Fehlermeldung für Laien, ohne den eigentlichen
-Sicherheitsvertrag vom Dialog abhängig zu machen.
+Vorlagen werden beim Schreiben und erneut beim Lesen normalisiert. Der geführte Dialog
+validiert Schwellen vorab; der öffentliche CLI-Parser und `FolderTimelineOptions`
+prüfen erneut. Beschädigte oder manuell manipulierte Konfigurationen werden nicht
+blind übernommen.
 
-### Argumentliste statt Befehlszeichenkette
+### Warnstatus überschreibt keinen Verlauf
 
-Der angezeigte Befehl dient nur der Transparenz. Tatsächlich wird eine Liste einzelner
-Argumente an den internen Runner übergeben. Leerzeichen in Pfaden oder Ordnernamen
-können dadurch nicht als Shell-Syntax interpretiert werden.
+`FolderTimelinePoint.status` beschreibt weiterhin den tatsächlichen Übergang wie
+`grown` oder `shrunk`. `threshold_triggered`, `threshold_reasons` und die Ampel bilden
+den optionalen Warnvertrag. Auswertungsdaten und Nutzerwarnung bleiben damit getrennt.
 
-### SVG-Erzeugung in eigenem Modul
+### Sichtbarer Scan als Vergleichsbasis
 
-`core/folder_timeline_charts.py` erhält ausschließlich das geprüfte Zeitreihenmodell und
-liefert statisches SVG-Markup. Dateischreiben, JSON, CSV und HTML-Rahmen bleiben im
-Exportmodul. Das hält Berechnung, Visualisierung und Dateifreigabe getrennt testbar.
+Prozentwerte beziehen sich auf den direkten vorherigen Punkt der tatsächlich
+angezeigten Zeitreihe. Dies ist deterministisch und entspricht der Terminal- und
+Berichtsreihenfolge. Der erste sichtbare Punkt bleibt Ausgangswert.
 
-### Zwei Diagramme statt Doppelachse
+### Keine automatische Reaktion
 
-Größe und Dateizahl besitzen unterschiedliche Einheiten. Zwei getrennte Diagramme sind
-für Laien und Screenreader verständlicher als eine kombinierte Doppelachse. Beide
-verwenden dieselbe Scan-Reihenfolge und stehen direkt oberhalb derselben Wertetabelle.
+Eine erreichte Grenze erzeugt nur Text und Darstellung. Es gibt keinen Callback für
+Löschen, Verschieben, Scanstart oder andere Folgeaktionen. Damit bleibt die Funktion
+rein diagnostisch.
 
-### Vollständigkeit trotz reduzierter Beschriftung
+## Verbesserte Prüfqualität
 
-Bis zwölf Punkte werden vollständig sichtbar beschriftet. Bei längeren Reihen werden
-sechs repräsentative Achsenpositionen gewählt. Alle Punkte bleiben fokussierbar und
-beschrieben; die Tabelle enthält weiterhin jede Zeile. Übersichtlichkeit reduziert
-somit keine Information.
+Die neuen Tests decken ab:
 
-### Skriptfreiheit als Sicherheits- und Portabilitätsmerkmal
+- Vorlagen-Roundtrip und Fall-unabhängige Namensauflösung,
+- Modus `0600`, atomaren Überschreibschutz und bewusstes Ersetzen,
+- Ablehnung unsicherer Ordnerpfade,
+- Löschbestätigung,
+- Parser, Handler, `CommandPolicy` und Modulzuständigkeit,
+- Startseiten-Auswahl per Nummer,
+- bestätigtes Speichern über Punkt 12,
+- deutsches Dezimalkomma und Zahlenbereiche,
+- gleichzeitigen Größen- und Dateizahl-Treffer,
+- Null-, NaN-, Unendlich- und Grenzwertfälle,
+- Gründe in Terminal, JSON, CSV, HTML und SVG,
+- Skript- und Netzwerkfreiheit des HTML-Berichts,
+- Detail-, Schritt-, Feld- und Fehlerhilfe.
 
-Die Grafiken benötigen weder JavaScript noch Bibliotheken, Netzwerkzugriff oder
-Schriftdateien. Dadurch bleibt der Bericht auch beim ersten netzlosen Start stabil und
-enthält keine aktive Ausführungsfläche.
+Gesamtstand:
 
-## Automatische Prüfqualität
-
-Die Tests prüfen zusätzlich:
-
-- eindeutigen Startseitenpunkt 11,
-- vollständige Argumentliste mit Scan-Grenzen und HTML-Ziel,
-- Feldhilfe innerhalb des Dialogs,
-- Ablehnung von Zeitpunkten außerhalb 2 bis 500,
-- Detail- und Schrittanleitung ohne Aktionsstart,
-- zeitreihebezogene Fehlerhilfe,
-- eigenständige Hilfe und Alltagswortsuche,
-- genau zwei SVG-Elemente,
-- zugängliche Rollen, Titel und Beschreibungen,
-- Tastaturfokus für Datenpunkte,
-- vollständige Wertetabelle,
-- Abwesenheit von Skripten und externen URLs.
-
-Gesamtstand der Funktionsreferenz:
-
-- 77 Tests unter Python 3.10,
-- 77 Tests unter Python 3.12,
+- 86 Tests unter Python 3.10,
+- 86 Tests unter Python 3.12,
 - Warnungen als Fehler,
 - Quick-Abnahme 11/11,
 - Standard-Abnahme 11/11.
 
-## 0.12-Funktionsreferenz
+## 0.13-Funktionsreferenz
 
-Commit `b27e678259474ae459f08751ba0b386cccb653a3`:
+Run `30927676213`, Funktionscommit
+`8ded929533f806c739a7139b47d16379a788cfb0`:
 
 | Profil | Dateien | Kriterien | Laufzeit | Python-Spitzenspeicher |
 |---|---:|---:|---:|---:|
-| Quick | 600 | 11/11 | 1,015 s | 1.325.982 Byte |
-| Standard | 10.000 | 11/11 | 16,116 s | 13.398.883 Byte |
+| Quick | 600 | 11/11 | 1,129 s | 1.324.226 Byte |
+| Standard | 10.000 | 11/11 | 18,150 s | 13.398.233 Byte |
 
 ## Erkannte nächste Analysepunkte
 
-1. Häufig geprüfte relative Ordner als sichere Zeitreihen-Vorlagen speichern.
-2. Optionale Trendgrenzen für starkes Größen- oder Dateiwachstum definieren.
-3. Diagrammpunkte optional nach realem Zeitabstand positionieren.
-4. Mehrere ausgewählte Ordner gemeinsam darstellen.
-5. Reale Laienabnahme auf Kubuntu durchführen.
-6. `large`-Profil auf Zielhardware vermessen.
-7. Später grafische Pfadauswahldialoge ergänzen.
+1. Geführtes Anzeigen, Ersetzen und Löschen der Vorlagen ergänzen.
+2. Mehrere Ordner in einem klar getrennten Trendbericht darstellen.
+3. Reale Zeitabstände optional auf der x-Achse abbilden.
+4. Reale Laienabnahme auf Kubuntu durchführen.
+5. `large`-Profil auf Zielhardware vermessen.
+6. Später grafische Pfadauswahldialoge ergänzen.
 
 ## Fazit
 
-Beide Aufträge sind umgesetzt und automatisch abgesichert. Die Zeitreihe ist ohne
-Befehlskenntnis erreichbar, jede Eingabe wird erklärt und vorvalidiert, und Fehler
-führen zu konkreten Lösungsschritten. Die HTML-Trends sind lokal, skriptfrei,
-tastaturzugänglich und durch eine vollständige Tabelle abgesichert. Offen bleibt
-bewusst nur die tatsächlich menschliche Laienabnahme.
+Beide Aufträge sind vollständig umgesetzt und automatisch abgesichert. Vorlagen
+reduzieren wiederholte Eingaben, ohne sensible oder unnötige Pfade zu speichern.
+Trendgrenzen erhöhen die Sichtbarkeit auffälligen Wachstums, bleiben aber strikt
+rein lesend und frei von automatischen Entscheidungen. Offen bleibt bewusst nur die
+menschliche Laienabnahme.
