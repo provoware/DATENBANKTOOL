@@ -12,8 +12,10 @@ from datenbanktool.core.folder_compare import (
     FolderComparisonFilter,
     compare_folders,
 )
+from datenbanktool.core.guided_home import menu_actions
 from datenbanktool.core.index_database import IndexBuildOptions, build_index
 from datenbanktool.core.incremental import IncrementalScanOptions, incremental_rescan
+from datenbanktool.core.layered_help import get_topic, render_topic
 
 
 class FolderComparisonTests(unittest.TestCase):
@@ -21,15 +23,18 @@ class FolderComparisonTests(unittest.TestCase):
         root = Path(directory) / "data"
         root.mkdir()
         (root / "grow").mkdir()
+        (root / "shrink").mkdir()
         (root / "gone").mkdir()
         (root / "stable").mkdir()
         (root / "grow" / "a.bin").write_bytes(b"a" * 10)
+        (root / "shrink" / "small.bin").write_bytes(b"s" * 60)
         (root / "gone" / "b.bin").write_bytes(b"b" * 30)
         (root / "stable" / "same.txt").write_text("gleich", encoding="utf-8")
         database = Path(directory) / "index.sqlite3"
         first = build_index(IndexBuildOptions(root=root, database=database))
 
         (root / "grow" / "a.bin").write_bytes(b"a" * 70)
+        (root / "shrink" / "small.bin").write_bytes(b"s" * 5)
         (root / "gone" / "b.bin").unlink()
         (root / "new").mkdir()
         (root / "new" / "c.bin").write_bytes(b"c" * 20)
@@ -46,6 +51,7 @@ class FolderComparisonTests(unittest.TestCase):
             self.assertEqual(page.to_session_id, second.session_id)
             rows = {row.folder: row for row in page.rows}
             self.assertEqual(rows["grow"].change_type, "grown")
+            self.assertEqual(rows["shrink"].change_type, "shrunk")
             self.assertEqual(rows["gone"].change_type, "removed")
             self.assertEqual(rows["new"].change_type, "new")
             self.assertNotIn("stable", rows)
@@ -127,6 +133,14 @@ class FolderComparisonTests(unittest.TestCase):
                     ),
                     2,
                 )
+
+    def test_help_topic_and_home_menu_are_connected(self) -> None:
+        topic = get_topic("folder-compare")
+        self.assertIn("größer oder kleiner", topic.quick)
+        self.assertTrue(any(action.key == "10" for action in menu_actions()))
+        guided = "\n".join(render_topic(topic, "guided"))
+        self.assertIn("Schritt für Schritt", guided)
+        self.assertIn("rein lesend", guided.casefold())
 
 
 if __name__ == "__main__":
