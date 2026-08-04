@@ -211,10 +211,10 @@ def _ancestors(folder: str) -> tuple[str, ...]:
     if folder == ".":
         return (".",)
     parts = PurePosixPath(folder).parts
-    values = ["."]
-    for index in range(1, len(parts) + 1):
-        values.append(PurePosixPath(*parts[:index]).as_posix())
-    return tuple(values)
+    return tuple(
+        ["."]
+        + [PurePosixPath(*parts[:index]).as_posix() for index in range(1, len(parts) + 1)]
+    )
 
 
 def _depth(folder: str) -> int:
@@ -300,6 +300,7 @@ def compare_folders(
     filters: FolderComparisonFilter = FolderComparisonFilter(),
     from_session_id: int | None = None,
     to_session_id: int | None = None,
+    all_rows: bool = False,
 ) -> FolderComparisonPage:
     filters.validate()
     with closing(_readonly_connection(database_path)) as connection:
@@ -311,7 +312,8 @@ def compare_folders(
     counts = {name: 0 for name in sorted(_VALID_TYPES)}
     output: list[FolderComparisonRow] = []
     needle = filters.contains.strip().casefold()
-    for folder in sorted(set(before) | set(after), key=lambda value: (value.casefold(), value)):
+    folders = sorted(set(before) | set(after), key=lambda value: (value.casefold(), value))
+    for folder in folders:
         old = before.get(folder, _FolderTotals())
         new = after.get(folder, _FolderTotals())
         change_type = _classify(old, new)
@@ -385,9 +387,21 @@ def compare_folders(
     }[filters.sort_by]
     output.sort(key=key, reverse=filters.descending)
     total_rows = len(output)
+    if all_rows:
+        return FolderComparisonPage(
+            database=str(normalise_database_path(database_path)),
+            from_session_id=int(baseline["id"]),
+            to_session_id=int(target["id"]),
+            root=str(target["root"]),
+            page=1,
+            page_size=max(1, total_rows),
+            total_rows=total_rows,
+            total_pages=1,
+            counts=counts,
+            rows=tuple(output),
+        )
     total_pages = max(1, math.ceil(total_rows / filters.page_size))
     start = (filters.page - 1) * filters.page_size
-    rows = tuple(output[start : start + filters.page_size])
     return FolderComparisonPage(
         database=str(normalise_database_path(database_path)),
         from_session_id=int(baseline["id"]),
@@ -398,5 +412,33 @@ def compare_folders(
         total_rows=total_rows,
         total_pages=total_pages,
         counts=counts,
-        rows=rows,
+        rows=tuple(output[start : start + filters.page_size]),
+    )
+
+
+def paginate_folder_comparison(
+    complete_page: FolderComparisonPage,
+    *,
+    page: int,
+    page_size: int,
+) -> FolderComparisonPage:
+    if page < 1:
+        raise ValueError("Seite muss mindestens 1 sein")
+    if not 1 <= page_size <= _MAX_PAGE_SIZE:
+        raise ValueError(f"Seitengröße muss zwischen 1 und {_MAX_PAGE_SIZE} liegen")
+    if len(complete_page.rows) != complete_page.total_rows:
+        raise ValueError("Pagination benötigt einen vollständigen Ordnervergleich")
+    total_pages = max(1, math.ceil(complete_page.total_rows / page_size))
+    start = (page - 1) * page_size
+    return FolderComparisonPage(
+        database=complete_page.database,
+        from_session_id=complete_page.from_session_id,
+        to_session_id=complete_page.to_session_id,
+        root=complete_page.root,
+        page=page,
+        page_size=page_size,
+        total_rows=complete_page.total_rows,
+        total_pages=total_pages,
+        counts=dict(complete_page.counts),
+        rows=tuple(complete_page.rows[start : start + page_size]),
     )
