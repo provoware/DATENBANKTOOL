@@ -6,158 +6,163 @@
 
 | Bereich | Stand |
 |---|---|
-| Version | `0.8.0-alpha.1` |
+| Version | `0.9.0-alpha.1` |
 | SQLite-Schema | `3` |
-| Entwicklungsfortschritt | **93 %** |
-| Erledigte Hauptpunkte | **42** |
-| Offene Hauptpunkte | **3** |
+| Entwicklungsfortschritt | **96 %** |
+| Erledigte Hauptpunkte | **43** |
+| Offene Hauptpunkte | **2** |
 | Automatische Originaldateiänderungen | **Gesperrt** |
 | Externe Laufzeitabhängigkeiten | **0** |
-| Automatisierte Tests | **54/54** unter Python 3.10 und 3.12 |
+| Automatisierte Tests | **59/59** unter Python 3.10 und 3.12 |
 
-## Neu: modularer und dauerhaft abgesicherter CLI-Aufbau
+## Neu: Ordner zwischen zwei Scans vergleichen
 
-Der frühere zentrale Befehlsblock mit 1.409 Zeilen wurde ohne sichtbare
-Befehlsänderungen in klar abgegrenzte Fachmodule aufgeteilt.
+Der Ordnervergleich zeigt verständlich, wo Speicher hinzugekommen oder weggefallen ist.
+Er arbeitet ausschließlich mit zwei bereits gespeicherten, abgeschlossenen Scans.
 
-| Modul | Zuständigkeit |
+```bash
+datenbanktool index folder-compare index.sqlite3
+```
+
+Ohne weitere Angaben wählt das Tool automatisch:
+
+1. den neuesten abgeschlossenen Scan mit einer passenden Vergleichsbasis,
+2. dessen direkten Vorgänger oder den vorherigen abgeschlossenen Scan desselben Stammordners.
+
+Explizite Auswahl:
+
+```bash
+datenbanktool index folder-compare index.sqlite3 \
+  --from-session-id 3 \
+  --to-session-id 7
+```
+
+Beide Sitzungen müssen abgeschlossen sein, dieselbe Ordnerwurzel besitzen und in der
+richtigen zeitlichen Reihenfolge liegen.
+
+### Verständliche Zustände
+
+| Zustand | Bedeutung |
 |---|---|
-| `cli.py` | nur Zusammensetzung, Dispatch und zentrale Fehlergrenze |
-| `cli_scan.py` | einmalige Scans |
-| `cli_search.py` | Suche und Suchvorlagen |
-| `cli_reports.py` | Ordner-, Änderungs- und Dateiberichte |
-| `cli_index.py` | Indexaufbau, Re-Scan, Status, Sitzungen, Backup, Restore und Reparatur |
-| `cli_help.py` | klassischer Erklärungsbefehl |
-| `cli_common.py` | gemeinsame Eingabeprüfung, Ausgabe und Formatierung |
-| `cli_contract.py` | Handlervertrag und deklarierte Seiteneffekte |
+| **Gewachsen** | Gesamtgröße des Ordners ist gestiegen |
+| **Kleiner geworden** | Gesamtgröße ist gesunken |
+| **Neu** | Ordner enthält erstmals Dateien |
+| **Nicht mehr vorhanden** | Im neueren Scan liegen dort keine Dateien mehr |
+| **Dateizahl geändert** | Größe gleich, aber Anzahl der Dateien anders |
+| **Unverändert** | Größe und Dateizahl sind gleich |
 
-`cli.py` besitzt jetzt nur noch rund 100 Zeilen. Alle bisherigen Befehle und
-Parameter bleiben unverändert.
+Unveränderte Ordner werden standardmäßig ausgeblendet. Sie können gezielt angezeigt
+werden:
 
-## Globale Wartungsregeln
-
-Die projektweiten Regeln stehen verständlich in:
-
-```text
-MAINTENANCE_RULES.md
+```bash
+datenbanktool index folder-compare index.sqlite3 --type unchanged
 ```
 
-Die maschinenlesbare und versionierte Fassung steht in:
+### Filter und Sortierung
 
-```text
-maintenance_rules.json
+```bash
+# Nur gewachsene Ordner
+datenbanktool index folder-compare index.sqlite3 --type grown
+
+# Nur Änderungen ab 100 MiB
+datenbanktool index folder-compare index.sqlite3 --min-change-mib 100
+
+# Nur zwei Ordnerebenen
+datenbanktool index folder-compare index.sqlite3 --max-depth 2
+
+# Nach Pfad sortieren
+datenbanktool index folder-compare index.sqlite3 --sort path --no-descending
 ```
 
-Automatische Architekturtests erzwingen unter anderem:
+Weitere Sortierungen:
 
-- `cli.py` höchstens 150 Zeilen,
-- jedes CLI-Fachmodul höchstens 500 Zeilen,
-- keine zyklischen Importe zurück zu `cli.py`,
-- keine Shell-Auswertung, `eval`, `exec` oder `os.system`,
-- jeder öffentliche Befehl besitzt Handler und `CommandPolicy`,
-- Originaldatei-Schreibzugriffe bleiben global gesperrt,
-- Parser und Handler gehören zum selben Fachmodul,
-- Rückgabecodes bleiben ganzzahlig und kontrolliert.
+- `change` – größte absolute Speicheränderung,
+- `percent` – größte prozentuale Änderung,
+- `files` – größte Änderung der Dateizahl,
+- `current-size` – aktuelle Ordnergröße,
+- `path` – Ordnername.
 
-## Mehrschichtige Laienhilfe
+### Sichere Exporte
 
-DATENBANKTOOL erklärt Funktionen in mehreren Tiefen. Der Nutzer entscheidet selbst,
-wie viele Informationen benötigt werden.
+```bash
+datenbanktool index folder-compare index.sqlite3 \
+  --json ordnervergleich.json \
+  --csv ordnervergleich.csv \
+  --html ordnervergleich.html
+```
 
-### Ebene 1: Soforthilfe
+- CSV verwendet UTF-8 mit BOM und Semikolon und ist für LibreOffice Calc geeignet.
+- HTML funktioniert vollständig offline und besitzt Klartext, Ampeln und Tooltips.
+- JSON ist maschinenlesbar und enthält keine Farbcodes.
+- Vorhandene Berichte werden nur mit `--overwrite-report` ersetzt.
+- Exportiert wird die aktuell gefilterte und ausgewählte Seite.
 
-Direkt in der Startseite stehen Kurzbeschreibung, Ampel und Schreibwirkung.
+## Startseite und Hilfe
+
+Der Vergleich ist als Punkt **10** in der geführten Startseite erreichbar:
 
 ```bash
 datenbanktool start
 ```
 
-### Ebene 2: Detailhilfe
-
-In der Startseite `?` vor die Funktionsnummer setzen:
-
 ```text
-?1   Details zur Dateisuche
-?5   Details zum Indexaufbau
-?7   Details zur Sicherung
+1   Dateien suchen
+2   Ordnerübersicht
+3   Änderungen anzeigen
+4   Indexstatus prüfen
+5   Neuen Index anlegen
+6   Ordner erneut prüfen
+7   Index sichern
+8   Suchvorlagen anzeigen
+9   Funktionen erklären
+10  Ordner vergleichen
+h   Hilfezentrum
+0   Beenden
 ```
 
-### Ebene 3: Schritt-für-Schritt-Hilfe
-
-In der Startseite `g` vor die Nummer setzen:
+Mehrschichtige Hilfe:
 
 ```text
-g1   Dateisuche Schritt für Schritt
-g5   Indexaufbau Schritt für Schritt
-g7   Sicherung Schritt für Schritt
+?10   ausführliche Erklärung
+g10   vollständige Schritt-für-Schritt-Anleitung
 ```
 
-### Ebene 4: Hilfe im Eingabefeld
-
-Bei jeder geführten Pfad-, Such- oder Bestätigungsfrage kann `?` eingegeben werden.
-Das Tool erklärt dieses Feld und stellt danach dieselbe Frage erneut.
-
-### Ebene 5: Fehlerhilfe
-
-Beendet ein Fachbefehl sich mit einem Fehlercode, zeigt die Startseite sichere
-Prüfstellen und den passenden ausführlichen Hilfebefehl. Es erfolgt keine versteckte
-Reparatur.
-
-## Eigenständiger Hilfebefehl
+Direkter Hilfebefehl:
 
 ```bash
-# Alle Themen
-datenbanktool help
-
-# Kurze Erklärung
-datenbanktool help search --level quick
-
-# Ausführliche Erklärung
-datenbanktool help build --level detail
-
-# Vollständige Anleitung
-datenbanktool help build --level guided
-
-# Suche mit Alltagsbegriff
-datenbanktool help --find Platzfresser
-
-# Maschinenlesbar
-datenbanktool help folders --level guided --json
+datenbanktool help folder-compare --level guided
+datenbanktool explain folder-compare
 ```
 
-## Bedienung der Startseite
-
-```text
-1  Dateien suchen
-2  Ordnerübersicht
-3  Änderungen anzeigen
-4  Indexstatus prüfen
-5  Neuen Index anlegen
-6  Ordner erneut prüfen
-7  Index sichern
-8  Suchvorlagen anzeigen
-9  Funktionen erklären
-h  Hilfezentrum
-0  Beenden
-```
-
-| Eingabe | Wirkung |
-|---|---|
-| `?NUMMER` | ausführliche Hilfe zur Funktion |
-| `gNUMMER` | vollständige Schrittanleitung |
-| `?` im Feld | Hilfe zur aktuellen Eingabe |
-| `q` | aktuellen Schritt abbrechen |
-| `0` | Startseite beenden |
-
-## Ampeln
+## Ampeln beim Ordnervergleich
 
 | Ampel | Bedeutung |
 |---|---|
-| **GRÜN** | rein lesend oder ohne erkannte Auffälligkeit |
-| **GELB** | kontrollierter Schreibzugriff oder Prüfbedarf |
-| **ROT** | dringender Prüfbedarf |
+| **ROT – Stark gewachsen** | Zunahme überschreitet die gewählte Warnschwelle |
+| **GELB – Gewachsen/Neu** | Veränderung verdient Aufmerksamkeit |
+| **GRÜN – Kleiner/Entfernt/Unverändert** | kein Speicherwachstum erkannt |
 
-Farben stehen nie allein. Farbnamen, Statuswort und Begründung bleiben sichtbar.
+Die Ampel bewertet nur die Größenentwicklung. Sie sagt nicht, dass Dateien beschädigt,
+gefährlich oder überflüssig sind. Farbe, Status und Begründung werden immer gemeinsam
+angezeigt.
+
+## Modulare CLI-Struktur
+
+| Modul | Zuständigkeit |
+|---|---|
+| `cli.py` | Zusammensetzung, Dispatch und zentrale Fehlergrenze |
+| `cli_scan.py` | einmalige Scans |
+| `cli_search.py` | Suche und Suchvorlagen |
+| `cli_reports.py` | Ordner-, Änderungs- und Dateiberichte |
+| `cli_folder_compare.py` | Ordnervergleich |
+| `cli_index.py` | Indexaufbau, Re-Scan, Status, Backup, Restore und Reparatur |
+| `cli_help.py` | klassischer Erklärungsbefehl |
+| `cli_common.py` | gemeinsame Eingabeprüfung und Ausgabe |
+| `cli_contract.py` | Handler- und Seiteneffektvertrag |
+
+Globale Regeln stehen in `MAINTENANCE_RULES.md` und `maintenance_rules.json`.
+Automatische Tests erzwingen unter anderem Größenlimits, Importgrenzen, Handler- und
+Sicherheitsrichtlinien sowie das Verbot von Shell-Auswertung.
 
 ## Wichtige Direktbefehle
 
@@ -165,8 +170,11 @@ Farben stehen nie allein. Farbnamen, Statuswort und Begründung bleiben sichtbar
 # Index aufbauen
 datenbanktool index build ~/Daten --database index.sqlite3
 
-# Erneut prüfen
+# Ordner erneut prüfen
 datenbanktool index rescan ~/Daten --database index.sqlite3
+
+# Ordner vergleichen
+datenbanktool index folder-compare index.sqlite3
 
 # Dateien suchen
 datenbanktool index search index.sqlite3 urlaub
@@ -174,7 +182,7 @@ datenbanktool index search index.sqlite3 urlaub
 # Ordnerübersicht
 datenbanktool index folders index.sqlite3
 
-# Änderungen anzeigen
+# Dateiänderungen anzeigen
 datenbanktool index changes index.sqlite3
 
 # Index sichern
@@ -183,15 +191,15 @@ datenbanktool index backup index.sqlite3 --output backup.sqlite3
 
 ## Sicherheitsgrundsätze
 
-- Originaldateien werden standardmäßig nur gelesen.
+- Der Ordnervergleich öffnet SQLite mit `mode=ro` und `PRAGMA query_only=ON`.
+- Er liest nicht erneut den aktuellen Dateisystemstand.
+- Originaldateien werden nicht geöffnet, gelöscht, verschoben oder verändert.
+- Die SQLite-Indexdatenbank bleibt während des Vergleichs unverändert.
+- Berichte werden atomar geschrieben und nicht still überschrieben.
+- Unterschiedliche Stammordner werden nicht miteinander vermischt.
 - Jeder CLI-Befehl deklariert seine Seiteneffekte über `CommandPolicy`.
-- Eine Richtlinie mit Originaldatei-Schreibzugriff wird technisch abgewiesen.
-- Die Startseite und direkte CLI führen keine Shell-Zeichenketten aus.
-- Pfade und Suchtexte werden als einzelne Argumente übergeben.
-- Berichte und Sicherungen werden nicht still überschrieben.
-- Restore erstellt standardmäßig eine Rückfallsicherung.
-- Automatisches Löschen, Verschieben und Umbenennen bleibt gesperrt.
-- Maschinenlesbare Ausgaben bleiben frei von Farbcodes und Bedienhinweisen.
+- Shell-Auswertung, `eval`, `exec` und `os.system` bleiben verboten.
+- Externe Laufzeitabhängigkeiten bleiben bei null.
 
 ## Installation für die Entwicklung
 
@@ -209,31 +217,28 @@ python -m compileall -q src tests
 PYTHONWARNINGS=error python -m unittest discover -s tests -v
 ```
 
-GitHub Actions prüft Python 3.10 und 3.12. Zusätzlich werden Modulgrößen,
-Importgrenzen, Handlerzuordnung, Seiteneffekte und verbotene Shell-Funktionen geprüft.
+GitHub Actions prüft Python 3.10 und 3.12 sowie Architekturgrenzen,
+Seiteneffektverträge und verbotene Shell-Funktionen.
 
 ## Aktuelle Grenzen
 
-- Die Oberfläche bleibt vorerst terminalbasiert.
-- Pfade werden noch als Text eingegeben oder eingefügt.
-- Die Ordnerübersicht besitzt JSON und HTML, aber noch keinen CSV-Export.
-- Ordnerwachstum zwischen zwei Scan-Sitzungen wird noch nicht direkt verglichen.
+- Es werden immer genau zwei Scan-Sitzungen verglichen, noch keine längere Zeitreihe.
+- Leere Ordner ohne Dateien können nicht erscheinen, weil der Index Dateien speichert.
+- Elternordner enthalten bewusst die Werte ihrer Unterordner; Zeilen dürfen deshalb
+  nicht addiert werden.
+- Der Vergleich zeigt gespeicherte Scanstände und nicht automatisch den heutigen
+  Dateisystemzustand.
+- Exporte enthalten die aktuelle gefilterte Seite, nicht automatisch alle Treffer.
+- Die normale Ordnerübersicht besitzt weiterhin JSON und HTML, aber noch keinen CSV-Export.
 - Vor einem stabilen Release fehlt eine Abnahme mit sehr großen realistischen Beständen
   und Linux-Laien.
 
 ## Nächster einfacher Entwicklungsschritt
 
-**Ordnerübersicht als CSV speichern:** Ordnergrößen, Dateizahlen, Ampelgründe und
-größte Platzfresser sollen direkt in LibreOffice Calc geöffnet werden können.
+**Ordnerübersicht als CSV speichern:** Dateizahl, Gesamtgröße, Ampelgrund und größte
+Platzfresser sollen direkt in LibreOffice Calc geöffnet werden können.
 
 ## Sichere Zusatzverbesserung
 
-**Ordnervergleich:** Anzeigen, welche Ordner seit dem vorherigen Scan gewachsen oder
-kleiner geworden sind, ohne Originaldateien zu verändern.
-
-## Weitere sinnvolle Upgrades
-
-- Grafische Oberfläche mit Schaltflächen und Dateiauswahlfenstern entwickeln.
-- Suchvorlagen exportieren und importieren.
-- Sehr große reale Dateibestände mit festen Laufzeit- und Speichergrenzen prüfen.
-- Hilfetexte später für weitere Sprachen vorbereiten.
+**Großbestands- und Laienabnahme:** Einen realistischen Testbestand mit festen Laufzeit-,
+Speicher- und Bedienkriterien prüfen, ohne Originaldateioperationen freizuschalten.
