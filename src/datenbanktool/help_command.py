@@ -4,12 +4,35 @@ import argparse
 import json
 from typing import Sequence, TextIO
 
+from datenbanktool.core.folder_timeline_help import (
+    FOLDER_TIMELINE_TOPIC,
+    timeline_matches,
+    timeline_topic,
+)
 from datenbanktool.core.layered_help import (
-    find_topics,
-    get_topic,
-    list_topics,
+    find_topics as find_base_topics,
+    get_topic as get_base_topic,
+    list_topics as list_base_topics,
     render_topic,
 )
+
+
+def _all_topics():
+    topics = {topic.name: topic for topic in list_base_topics()}
+    topics[FOLDER_TIMELINE_TOPIC.name] = FOLDER_TIMELINE_TOPIC
+    return tuple(sorted(topics.values(), key=lambda topic: topic.name))
+
+
+def _find_topics(query: str):
+    topics = {topic.name: topic for topic in find_base_topics(query)}
+    if timeline_matches(query):
+        topics[FOLDER_TIMELINE_TOPIC.name] = FOLDER_TIMELINE_TOPIC
+    return tuple(sorted(topics.values(), key=lambda topic: topic.name))
+
+
+def _get_topic(name: str):
+    extension = timeline_topic(name)
+    return extension if extension is not None else get_base_topic(name)
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -23,7 +46,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "topic",
         nargs="?",
-        help="Zum Beispiel search, build oder folders",
+        help="Zum Beispiel search, build, folders oder folder-timeline",
     )
     parser.add_argument(
         "--level",
@@ -53,7 +76,7 @@ def run_help_command(
     arguments = _parser().parse_args(list(argv))
     try:
         if arguments.find is not None:
-            topics = find_topics(arguments.find)
+            topics = _find_topics(arguments.find)
             if arguments.json:
                 output_stream.write(
                     json.dumps(
@@ -73,7 +96,7 @@ def run_help_command(
             output_stream.flush()
             return 0
         if arguments.topic is None:
-            topics = list_topics()
+            topics = _all_topics()
             if arguments.json:
                 output_stream.write(
                     json.dumps(
@@ -95,7 +118,7 @@ def run_help_command(
                 )
             output_stream.flush()
             return 0
-        topic = get_topic(arguments.topic)
+        topic = _get_topic(arguments.topic)
         if arguments.json:
             payload = topic.to_dict()
             payload["level"] = arguments.level
