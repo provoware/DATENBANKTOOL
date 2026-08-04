@@ -15,11 +15,13 @@ from datenbanktool.cli_common import (
 )
 from datenbanktool.cli_contract import CommandPolicy, bind_handler
 from datenbanktool.core.changes import ChangeFilter, export_changes, query_changes
+from datenbanktool.core.folder_csv import export_folder_csv
 from datenbanktool.core.folders import (
     FolderFilter,
     analyse_folders,
     export_folder_html,
     export_folder_json,
+    paginate_folder_page,
 )
 from datenbanktool.core.presentation import (
     TrafficLight,
@@ -43,8 +45,8 @@ def register_index_report_parsers(
         epilog=(
             "Grün = unauffällig, Gelb = prüfen, Rot = dringend prüfen. "
             "Die Begründung steht immer dabei.\n"
-            "Auswirkung: Reine Auswertung; nur gewählte JSON-/HTML-Berichte "
-            "werden geschrieben."
+            "Auswirkung: Reine Auswertung; nur gewählte JSON-/CSV-/HTML-Berichte "
+            "werden geschrieben. --all-pages exportiert alle passenden Ordner."
         ),
     )
     folders.add_argument("database", type=Path)
@@ -73,7 +75,13 @@ def register_index_report_parsers(
         help="Ab dieser Einzeldateigröße wechselt die Ampel mindestens auf Gelb.",
     )
     folders.add_argument("--json", dest="json_path", type=Path)
+    folders.add_argument("--csv", dest="csv_path", type=Path)
     folders.add_argument("--html", dest="html_path", type=Path)
+    folders.add_argument(
+        "--all-pages",
+        action="store_true",
+        help="Alle passenden Ordner exportieren; Terminalanzeige bleibt paginiert.",
+    )
     folders.add_argument("--overwrite-report", action="store_true")
     folders.add_argument("--no-terminal", action="store_true")
     bind_handler(
@@ -147,13 +155,20 @@ def register_report_parser(
 
 
 def run_folders(arguments: argparse.Namespace) -> int:
-    has_export = any((arguments.json_path, arguments.html_path))
+    has_export = any(
+        (arguments.json_path, arguments.csv_path, arguments.html_path)
+    )
+    if arguments.all_pages and not has_export:
+        raise ValueError("--all-pages benötigt mindestens JSON, CSV oder HTML")
     if arguments.no_terminal and not has_export:
-        raise ValueError("Ohne Terminalanzeige muss JSON oder HTML gewählt werden")
+        raise ValueError(
+            "Ohne Terminalanzeige muss mindestens JSON, CSV oder HTML gewählt werden"
+        )
     mib = 1024 * 1024
-    page = analyse_folders(
+    analysed = analyse_folders(
         arguments.database,
         session_id=arguments.session_id,
+        all_rows=arguments.all_pages,
         filters=FolderFilter(
             contains=arguments.contains,
             min_files=arguments.min_files,
@@ -167,17 +182,29 @@ def run_folders(arguments: argparse.Namespace) -> int:
             attention_file_bytes=arguments.attention_file_mib * mib,
         ),
     )
+    terminal_page = (
+        paginate_folder_page(
+            analysed,
+            page=arguments.page,
+            page_size=arguments.page_size,
+        )
+        if arguments.all_pages
+        else analysed
+    )
     if not arguments.no_terminal:
-        print(f"Ordner: {page.root} | Scan: #{page.session_id}")
-        print(f"Treffer: {page.total_rows} | Seite {page.page} von {page.total_pages}")
-        if not page.rows:
+        print(f"Ordner: {terminal_page.root} | Scan: #{terminal_page.session_id}")
+        print(
+            f"Treffer: {terminal_page.total_rows} | "
+            f"Seite {terminal_page.page} von {terminal_page.total_pages}"
+        )
+        if not terminal_page.rows:
             print(
                 traffic_text(
                     TrafficLight("yellow", "Keine Ordner", "Filter prüfen"),
                     mode=colour_mode(arguments),
                 )
             )
-        for row in page.rows:
+        for row in terminal_page.rows:
             print(traffic_text(row.traffic_light, mode=colour_mode(arguments)))
             print(
                 f"  {row.folder} | direkt {row.direct_files} Datei(en), "
@@ -191,19 +218,30 @@ def run_folders(arguments: argparse.Namespace) -> int:
                     f"    ↳ {human_size(largest.size_bytes)} · "
                     f"{largest.relative_path}"
                 )
-        if page.page < page.total_pages:
-            print(f"Nächste Seite: --page {page.page + 1}")
+        if terminal_page.page < terminal_page.total_pages:
+            print(f"Nächste Seite: --page {terminal_page.page + 1}")
         print_hint(
             arguments,
             "Ampeln zeigen Prüfbedarf. Sie sind keine Aussage über "
             "Beschädigung oder Gefährlichkeit.",
         )
+    if arguments.all_pages and has_export:
+        print(f"Exportumfang: alle {analysed.total_rows} passenden Ordner")
     if arguments.json_path:
         print(
             "JSON-Bericht: "
             + export_folder_json(
-                page,
+                analysed,
                 arguments.json_path,
+                overwrite=arguments.overwrite_report,
+            )
+        )
+    if arguments.csv_path:
+        print(
+            "CSV-Bericht: "
+            + export_folder_csv(
+                analysed,
+                arguments.csv_path,
                 overwrite=arguments.overwrite_report,
             )
         )
@@ -211,7 +249,7 @@ def run_folders(arguments: argparse.Namespace) -> int:
         print(
             "HTML-Bericht: "
             + export_folder_html(
-                page,
+                analysed,
                 arguments.html_path,
                 overwrite=arguments.overwrite_report,
             )
