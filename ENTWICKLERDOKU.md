@@ -34,12 +34,7 @@ PYTHONPATH=src python -m unittest discover -s tests -v
 PYTHONPATH=src python -m datenbanktool --help
 ```
 
-## Historischer MVP-Status
-
-Die frühe reine SQLite-Strukturprüfung ist abgeschlossen. Ihre Dateien und Befehle
-sind nicht mehr die vollständige Architekturübersicht des aktuellen Alpha-Stands.
-
-## Architekturstand 0.13.0-alpha.1
+## Architekturstand 0.13.0-alpha.2
 
 Diese Iteration ergänzt zwei getrennte Fachverträge:
 
@@ -55,7 +50,9 @@ Gezielt erweiterte Module:
 
 - `core/folder_timeline.py` – Datei- und Größenprozente sowie Schwellenklassifikation,
 - `cli_folder_timeline.py` – `--preset` und Warnschwellenoptionen,
-- `core/guided_home.py` – Vorlagenauswahl, Punkt 12 und Schwellenfelder,
+- `core/guided_home.py` – orchestrierende Startseitenklasse für I/O, Hilfe und Befehlsaufbau,
+- `core/guided_home_catalog.py` – Menüaktionen und Feldhilfen,
+- `core/guided_home_input.py` – Parser für Ganzzahlen, Prozentwerte und Berichtsformate,
 - `core/folder_timeline_exports.py` – Warnfelder in JSON, CSV und HTML,
 - `core/folder_timeline_charts.py` – sichtbare und zugängliche SVG-Warnmarken,
 - `core/folder_timeline_help.py` – gemeinsame Vorlagen- und Schwellenhilfe.
@@ -299,4 +296,8 @@ klarer Nicht-Addierbarkeitswarnung darstellen.
 ## Unverändert
 
 `AGENTS.md` wird nicht verändert. Externe Laufzeitabhängigkeiten bleiben bei null.
-Automatische Schreibzugriffe auf gescannte Originaldateien bleiben gesperrt. Der neue Versionstest schützt CLI, Registry, Projektregistry, Paketmetadaten und Dokumentation gegen Drift.
+Automatische Schreibzugriffe auf gescannte Originaldateien bleiben gesperrt.
+
+## Wartungsnotiz 0.13.0-alpha.2
+
+Der CLI-Dateikopf darf nur einen Modul-Docstring und danach `from __future__ import annotations` enthalten. Historische CLI-Stubs dürfen nicht vor diesem Import stehen. Parser für die geführte Startseite sollen rein bleiben und ohne Streams testbar sein; Eingabe- und Ausgabeschleifen verbleiben in `TerminalHome`.

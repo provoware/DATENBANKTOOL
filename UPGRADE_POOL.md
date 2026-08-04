@@ -1,5 +1,13 @@
 # Upgrade-Pool
 
+| Priorität | Upgrade | Nutzen | Voraussetzung |
+| --- | --- | --- | --- |
+| Hoch | Geführte Vorlagenverwaltung | Vorlagen ohne direkte CLI verwalten | Anzeigen, Ersetzen und Löschen laienfreundlich spezifizieren |
+| Mittel | PostgreSQL-Anbindung | Serverdatenbanken analysieren | Treiber- und Geheimnisverwaltung festlegen |
+| Mittel | Schema-Vergleich | Änderungen zwischen zwei Ständen erkennen | stabiles neutrales Schemamodell |
+| Niedrig | Barrierefreie GUI | Nutzung ohne Kommandozeile | Bedienkonzept und GUI-Technik auswählen |
+
+Upgrades werden erst umgesetzt, wenn Eingaben, Ausgaben und Fehlerfälle spezifiziert sind.
 Stand: Version 0.13.0-alpha.1
 
 Upgrades werden erst umgesetzt, wenn Eingaben, Ausgaben, Fehlerfälle und der passende Registry-Eintrag spezifiziert sind.
@@ -51,5 +59,6 @@ Upgrades werden erst umgesetzt, wenn Eingaben, Ausgaben, Fehlerfälle und der pa
 - Begründete Warnungen in Terminal, JSON, CSV, HTML und SVG.
 - Trennung von Verlaufsklassifikation und Warnstatus.
 - Reproduzierbare Abnahmeprofile mit 600, 10.000 und 100.000 Dateien.
-- 0.13-Funktionsprüfung mit 87 Tests je Python-Version sowie Quick und Standard 11/11.
-- Verbindlicher Versionsvertrag mit PEP-440-Paketversion und menschenlesbarer Projektversion.
+- 0.13-Funktionsprüfung mit 86 Tests je Python-Version sowie Quick und Standard 11/11.
+- Startseiten-Kataloge und Eingabeparser in kleine Wartungsmodule getrennt.
+- CLI-Importkopf bereinigt und Parser-Fehlerfälle gezielt getestet.

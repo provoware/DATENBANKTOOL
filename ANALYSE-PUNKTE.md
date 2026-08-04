@@ -1,6 +1,6 @@
 # Analyse-Punkte
 
-Stand: Projektversion 0.13.0-alpha.1 / Paketversion 0.13.0a1
+Stand: Version 0.13.0-alpha.2
 
 | Bereich | Befund | Maßnahme / Status |
 | --- | --- | --- |
@@ -22,7 +22,8 @@ Stand: Projektversion 0.13.0-alpha.1 / Paketversion 0.13.0a1
 
 ## Nächste Analyse
 
-Vor dem CSV-Export sind Formel-Injektion in Tabellenprogrammen, Überschreiben vorhandener Dateien und große Ergebnismengen zu bewerten.
+Vor der nächsten Funktionsrunde sind reale Laienabnahme, 100.000-Dateien-Zielmessung und eine geführte Vorlagenverwaltung zu bewerten.
+
 ## Ergebnis dieser Iteration
 
 DATENBANKTOOL besitzt jetzt sichere lokale Zeitreihen-Vorlagen und optionale,
@@ -153,3 +154,10 @@ reduzieren wiederholte Eingaben, ohne sensible oder unnötige Pfade zu speichern
 Trendgrenzen erhöhen die Sichtbarkeit auffälligen Wachstums, bleiben aber strikt
 rein lesend und frei von automatischen Entscheidungen. Offen bleibt bewusst nur die
 menschliche Laienabnahme.
+
+## Ergebnis der Wartungsiteration 0.13.0-alpha.2
+
+- Fehlerfreiheit: Der doppelte alte CLI-Kopf wurde entfernt; `from __future__ import annotations` steht wieder am Dateianfang.
+- Robustheit: Negative Parser-Tests sichern ungültige Ganzzahlen, nicht endliche Prozentwerte und unbekannte Berichtsformate ab.
+- Wartbarkeit: Startseiten-Kataloge, Eingabeparser und orchestrierende Klasse bleiben klar getrennt.
+- Konsistenz: Registry und Info-Dateien verweisen auf denselben aktuellen Entwicklungsstand.

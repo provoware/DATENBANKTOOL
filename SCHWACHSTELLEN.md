@@ -14,6 +14,13 @@ Stand: Version 0.13.0-alpha.1
 3. geführte Vorlagenverwaltung,
 4. Mehrordner-Zeitreihe.
 
+- Originaldateien werden durch Index-, Berichts- und Startseitenfunktionen nicht automatisch verändert.
+- Eingaben für Zeitreihenordner, Vorlagen, Ganzzahlen, Prozentwerte und Berichtsformate werden validiert.
+- Startseiten-Kataloge und Eingabeparser sind getrennt, wodurch die Orchestrierung wartbarer bleibt.
+
+Sicherheitsrelevante Fehler sollen ohne sensible Dateiinhalte, Zugangsdaten oder Stapelspuren ausgegeben werden.
+
+## Fachliche Grenzen
 ## Historischer MVP-Status
 
 Die frühe reine SQLite-Strukturprüfung ist abgeschlossen und nicht mehr der aktuelle

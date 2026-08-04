@@ -2,22 +2,15 @@
 
 Alle wichtigen Änderungen werden hier dokumentiert. Das Projekt verwendet semantische Versionierung.
 
-## Dokumentation – 2026-08-04
+## 0.13.0-alpha.2 – 2026-08-04
 
-- README-Startbereich auf einen einzigen aktuellen Projektstatus konsolidiert.
-- Veraltete MVP-Beispiele durch aktuelle Einstiege `start`, `help` und `index ...`
-  ersetzt.
-- Offenen Hauptpunkt zwischen README, TODO, Upgrade-Pool und Projektregistry
-  abgeglichen.
+### Wartung und Korrekturen
 
-## [0.1.0] - 2026-08-04
+- Doppelten alten CLI-Kopf entfernt, damit `from __future__ import annotations` wieder am Dateianfang steht und die Startseiten-Tests importieren können.
+- Startseiten-Kataloge und Eingabeparser bleiben in getrennten kleinen Modulen.
+- Negative Parser-Tests für ungültige Ganzzahlen, nicht endliche Prozentwerte und unbekannte Berichtsformate ergänzt.
+- Registry, README, TODO, Upgrade-Pool, Schwachstellenliste, Analysepunkte und Entwicklerdokumentation auf den aktuellen Wartungsstand synchronisiert.
 
-### Hinzugefügt
-
-- Schreibgeschützte SQLite-Analyse mit den Befehlen `summary` und `tables`.
-- Validierung von Pfaden, Dateitypen und SQLite-Signaturen.
-- Menschenlesbare und JSON-Ausgabe mit definierten Exitcodes.
-- Versionsregistry, Paketkonfiguration und automatische Tests.
 ## 0.13.0-alpha.1 – 2026-08-04
 
 ### Versionierungsvertrag
