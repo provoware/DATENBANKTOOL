@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import shlex
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Callable, Sequence, TextIO
 
 from datenbanktool.core.folder_timeline_help import (
     timeline_error_help,
+    timeline_preset_error_help,
     timeline_topic,
 )
 from datenbanktool.core.layered_help import (
@@ -14,6 +16,11 @@ from datenbanktool.core.layered_help import (
     render_topic,
 )
 from datenbanktool.core.presentation import TrafficLight, status_text, traffic_text
+from datenbanktool.core.timeline_presets import (
+    TimelinePreset,
+    get_timeline_preset,
+    list_timeline_presets,
+)
 
 CommandRunner = Callable[[Sequence[str]], int]
 
@@ -53,6 +60,7 @@ _ACTIONS = (
     MenuAction("9", "explain", "explain"),
     MenuAction("10", "folder-compare", "folder_compare"),
     MenuAction("11", "folder-timeline", "folder_timeline"),
+    MenuAction("12", "timeline-presets", "timeline_preset_save", True),
 )
 
 _FIELD_HELP = {
@@ -77,6 +85,17 @@ _FIELD_HELP = {
     "backup_output": (
         "Optionaler neuer Sicherungspfad. Leer erzeugt automatisch einen sicheren Namen."
     ),
+    "timeline_preset_choice": (
+        "Nummer oder exakten Namen einer angezeigten Zeitreihen-Vorlage eingeben. "
+        "Leer bedeutet, den Ordner manuell einzugeben."
+    ),
+    "timeline_preset_name": (
+        "Verständlicher eindeutiger Name mit 1 bis 64 Zeichen. Vorhandene Namen "
+        "werden über die Startseite nicht überschrieben."
+    ),
+    "timeline_preset_description": (
+        "Optionaler kurzer Zweck der Vorlage, höchstens 240 Zeichen."
+    ),
     "timeline_folder": (
         "Relativer Pfad innerhalb des gescannten Stammordners, zum Beispiel Musik "
         "oder Bilder/2026. Ein Punkt bedeutet den gesamten Stammordner. Absolute "
@@ -93,6 +112,14 @@ _FIELD_HELP = {
     "timeline_limit": (
         "Höchstens so viele neueste Zeitpunkte laden. Zulässig sind 2 bis 500; "
         "100 ist ein übersichtlicher Standard."
+    ),
+    "timeline_size_threshold": (
+        "Optionaler Prozentwert ab 0. Leer deaktiviert die Größenwarnung. "
+        "Geprüft wird nur positives Wachstum zum vorherigen sichtbaren Scan."
+    ),
+    "timeline_file_threshold": (
+        "Optionaler Prozentwert ab 0. Leer deaktiviert die Dateizahlwarnung. "
+        "Die Warnung bleibt rein lesend und ist keine Schadensbewertung."
     ),
     "timeline_report": (
         "Kein Bericht zeigt nur das Terminal. JSON ist maschinenlesbar, CSV passt "
@@ -115,8 +142,10 @@ def _get_topic(name: str):
 
 
 def _error_help(topic_name: str, exit_code: int) -> tuple[str, ...]:
-    if timeline_topic(topic_name) is not None:
+    if topic_name == "folder-timeline":
         return timeline_error_help(exit_code)
+    if topic_name == "timeline-presets":
+        return timeline_preset_error_help(exit_code)
     return base_error_help(topic_name, exit_code)
 
 
@@ -136,12 +165,14 @@ class TerminalHome:
         output_stream: TextIO,
         error_stream: TextIO,
         color_mode: str = "auto",
+        timeline_preset_path: Path | None = None,
     ) -> None:
         self.command_runner = command_runner
         self.input_stream = input_stream
         self.output_stream = output_stream
         self.error_stream = error_stream
         self.color_mode = color_mode
+        self.timeline_preset_path = timeline_preset_path
         self.session = HomeSession()
         keys = [action.key for action in _ACTIONS]
         if len(keys) != len(set(keys)):
@@ -231,6 +262,37 @@ class TerminalHome:
                     else f"ab {minimum}"
                 )
                 self._write(f"Bitte eine Zahl {range_text} eingeben.", error=True)
+                continue
+            return number
+
+    def _optional_float(
+        self,
+        label: str,
+        *,
+        help_text: str,
+        minimum: float,
+        maximum: float,
+    ) -> float | None:
+        while True:
+            value = self._read(
+                f"{label} [optional, ? Hilfe]: ",
+                help_text=help_text,
+            )
+            if not value:
+                return None
+            try:
+                number = float(value.replace(",", "."))
+            except ValueError:
+                self._write("Bitte eine Zahl eingeben.", error=True)
+                continue
+            if number != number or number in {float("inf"), float("-inf")}:
+                self._write("Bitte eine endliche Zahl eingeben.", error=True)
+                continue
+            if not minimum <= number <= maximum:
+                self._write(
+                    f"Bitte eine Zahl zwischen {minimum:g} und {maximum:g} eingeben.",
+                    error=True,
+                )
                 continue
             return number
 
@@ -361,15 +423,62 @@ class TerminalHome:
     def _build_folder_compare(self) -> list[str]:
         return ["index", "folder-compare", self._database()]
 
+    def _choose_timeline_preset(self) -> TimelinePreset | None:
+        try:
+            presets = list_timeline_presets(self.timeline_preset_path)
+        except (OSError, ValueError) as error:
+            self._write(f"Zeitreihen-Vorlagen konnten nicht gelesen werden: {error}", error=True)
+            self._write("Der Ordner kann weiterhin manuell eingegeben werden.")
+            return None
+        if not presets:
+            self._write("Zeitreihen-Vorlagen: noch keine gespeichert.")
+            return None
+        self._write("Gespeicherte Zeitreihen-Vorlagen:")
+        for number, preset in enumerate(presets, 1):
+            description = f" – {preset.description}" if preset.description else ""
+            self._write(f"  {number}. {preset.name}: {preset.folder}{description}")
+        while True:
+            value = self._optional(
+                "Vorlage als Nummer oder Name; leer für manuell",
+                help_text=_FIELD_HELP["timeline_preset_choice"],
+            )
+            if not value:
+                return None
+            if value.isdigit():
+                index = int(value) - 1
+                if 0 <= index < len(presets):
+                    selected = presets[index]
+                else:
+                    self._write("Vorlagennummer wurde nicht gefunden.", error=True)
+                    continue
+            else:
+                try:
+                    selected = get_timeline_preset(value, self.timeline_preset_path)
+                except KeyError:
+                    self._write("Vorlagenname wurde nicht gefunden.", error=True)
+                    continue
+            self._write(f"Gewählt: {selected.name} → {selected.folder}")
+            return selected
+
     def _build_folder_timeline(self) -> list[str]:
         database = self._database()
+        selected = self._choose_timeline_preset()
+        default_folder = (
+            selected.folder if selected is not None else self.session.last_timeline_folder
+        )
         folder = self._required(
             "Relativer Ordner im Scan",
-            self.session.last_timeline_folder,
+            default_folder,
             help_text=_FIELD_HELP["timeline_folder"],
         )
         self.session.last_timeline_folder = folder
-        command = ["index", "folder-timeline", database, folder]
+        command = ["index", "folder-timeline", database]
+        if selected is not None and folder == selected.folder:
+            command.extend(("--preset", selected.name))
+            if self.timeline_preset_path is not None:
+                command.extend(("--preset-file", str(self.timeline_preset_path)))
+        else:
+            command.append(folder)
         from_session = self._optional_integer(
             "Älteste Scan-ID",
             help_text=_FIELD_HELP["timeline_from_session"],
@@ -387,12 +496,28 @@ class TerminalHome:
             maximum=500,
             default=100,
         )
+        size_threshold = self._optional_float(
+            "Warnschwelle Größenwachstum in Prozent",
+            help_text=_FIELD_HELP["timeline_size_threshold"],
+            minimum=0,
+            maximum=1_000_000,
+        )
+        file_threshold = self._optional_float(
+            "Warnschwelle Dateizahlwachstum in Prozent",
+            help_text=_FIELD_HELP["timeline_file_threshold"],
+            minimum=0,
+            maximum=1_000_000,
+        )
         if from_session is not None:
             command.extend(("--from-session-id", str(from_session)))
         if to_session is not None:
             command.extend(("--to-session-id", str(to_session)))
         if limit is not None:
             command.extend(("--limit", str(limit)))
+        if size_threshold is not None:
+            command.extend(("--warn-size-growth-percent", str(size_threshold)))
+        if file_threshold is not None:
+            command.extend(("--warn-file-growth-percent", str(file_threshold)))
         report_format = self._report_format()
         if report_format != "none":
             report_path = self._required(
@@ -400,6 +525,27 @@ class TerminalHome:
                 help_text=_FIELD_HELP["timeline_report_path"],
             )
             command.extend((f"--{report_format}", report_path))
+        return command
+
+    def _build_timeline_preset_save(self) -> list[str]:
+        name = self._required(
+            "Name der neuen Zeitreihen-Vorlage",
+            help_text=_FIELD_HELP["timeline_preset_name"],
+        )
+        folder = self._required(
+            "Relativer Ordner für die Vorlage",
+            self.session.last_timeline_folder,
+            help_text=_FIELD_HELP["timeline_folder"],
+        )
+        description = self._optional(
+            "Kurze Beschreibung",
+            help_text=_FIELD_HELP["timeline_preset_description"],
+        )
+        command = ["index", "timeline-presets", "save", name, folder]
+        if description:
+            command.extend(("--description", description))
+        if self.timeline_preset_path is not None:
+            command.extend(("--preset-file", str(self.timeline_preset_path)))
         return command
 
     def _build_command(self, action: MenuAction) -> list[str]:
@@ -415,6 +561,7 @@ class TerminalHome:
             "explain": self._build_explain,
             "folder_compare": self._build_folder_compare,
             "folder_timeline": self._build_folder_timeline,
+            "timeline_preset_save": self._build_timeline_preset_save,
         }
         try:
             return list(builders[action.builder_name]())
@@ -432,7 +579,7 @@ class TerminalHome:
         self._write("\nMehrschichtige Hilfe")
         self._write("h          zeigt diese Übersicht")
         self._write("?NUMMER    zeigt Details, zum Beispiel ?11")
-        self._write("gNUMMER    zeigt Schritt für Schritt, zum Beispiel g11")
+        self._write("gNUMMER    zeigt Schritt für Schritt, zum Beispiel g12")
         self._write("?          erklärt das aktuelle Eingabefeld")
         self._write("q          bricht den aktuellen Schritt ab")
         self._write("0          beendet die Startseite")
