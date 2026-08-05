@@ -62,6 +62,7 @@ class GuidedRecoveryTests(unittest.TestCase):
             self.assertEqual(candidate.root, str(root.resolve()))
             self.assertEqual(candidate.database, str(database.resolve()))
             self.assertEqual(candidate.status, "interrupted")
+            self.assertTrue(candidate.resumable)
             self.assertEqual(candidate.command[-1], "--resume")
             self.assertEqual(candidate.command.count("--resume"), 1)
 
@@ -94,8 +95,8 @@ class GuidedRecoveryTests(unittest.TestCase):
             )
             self.assertEqual(home.run(), 0)
             self.assertEqual(calls, [])
-            self.assertIn("Unterbrochene Ordnerprüfung gefunden", output.getvalue())
-            self.assertIn("bleibt für später gespeichert", output.getvalue())
+            self.assertIn("Gespeicherte Wiederanläufe: 1", output.getvalue())
+            self.assertIn("Kein Eintrag verändert", output.getvalue())
             self.assertIsNotNone(load_resume_record())
 
     def test_start_page_confirms_exact_visible_resume_command(self) -> None:
@@ -109,7 +110,7 @@ class GuidedRecoveryTests(unittest.TestCase):
             output = StringIO()
             home = TerminalHome(
                 lambda command: calls.append(tuple(command)) or 0,
-                input_stream=StringIO("j\n0\n"),
+                input_stream=StringIO("1\nfortsetzen\n0\n"),
                 output_stream=output,
                 error_stream=StringIO(),
                 color_mode="never",
@@ -119,7 +120,11 @@ class GuidedRecoveryTests(unittest.TestCase):
             self.assertEqual(calls[0][:-1], original)
             self.assertEqual(calls[0][-1], "--resume")
             text = output.getvalue()
-            self.assertLess(text.index("Ordner:"), text.index("Technisch") if "Technisch" in text else len(text))
+            self.assertIn("Wiederanlauf im Detail", text)
+            self.assertLess(
+                text.index("Ordner:"),
+                text.index("Begründung:"),
+            )
 
 
 class BackupCatalogueTests(unittest.TestCase):
