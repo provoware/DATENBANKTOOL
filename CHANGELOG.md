@@ -1,59 +1,61 @@
 # Changelog
 
+## 0.16.0-alpha.1 – 2026-08-05
+
+### Geführter Wiederanlauf
+
+- Bestätigte `index build`- und `index rescan`-Befehle werden zusätzlich als eigener fortsetzbarer Scanstand gespeichert.
+- Die Startseite prüft Wiederanlaufdatensatz, Ordner, Indexdatei, Scanart und SQLite-Sitzung nur lesend gegeneinander.
+- Ein gültiger Wiederanlauf zeigt Art, Ordner, Indexdatei, Sitzung, Phase, Dateizahl und den vollständigen `--resume`-Befehl.
+- Fortsetzung startet ausschließlich nach sichtbarer Ja/Nein-Bestätigung.
+- Ablehnen, Abbrechen oder geschlossene Eingabe lässt den Wiederanlauf für später erhalten.
+- Ein erfolgreicher Scan entfernt nur den internen Wiederanlaufhinweis; Laufjournal und Index bleiben erhalten.
+- Veraltete Hinweise ohne fortsetzbare SQLite-Sitzung werden kontrolliert entfernt.
+- Vollscan und inkrementeller Re-Scan besitzen getrennte geprüfte Wiederanlaufpfade.
+
+### Sicherungsübersicht
+
+- Neuer Befehl `index backups list` für Index- und Konfigurationssicherungen.
+- Anzeige von Typ, Pfad, Größe, UTC-Zeitpunkt, verständlichem Alter, Status und technischer Begründung.
+- SQLite-Sicherungen werden im Nur-Lese-Modus mit `quick_check` und Schemaversion geprüft.
+- Konfigurationssicherungen werden auf gültiges JSON, Schemaversion und Vorlagenliste geprüft.
+- Neuer Befehl `index backups delete` löscht genau eine katalogisierte Datei.
+- Löschen benötigt vollständigen Pfad, exakten Dateinamen und `--yes`.
+- Aktive Dateien, unbekannte Pfade und symbolische Verknüpfungen sind ausgeschlossen.
+- Startseitenpunkt 7 bündelt Erstellen, Anzeigen und einzelne bestätigte Löschung.
+- Keine automatische Rotation, Sammellöschung oder Löschung nach Alter.
+
+### Zusätzliche Härtung
+
+- Dauerhafte Dateioperationen folgen keine symbolischen Verknüpfungen mehr.
+- Atomare Veröffentlichung verweigert Symlink-Ziele auch bei ausdrücklichem Überschreiben.
+- Dauerhafte Einzellöschung prüft selbst auf normale Datei und bestätigt anschließend den Ordnerzustand mit `fsync`.
+- Sortierung der Sicherungsübersicht ist eindeutig „neueste zuerst“.
+
+### Prüfung
+
+- Wiederanlauf für Vollscan und Re-Scan.
+- Ablehnen und späteres Fortsetzen.
+- Veralteter Wiederanlaufhinweis.
+- Exakte sichtbare Argumentliste ohne Shell.
+- Gültige, beschädigte und unbekannte Sicherungen.
+- CLI-JSON-Ausgabe und tatsächliche Einzellöschung.
+- Fehlendes `--yes`, falscher Name, aktive Datei und Symlink.
+- Zentrale Symlink-Sperre für Schreiben und Löschen.
+
 ## 0.15.0-alpha.1 – 2026-08-05
 
-### Absturzsicherheit und Autosave
-
-- Zentrale Prozessgrenze für unerwartete Ausnahmen ergänzt.
-- Unerwartete Programmfehler enden kontrolliert mit Rückgabecode `70`.
-- Tastaturabbruch endet mit `130` und markiert laufende Scans als unterbrochen.
-- Lokales Laufjournal unter `$XDG_STATE_HOME/datenbanktool/last-run.json` ergänzt.
-- Eindeutige Crashberichte mit Python-, Plattform-, Versions- und Tracebackdaten ergänzt.
-- Werte hinter typischen Token-, Passwort-, Secret- und API-Key-Schaltern werden ausgeblendet.
-- Scan-Autosave speichert standardmäßig spätestens nach fünf Sekunden oder 500 Einträgen.
-- Vollscan und Änderungsprüfung können am letzten bestätigten Pfad mit `--resume` fortgesetzt werden.
-- Sehr große Dateien werden nach einem Abbruch höchstens für den gerade laufenden Einzelhash erneut gelesen.
-
-### Dauerhafte Schreibgrenze
-
-- Neue gemeinsame Schreibschicht `core/durable_files.py`.
-- Temporärdateien werden vollständig geschrieben und mit Datei-`fsync` bestätigt.
-- Veröffentlichung erfolgt im selben Ordner über `os.replace`.
-- Der Zielordner wird anschließend mit Verzeichnis-`fsync` bestätigt.
-- Fehlgeschlagene Veröffentlichung hält die alte Zieldatei unverändert und entfernt die Temporärdatei.
-- Such- und Zeitreihenvorlagen, gemeinsame JSON-Berichte, Ordnervergleich, Ordner-Zeitreihe, Sicherung und Wiederherstellung verwenden die gehärtete Grenze.
-- Sicherungen werden vor Veröffentlichung mit SQLite `quick_check` geprüft.
-- Wiederherstellung behält standardmäßig eine Rückfallsicherung.
-
-### SQLite-Härtung
-
-- Schreibende Indexverbindungen verwenden `WAL`, `synchronous=FULL` und `wal_autocheckpoint=1000`.
-- Bestätigte Batches, Abschluss-, Abbruch- und Fehlerzustände werden dauerhaft committed.
-- Ein vorübergehend blockierter passiver WAL-Checkpoint bricht einen bereits sicheren Commit nicht mehr ab.
-- Python-3.10-Kompatibilitätsfehler im Versionstest behoben; kein `tomllib` aus Python 3.11 mehr erforderlich.
-
-### Einfache Nutzeransprache
-
-- Neue Startklar-Prüfung `datenbanktool check`.
-- Optionaler Nur-Lese-Test einer Indexdatei über `--database`.
-- Öffentliche Einstiegstexte nennen zuerst Alltagssprache, dann Auswirkung, nächsten Schritt und erst danach Fachdetails.
-- Kontrollierte CLI-Fehler bestätigen ausdrücklich, dass Originaldateien nicht automatisch verändert wurden.
-- Zahlen-, Pfad-, Sicherungs- und Vorlagenfehler wurden verständlicher formuliert.
-
-### Automatische Prüfung
-
-- Simulation einer fehlgeschlagenen atomaren Umschaltung.
-- Prüfung unveränderter Altdatei und entfernten Temporärrests.
-- Prüfung von Dateimodus `0600`.
-- Crashbericht-, Geheimnis-Ausblendungs- und Rückgabecodeprüfung.
-- Tastaturabbruch- und Laufjournalprüfung.
-- Unterbrechungs- und Wiederaufnahmetest.
-- SQLite-`FULL`- und Nur-Lese-Diagnosetest.
-- Architekturbindung des neuen Diagnosebefehls.
+- Zentrale Prozessgrenze, Laufjournal und bereinigte Crashberichte.
+- Autosave spätestens nach fünf Sekunden oder 500 Einträgen.
+- Wiederaufnahme über `--resume`.
+- SQLite `WAL` mit `synchronous=FULL`.
+- Gemeinsame dauerhafte Dateifreigabe mit Datei- und Ordner-`fsync`.
+- Startklar-Prüfung `datenbanktool check`.
+- Alltagssprache vor technischen Einzelheiten.
 
 ## Frühere Entwicklungsstufen
 
-- **0.14.0-alpha.1:** Registry-Konsolidierung und geführte Zeitreihen-Vorlagenverwaltung.
+- **0.14.x:** Registry-Konsolidierung und geführte Zeitreihen-Vorlagenverwaltung.
 - **0.13.x:** Zeitreihen-Vorlagen, Trendgrenzen, Hilfen und Versionierungsvertrag.
 - **0.12.x:** geführte Ordner-Zeitreihe und barrierefreie Offline-SVG-Trends.
 - **0.11.x:** Ordner-Zeitreihe und vollständige Vergleichsexporte.
