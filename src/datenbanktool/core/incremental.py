@@ -4,6 +4,7 @@ import hashlib
 import json
 from dataclasses import dataclass
 from pathlib import Path
+from time import monotonic
 
 from datenbanktool.core.index_database import (
     IndexDatabase,
@@ -27,6 +28,7 @@ class IncrementalScanOptions:
     follow_symlinks: bool | None = None
     detect_moves_by_hash: bool = True
     batch_size: int = 500
+    autosave_seconds: float = 5.0
     resume: bool = False
     max_files: int | None = None
     lock_timeout_seconds: float = 0.0
@@ -125,6 +127,10 @@ def _resolved_settings(options: IncrementalScanOptions, baseline) -> tuple[bool,
     return hash_duplicates, large_file_bytes, follow_symlinks
 
 
+def _autosave_due(last_save: float, autosave_seconds: float) -> bool:
+    return monotonic() - last_save >= autosave_seconds
+
+
 def _match_inode_moves(database: IndexDatabase, session_id: int, baseline_id: int) -> int:
     matches = database.connection.execute(
         """
@@ -174,8 +180,7 @@ def _match_inode_moves(database: IndexDatabase, session_id: int, baseline_id: in
             database.connection.execute(
                 """
                 UPDATE file_changes
-                SET change_type='moved', old_file_id=?, old_path=?,
-                    details_json=?
+                SET change_type='moved', old_file_id=?, old_path=?, details_json=?
                 WHERE session_id=? AND new_file_id=?
                 """,
                 (
@@ -315,12 +320,14 @@ def incremental_rescan(
     progress_callback: ProgressCallback | None = None,
 ) -> IncrementalScanResult:
     if options.batch_size < 1:
-        raise ValueError("batch_size muss mindestens 1 sein")
+        raise ValueError("Die Autosave-Menge muss mindestens 1 Datei betragen.")
+    if options.autosave_seconds <= 0:
+        raise ValueError("Der Autosave-Abstand muss größer als 0 Sekunden sein.")
     if options.max_files is not None and options.max_files < 1:
-        raise ValueError("max_files muss mindestens 1 sein")
+        raise ValueError("Die Dateigrenze muss mindestens 1 sein.")
     root = options.root.expanduser().resolve(strict=True)
     if not root.is_dir():
-        raise NotADirectoryError(f"Kein Verzeichnis: {root}")
+        raise NotADirectoryError(f"Der gewählte Ordner ist nicht vorhanden: {root}")
 
     with IndexProcessLock(options.database, "index rescan", options.lock_timeout_seconds):
         with IndexDatabase(options.database) as database:
@@ -330,15 +337,22 @@ def incremental_rescan(
             else:
                 baseline = database.session(options.baseline_session_id)
                 if str(baseline["status"]) != "complete":
-                    raise IndexErrorBase("Die Baseline-Sitzung muss vollständig abgeschlossen sein")
+                    raise IndexErrorBase(
+                        "Der Vergleichsstand ist noch nicht vollständig abgeschlossen."
+                    )
                 if str(baseline["root"]) != str(root):
-                    raise IndexErrorBase("Baseline und Re-Scan verwenden unterschiedliche Wurzelpfade")
+                    raise IndexErrorBase(
+                        "Der frühere Scan gehört zu einem anderen Stammordner."
+                    )
             if baseline is None:
-                raise IndexErrorBase("Keine abgeschlossene Baseline vorhanden. Zuerst 'index build' ausführen.")
+                raise IndexErrorBase(
+                    "Es gibt noch keinen vollständigen Ausgangsstand. Starte zuerst "
+                    "'datenbanktool index build'. (Technisch: keine Baseline.)"
+                )
             baseline_id = int(baseline["id"])
             hash_duplicates, large_file_bytes, follow_symlinks = _resolved_settings(options, baseline)
             if large_file_bytes < 0:
-                raise ValueError("large_file_bytes darf nicht negativ sein")
+                raise ValueError("Die Grenze für große Dateien darf nicht negativ sein.")
             payload = {
                 "scan_mode": "incremental",
                 "baseline_session_id": baseline_id,
@@ -353,7 +367,11 @@ def incremental_rescan(
             if resumable is None:
                 session_id = database.create_session(
                     root,
-                    {**payload, "batch_size": options.batch_size},
+                    {
+                        **payload,
+                        "batch_size": options.batch_size,
+                        "autosave_seconds": options.autosave_seconds,
+                    },
                     fingerprint,
                     scan_mode="incremental",
                     parent_session_id=baseline_id,
@@ -361,7 +379,9 @@ def incremental_rescan(
             else:
                 session_id = int(resumable["id"])
                 if int(resumable["parent_session_id"]) != baseline_id:
-                    raise IndexErrorBase("Wiederaufnahme-Baseline stimmt nicht mehr überein")
+                    raise IndexErrorBase(
+                        "Der gespeicherte Zwischenstand passt nicht mehr zum Vergleichsstand."
+                    )
                 database.set_running(session_id)
             _emit(
                 database,
@@ -369,8 +389,15 @@ def incremental_rescan(
                 session_id=session_id,
                 phase="scanning",
                 kind="resume" if resumed else "start",
-                message="Inkrementeller Re-Scan wird fortgesetzt" if resumed else "Inkrementeller Re-Scan gestartet",
-                details={"baseline_session_id": baseline_id},
+                message=(
+                    "Änderungsprüfung wird am letzten sicheren Stand fortgesetzt"
+                    if resumed
+                    else "Änderungsprüfung gestartet"
+                ),
+                details={
+                    "baseline_session_id": baseline_id,
+                    "autosave_seconds": options.autosave_seconds,
+                },
             )
             try:
                 session = database.session(session_id)
@@ -379,6 +406,7 @@ def incremental_rescan(
                     errors: list[ScanError] = []
                     checkpoint = session["last_relative_path"]
                     processed_this_run = 0
+                    last_save = monotonic()
                     for path in iter_paths(root, follow_symlinks, checkpoint, errors):
                         if options.max_files is not None and processed_this_run >= options.max_files:
                             if items or errors:
@@ -390,7 +418,7 @@ def incremental_rescan(
                                 session_id=session_id,
                                 phase="scanning",
                                 kind="interrupted",
-                                message="Dateigrenze erreicht; Re-Scan kann sicher fortgesetzt werden",
+                                message="Dateigrenze erreicht; sichere Fortsetzung möglich",
                                 current=database.latest_status().imported_count,
                             )
                             return _result(database, session_id, baseline_id, resumed)
@@ -414,21 +442,27 @@ def incremental_rescan(
                             errors.append(ScanError(path=relative_path, operation="stat", message=str(error)))
                         checkpoint = relative_path
                         processed_this_run += 1
-                        if len(items) + len(errors) >= options.batch_size:
+                        if (
+                            len(items) + len(errors) >= options.batch_size
+                            or _autosave_due(last_save, options.autosave_seconds)
+                        ):
                             database.import_incremental_batch(session_id, items, errors, checkpoint)
+                            database.durable_checkpoint()
                             items.clear()
                             errors.clear()
+                            last_save = monotonic()
                             _emit(
                                 database,
                                 progress_callback,
                                 session_id=session_id,
                                 phase="scanning",
-                                kind="batch",
-                                message="Re-Scan-Batch verglichen und bestätigt",
+                                kind="autosave",
+                                message="Zwischenstand sicher gespeichert",
                                 current=database.latest_status().imported_count,
                             )
                     if items or errors:
                         database.import_incremental_batch(session_id, items, errors, checkpoint)
+                        database.durable_checkpoint()
                     database.set_incremental_stage(session_id, "comparing", phase="finalizing")
 
                 if str(database.session(session_id)["incremental_stage"]) == "comparing":
@@ -437,6 +471,7 @@ def incremental_rescan(
                     if options.detect_moves_by_hash:
                         hash_moves = _hash_added_move_candidates(database, root, session_id, baseline_id)
                     removed = _record_removed(database, session_id, baseline_id)
+                    database.durable_checkpoint()
                     database.set_incremental_stage(
                         session_id,
                         "hashing" if hash_duplicates else "finalizing",
@@ -448,7 +483,7 @@ def incremental_rescan(
                         session_id=session_id,
                         phase="comparing",
                         kind="complete",
-                        message="Änderungsabgleich abgeschlossen",
+                        message="Änderungen vollständig verglichen",
                         details={
                             "inode_moves": inode_moves,
                             "hash_moves": hash_moves,
@@ -463,6 +498,7 @@ def incremental_rescan(
                     errors = []
                     checkpoint = session["last_hash_path"]
                     hashed = 0
+                    last_save = monotonic()
                     for candidate in database.hash_candidates(session_id, checkpoint):
                         relative_path = str(candidate["relative_path"])
                         try:
@@ -471,21 +507,27 @@ def incremental_rescan(
                             errors.append(ScanError(path=relative_path, operation="sha256", message=str(error)))
                         checkpoint = relative_path
                         hashed += 1
-                        if len(hashes) + len(errors) >= options.batch_size:
+                        if (
+                            len(hashes) + len(errors) >= options.batch_size
+                            or _autosave_due(last_save, options.autosave_seconds)
+                        ):
                             database.update_hash_batch(session_id, hashes, errors, checkpoint)
+                            database.durable_checkpoint()
                             hashes.clear()
                             errors.clear()
+                            last_save = monotonic()
                             _emit(
                                 database,
                                 progress_callback,
                                 session_id=session_id,
                                 phase="hashing",
-                                kind="batch",
-                                message="Nur neue oder geänderte Hash-Kandidaten verarbeitet",
+                                kind="autosave",
+                                message="Prüfsummen-Zwischenstand sicher gespeichert",
                                 current=hashed,
                             )
                     if hashes or errors:
                         database.update_hash_batch(session_id, hashes, errors, checkpoint)
+                        database.durable_checkpoint()
                     database.set_incremental_stage(session_id, "finalizing", phase="finalizing")
 
                 if (
@@ -500,10 +542,21 @@ def incremental_rescan(
                         session_id=session_id,
                         phase="complete",
                         kind="complete",
-                        message="Inkrementeller Re-Scan erfolgreich abgeschlossen",
+                        message="Änderungsprüfung erfolgreich abgeschlossen",
                         current=database.latest_status().imported_count,
                         details={"duplicate_groups": groups, **database.change_counts(session_id)},
                     )
+            except KeyboardInterrupt:
+                database.mark_interrupted(session_id)
+                _emit(
+                    database,
+                    progress_callback,
+                    session_id=session_id,
+                    phase=str(database.session(session_id)["phase"]),
+                    kind="interrupted",
+                    message="Abgebrochen; letzter sicherer Zwischenstand bleibt erhalten",
+                )
+                raise
             except Exception as error:
                 database.mark_failed(session_id, str(error))
                 _emit(
@@ -512,7 +565,7 @@ def incremental_rescan(
                     session_id=session_id,
                     phase=str(database.session(session_id)["phase"]),
                     kind="failed",
-                    message="Inkrementeller Re-Scan fehlgeschlagen",
+                    message="Änderungsprüfung konnte nicht abgeschlossen werden",
                     details={"error": str(error)},
                 )
                 raise
