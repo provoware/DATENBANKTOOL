@@ -28,7 +28,7 @@ class GuidedRecoveryTests(unittest.TestCase):
                 root=root,
                 database=database,
                 max_files=1,
-                autosave_seconds=0.0,
+                autosave_seconds=0.01,
             )
         )
         self.assertEqual(result.status, "interrupted")
