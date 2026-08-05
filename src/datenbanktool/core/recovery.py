@@ -106,6 +106,7 @@ def _candidate_from_record(record: dict[str, object]) -> RecoveryCandidate | Non
     operation_label = (
         "erste Ordnerprüfung" if operation == "build" else "Änderungsprüfung"
     )
+    record_updated = str(record.get("updated_utc") or "")
     base = {
         "record_id": str(record.get("record_id") or ""),
         "command": _resume_command(arguments),
@@ -113,7 +114,6 @@ def _candidate_from_record(record: dict[str, object]) -> RecoveryCandidate | Non
         "operation_label": operation_label,
         "root": str(root),
         "database": str(database),
-        "updated_utc": str(record.get("updated_utc") or ""),
     }
     if not root.is_dir():
         return RecoveryCandidate(
@@ -122,6 +122,7 @@ def _candidate_from_record(record: dict[str, object]) -> RecoveryCandidate | Non
             status=str(record.get("status") or "unbekannt"),
             phase="nicht geprüft",
             imported_count=0,
+            updated_utc=record_updated,
             resumable=False,
             validation_label="Ordner nicht verfügbar",
             validation_detail=(
@@ -136,6 +137,7 @@ def _candidate_from_record(record: dict[str, object]) -> RecoveryCandidate | Non
             status=str(record.get("status") or "unbekannt"),
             phase="nicht geprüft",
             imported_count=0,
+            updated_utc=record_updated,
             resumable=False,
             validation_label="Indexdatei nicht verfügbar",
             validation_detail=(
@@ -153,6 +155,7 @@ def _candidate_from_record(record: dict[str, object]) -> RecoveryCandidate | Non
             status=str(record.get("status") or "unbekannt"),
             phase="Prüfung fehlgeschlagen",
             imported_count=0,
+            updated_utc=record_updated,
             resumable=False,
             validation_label="Index konnte nicht geprüft werden",
             validation_detail=f"Nur-Lese-SQLite-Prüfung fehlgeschlagen: {error}",
@@ -164,6 +167,7 @@ def _candidate_from_record(record: dict[str, object]) -> RecoveryCandidate | Non
             status=str(record.get("status") or "veraltet"),
             phase="kein fortsetzbarer Stand",
             imported_count=0,
+            updated_utc=record_updated,
             resumable=False,
             validation_label="Kein fortsetzbarer SQLite-Stand",
             validation_detail=(
@@ -193,9 +197,7 @@ def load_recovery_candidates() -> tuple[RecoveryCandidate, ...]:
         for record in load_resume_records()
         if (candidate := _candidate_from_record(record)) is not None
     ]
-    return tuple(
-        sorted(candidates, key=lambda item: item.updated_utc, reverse=True)
-    )
+    return tuple(sorted(candidates, key=lambda item: item.updated_utc, reverse=True))
 
 
 def load_recovery_candidate() -> RecoveryCandidate | None:
