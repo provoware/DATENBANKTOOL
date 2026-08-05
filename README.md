@@ -1,27 +1,27 @@
 # DATENBANKTOOL
 
-**Erledigt:** begrenzte Mehrfachliste unabhängiger Wiederanläufe, getrennte Prüfung und Auswahl je Indexdatei, bewusstes Einzelverwerfen, optionale geprüfte Konfigurationssicherungen vor Vorlagenänderungen, Sicherungsübersicht, Autosave, Crashberichte und SQLite-Härtung.
+**Erledigt:** geführte Konfigurations-Wiederherstellung mit Nur-Lese-Vergleich, exakter Einzelauswahl, automatischer geprüfter Rückfallsicherung und automatischem Rückfall bei fehlgeschlagener Nachprüfung; außerdem Mehrfach-Wiederanlauf, Konfigurationsvorsicherungen, Sicherungskatalog, Autosave, Crashberichte und SQLite-Härtung.
 
 **Offen:** reale Laienabnahme auf einem Kubuntu-Zielsystem.
 
-**Entwicklungsfortschritt:** **99 %** · **62 Hauptpunkte erledigt** · **1 Hauptpunkt offen**.
+**Entwicklungsfortschritt:** **99 %** · **63 Hauptpunkte erledigt** · **1 Hauptpunkt offen**.
 
-**Mögliche Upgrades aus `UPGRADE_POOL.md`:** Wiederanlauf-Diagnoseexport, geführtes Wiederherstellen einer Konfigurationssicherung, Mehrordner-Zeitreihe und später eine barrierefreie grafische Oberfläche.
+**Mögliche Upgrades aus `UPGRADE_POOL.md`:** Wiederanlauf-Diagnosebefehl, Wiederherstellungsprotokoll, Mehrordner-Zeitreihe und später eine barrierefreie grafische Oberfläche.
 
-> Findet, erklärt und vergleicht große Dateisammlungen, ohne persönliche Dateien automatisch zu verändern. Technisch: lokales Linux-Indexwerkzeug mit SQLite.
+> Lokales Linux-Indexwerkzeug für große Dateisammlungen. Persönliche Originaldateien werden nicht automatisch verändert.
 
 ## Projektstatus
 
 | Bereich | Stand |
 |---|---|
-| Projektversion | `0.17.0-alpha.1` |
-| Paketversion | `0.17.0a1` |
+| Projektversion | `0.18.0-alpha.1` |
+| Paketversion | `0.18.0a1` |
 | Python | `>=3.10` |
 | SQLite-Schema | `3` |
 | Wiederanlauflimit | **12 verschiedene Indexdateien** |
 | Originaldateiänderungen | **technisch gesperrt** |
 | Externe Laufzeitabhängigkeiten | **0** |
-| Automatische Tests | **130 unter Python 3.10 und 3.12** |
+| Automatische Tests | **139 unter Python 3.10 und 3.12** |
 | Reale Laienabnahme | **offen** |
 
 ## Einfach starten
@@ -30,94 +30,107 @@
 datenbanktool start
 ```
 
-Die Startseite zeigt alle gespeicherten Wiederanläufe verschiedener Indexdateien in einer begrenzten Liste. Jeder Eintrag wird getrennt und nur lesend gegen Ordner, Indexdatei und SQLite-Sitzung geprüft.
+Menüpunkt **7 – Sicherungen verwalten** bietet:
 
-Je Eintrag erscheinen:
+- Sicherungen anzeigen und prüfen,
+- neue Indexsicherung erstellen,
+- eine Konfigurationssicherung vergleichen und kontrolliert wiederherstellen,
+- genau eine erkannte Sicherung nach Bestätigung löschen.
 
-- Art der Prüfung,
-- verständlicher Prüfstatus,
-- Ordner,
-- Indexdatei,
-- gespeicherte Scan-Nummer und Dateizahl,
-- vollständiger geprüfter Befehl mit genau einem `--resume`.
-
-Danach kann genau dieser Eintrag:
-
-1. fortgesetzt werden,
-2. für später erhalten bleiben,
-3. bewusst verworfen werden.
-
-Nicht mehr verfügbare Ordner oder Indexdateien bleiben als nicht startbare Hinweise sichtbar, bis sie ausdrücklich einzeln verworfen werden. Ein erfolgreicher Scan entfernt nur seinen eigenen Eintrag. Die Ausführung erfolgt als Argumentliste ohne Shell-Auswertung.
-
-### Begrenzung und Deduplizierung
-
-- höchstens **12** Wiederanlaufeinträge,
-- höchstens ein Eintrag pro normalisierter Indexdatei,
-- ein neuerer Lauf derselben Indexdatei aktualisiert den vorhandenen Eintrag,
-- das Begrenzen verändert oder löscht keine Index- oder Originaldatei,
-- die Statusdatei ist mit Dateimodus `0600` geschützt,
-- Zugriffe werden über eine lokale Dateisperre koordiniert.
-
-## Autosave und direkte Wiederaufnahme
-
-Beim Aufbau oder Aktualisieren einer Dateiliste wird spätestens nach **5 Sekunden** oder **500 verarbeiteten Einträgen** gespeichert – je nachdem, was zuerst eintritt.
+## Konfigurationssicherung zuerst nur vergleichen
 
 ```bash
-datenbanktool index build ~/Daten --database index.sqlite3 --resume
-datenbanktool index rescan ~/Daten --database index.sqlite3 --resume
+datenbanktool index backups compare index.sqlite3 \
+  /pfad/search-presets.json.backup-ZEIT.json
 ```
 
-Eine gerade einzeln gehashte sehr große Datei kann nach einem Absturz erneut geprüft werden. Bereits bestätigte Batches bleiben erhalten.
-
-## Konfigurationssicherung vor Vorlagenänderungen
-
-Vor dem bewussten Ersetzen oder Löschen einer Such- oder Zeitreihen-Vorlage kann optional eine neue, geprüfte JSON-Sicherung erstellt werden:
+Maschinenlesbar:
 
 ```bash
-datenbanktool index presets save Audio \
-  --replace \
-  --backup-before-change
+datenbanktool index backups compare index.sqlite3 SICHERUNG --json
+```
 
-datenbanktool index presets delete Audio \
-  --backup-before-change \
+Der Vergleich ist vollständig lesend. Er zeigt:
+
+- zugehörige aktive Such- oder Zeitreihen-Konfiguration,
+- Anzahl der Vorlagen in Sicherung und aktiver Datei,
+- Vorlagen, die hinzukämen,
+- Vorlagen, die entfernt würden,
+- Vorlagen, die ersetzt würden,
+- unveränderte Vorlagen,
+- SHA-256 beider Dateien.
+
+Es wird dabei nichts gesichert, überschrieben, wiederhergestellt oder gelöscht.
+
+## Genau eine Konfigurationssicherung wiederherstellen
+
+```bash
+datenbanktool index backups restore index.sqlite3 SICHERUNG \
+  --confirm-name EXAKTER_DATEINAME \
   --yes
-
-datenbanktool index timeline-presets save Musik Archiv \
-  --replace \
-  --backup-before-change
 ```
 
-Die Startseite fragt bei Ersetzen und Löschen verständlich, ob diese Sicherung erstellt werden soll.
+Der Sicherheitsablauf ist fest:
 
-Der Sicherungsvertrag:
+1. Die Sicherung muss im frisch aufgebauten Sicherungskatalog vorkommen.
+2. Sie muss eine grün geprüfte Such- oder Zeitreihen-Konfigurationssicherung sein.
+3. Sicherung und aktive Datei werden erneut vollständig verglichen.
+4. Der Sicherungsdateiname muss exakt wiederholt werden.
+5. `--yes` ist zwingend.
+6. Unmittelbar vor dem Überschreiben wird eine neue geprüfte Rückfallsicherung der aktiven Datei erstellt.
+7. Aktive Datei und ausgewählte Sicherung werden nochmals per SHA-256 gegen den Vergleich geprüft.
+8. Die Wiederherstellung erfolgt atomar mit Dateimodus `0600`.
+9. Inhalt, Schema, Vorlagen und SHA-256 werden danach erneut geprüft.
+10. Scheitert diese Nachprüfung, wird die aktive Datei automatisch aus der neuen Rückfallsicherung zurückgesetzt und erneut geprüft.
 
-- Quelle muss eine normale Datei und darf kein Symlink sein,
-- UTF-8-JSON, oberstes Objekt, `schema_version` und `presets`-Liste werden geprüft,
-- Sicherung erhält einen UTC-Zeitstempel und Dateimodus `0600`,
-- Inhalt und SHA-256 werden nach dem Schreiben erneut geprüft,
-- eine fehlerhafte Sicherung wird nicht freigegeben,
-- die eigentliche Vorlagenänderung startet erst nach erfolgreicher Sicherung,
-- ohne `--backup-before-change` entsteht keine Sicherung,
-- vorhandene Sicherungen werden niemals automatisch rotiert oder gelöscht.
+Die ausgewählte Sicherung und die Rückfallsicherung bleiben erhalten. Es gibt keine automatische Auswahl, Rotation, Alterslöschung oder Sammellöschung.
 
-## Sicherungsübersicht
+### Bewusste Ablehnungen
+
+Nicht wiederherstellbar sind:
+
+- Indexsicherungen über diesen Konfigurationsassistenten,
+- beschädigte oder gelb/rot bewertete JSON-Dateien,
+- unbekannte oder manuell beliebig benannte Pfade,
+- symbolische Verknüpfungen,
+- Sicherungen ohne zugehörige aktive Konfigurationsdatei,
+- bytegenau bereits identische Sicherungen.
+
+## Optionale Sicherung vor Vorlagenänderungen
+
+Vor dem Ersetzen oder Löschen einer Such- oder Zeitreihen-Vorlage kann weiterhin eine neue geprüfte JSON-Sicherung erzeugt werden:
+
+```bash
+datenbanktool index presets save Audio --replace --backup-before-change
+datenbanktool index presets delete Audio --backup-before-change --yes
+datenbanktool index timeline-presets save Musik Archiv \
+  --replace --backup-before-change
+```
+
+Ohne `--backup-before-change` entsteht keine Sicherung. Vorhandene Sicherungen werden niemals automatisch rotiert oder gelöscht.
+
+## Mehrere unabhängige Wiederanläufe
+
+Die Startseite führt höchstens zwölf unterbrochene Scans verschiedener Indexdateien. Jeder Eintrag wird getrennt gegen Ordner, Indexdatei und SQLite-Sitzung geprüft und kann einzeln fortgesetzt, erhalten oder bewusst verworfen werden.
+
+Nicht verfügbare Ordner oder Indexdateien bleiben sichtbar, sind aber nicht startbar. Erfolg oder Verwerfen entfernt ausschließlich den ausgewählten internen Hinweis.
+
+## Sicherungsübersicht und Einzellöschung
 
 ```bash
 datenbanktool index backups list index.sqlite3
 datenbanktool index backups list index.sqlite3 --json
 ```
 
-Die Übersicht zeigt Typ, Dateiname, Pfad, Größe, UTC-Zeit, Alter, Status und technische Begründung. Neue Vorlagen-Sicherungen erscheinen dort als geprüfte Konfigurationssicherungen.
-
-### Genau eine Sicherung löschen
+Genau eine Sicherung löschen:
 
 ```bash
-datenbanktool index backups delete index.sqlite3 PFAD_ZUR_SICHERUNG \
+datenbanktool index backups delete index.sqlite3 SICHERUNG \
   --confirm-name EXAKTER_DATEINAME \
   --yes
 ```
 
-Eine Datei wird nur gelöscht, wenn sie im neu aufgebauten Katalog vorkommt, der Dateiname exakt bestätigt wurde, `--yes` gesetzt ist und das Ziel eine normale Datei ohne Symlink ist. Aktive Dateien, unbekannte Pfade und Sammellöschungen bleiben ausgeschlossen.
+Aktive Dateien, unbekannte Pfade, Verzeichnisse und Symlinks sind ausgeschlossen.
 
 ## Startklar prüfen
 
@@ -126,34 +139,13 @@ datenbanktool check
 datenbanktool check --database index.sqlite3
 ```
 
-Die Ausgabe nennt zuerst, was passiert ist, ob persönliche Dateien betroffen sind und was als Nächstes zu tun ist. Fachbegriffe folgen danach.
+## Sicherheitsgrenzen
 
-## Was bei einem Absturz erhalten bleibt
-
-- Konfigurationen und Berichte zeigen entweder den alten oder den vollständig neuen Stand.
+- Originaldateien bleiben schreibgeschützt.
+- CLI-Fachmodule verwenden keine Shell-Auswertung.
+- Konfigurationen werden atomar veröffentlicht und mit Datei- sowie Ordner-`fsync` abgesichert.
 - SQLite verwendet `WAL` und `synchronous=FULL`.
-- Scan-Zwischenstände besitzen bestätigte Fortsetzungspunkte.
-- Mehrere verschiedene Indexdateien verlieren ihre Wiederanlaufhinweise nicht gegenseitig.
-- Tastaturabbruch wird als **unterbrochen**, nicht als beschädigt gespeichert.
-- Unerwartete Programmfehler erzeugen einen lokalen Crashbericht.
-- Typische Passwort-, Token- und Secret-Werte werden ausgeblendet.
-- Originaldateien werden nicht automatisch verändert.
-
-Status, Crashberichte und die Wiederanlaufliste liegen unter:
-
-```text
-$XDG_STATE_HOME/datenbanktool/
-```
-
-Fallback:
-
-```text
-~/.local/state/datenbanktool/
-```
-
-## Wie weit reicht die Garantie?
-
-Der Softwarevertrag umfasst atomare Dateifreigabe, Datei- und Ordner-`fsync`, bestätigte SQLite-Transaktionen, getrennt validierte Wiederanläufe und geprüfte Sicherungen. Defekte Hardware, volles oder beschädigtes Dateisystem, falsche Controllercache-Zusagen, Kerneldefekte und physischer Verlust bleiben außerhalb des Anwendungsschutzes.
+- Hardwaredefekte, ein beschädigtes oder volles Dateisystem, Kerneldefekte und physischer Verlust bleiben außerhalb des Anwendungsschutzes.
 
 ## Entwicklung und Prüfung
 
