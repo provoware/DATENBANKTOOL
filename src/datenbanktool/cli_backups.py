@@ -9,10 +9,12 @@ from datenbanktool.cli_contract import CommandPolicy, bind_handler
 from datenbanktool.core.backup_catalog import delete_backup, list_backups
 from datenbanktool.core.config_restore import (
     ConfigRestoreComparison,
+    ConfigRestoreResult,
     compare_config_backup,
     restore_config_backup,
 )
 from datenbanktool.core.presentation import TrafficLight, traffic_text
+from datenbanktool.core.restore_audit import RestoreAuditResult, write_restore_audit_log
 
 
 def register_backup_catalog_parser(
@@ -65,6 +67,15 @@ def register_backup_catalog_parser(
     restoration.add_argument("--config-directory", type=Path)
     restoration.add_argument("--confirm-name", required=True)
     restoration.add_argument("--yes", action="store_true")
+    restoration.add_argument(
+        "--restore-log",
+        type=Path,
+        help=(
+            "Nach erfolgreicher Wiederherstellung genau ein neues JSON-Protokoll "
+            "ohne Konfigurationsinhalte schreiben. Vorhandene Dateien werden nicht "
+            "überschrieben."
+        ),
+    )
     restoration.add_argument("--json", action="store_true")
     bind_handler(
         restoration,
@@ -73,6 +84,7 @@ def register_backup_catalog_parser(
             "index.backups.restore",
             writes_backups=True,
             writes_configuration=True,
+            writes_reports=True,
         ),
     )
 
@@ -148,7 +160,11 @@ def _print_names(label: str, values: tuple[str, ...]) -> None:
 
 def _print_comparison(comparison: ConfigRestoreComparison) -> None:
     level = "yellow" if comparison.can_restore else "green"
-    label = "Wiederherstellung würde Änderungen ausführen" if comparison.can_restore else "Keine Änderung nötig"
+    label = (
+        "Wiederherstellung würde Änderungen ausführen"
+        if comparison.can_restore
+        else "Keine Änderung nötig"
+    )
     print(
         traffic_text(
             TrafficLight(level, label, comparison.validation_detail),
@@ -190,17 +206,21 @@ def run_backup_compare(arguments: argparse.Namespace) -> int:
     return 0
 
 
-def run_backup_restore(arguments: argparse.Namespace) -> int:
-    result = restore_config_backup(
-        arguments.database,
-        arguments.backup,
-        confirm_name=arguments.confirm_name,
-        yes=arguments.yes,
-        config_directory=arguments.config_directory,
-    )
-    if arguments.json:
-        print(json.dumps(result.to_dict(), ensure_ascii=False, indent=2))
-        return 0
+def _restore_payload(
+    result: ConfigRestoreResult,
+    audit: RestoreAuditResult | None,
+    audit_error: str | None,
+    *,
+    include_audit: bool,
+) -> dict[str, object]:
+    payload = result.to_dict()
+    if include_audit:
+        payload["restore_log"] = audit.to_dict() if audit is not None else None
+        payload["restore_log_error"] = audit_error
+    return payload
+
+
+def _print_restored(result: ConfigRestoreResult, arguments: argparse.Namespace) -> None:
     print(
         traffic_text(
             TrafficLight(
@@ -219,6 +239,54 @@ def run_backup_restore(arguments: argparse.Namespace) -> int:
         "Ausgewählte Sicherung und Rückfallsicherung bleiben erhalten. "
         "Es gibt keine automatische Rotation oder Löschung."
     )
+
+
+def run_backup_restore(arguments: argparse.Namespace) -> int:
+    result = restore_config_backup(
+        arguments.database,
+        arguments.backup,
+        confirm_name=arguments.confirm_name,
+        yes=arguments.yes,
+        config_directory=arguments.config_directory,
+    )
+    audit: RestoreAuditResult | None = None
+    audit_error: str | None = None
+    if arguments.restore_log is not None:
+        try:
+            audit = write_restore_audit_log(result, arguments.restore_log)
+        except (FileExistsError, OSError, ValueError) as error:
+            audit_error = f"{type(error).__name__}: {error}"
+
+    if arguments.json:
+        print(
+            json.dumps(
+                _restore_payload(
+                    result,
+                    audit,
+                    audit_error,
+                    include_audit=arguments.restore_log is not None,
+                ),
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+        return 1 if audit_error is not None else 0
+
+    _print_restored(result, arguments)
+    if audit is not None:
+        print(f"Wiederherstellungsprotokoll: {audit.path}")
+        print(f"Protokoll-SHA-256: {audit.sha256}")
+        print(
+            "Das Protokoll enthält nur UTC-Zeit, drei Dateipfade und drei SHA-256-Werte; "
+            "keine Konfigurationsinhalte oder Geheimnisse."
+        )
+    elif audit_error is not None:
+        print(
+            "Die Konfiguration wurde erfolgreich wiederhergestellt, aber das ausdrücklich "
+            "gewünschte Wiederherstellungsprotokoll konnte nicht geschrieben werden."
+        )
+        print(f"Technische Einzelheit: {audit_error}")
+        return 1
     return 0
 
 
