@@ -66,12 +66,18 @@ def _safe_write(path: Path, payload: dict[str, object]) -> bool:
     return True
 
 
-def previous_unfinished_run(state_directory: Path | None = None) -> dict[str, object] | None:
+def previous_unfinished_run(
+    state_directory: Path | None = None,
+    *,
+    ignore_process_id: int | None = None,
+) -> dict[str, object] | None:
     path = (state_directory or default_state_directory()) / "last-run.json"
     payload = _read_json(path)
-    if payload and payload.get("status") in {"running", "failed", "interrupted"}:
-        return payload
-    return None
+    if not payload or payload.get("status") not in {"running", "failed", "interrupted"}:
+        return None
+    if ignore_process_id is not None and payload.get("process_id") == ignore_process_id:
+        return None
+    return payload
 
 
 @dataclass(slots=True)
@@ -90,7 +96,7 @@ class RunJournal:
     ) -> "RunJournal":
         directory = state_directory or default_state_directory()
         path = directory / "last-run.json"
-        previous = previous_unfinished_run(directory)
+        previous = previous_unfinished_run(directory, ignore_process_id=os.getpid())
         payload: dict[str, object] = {
             "schema_version": _SCHEMA_VERSION,
             "status": "running",
