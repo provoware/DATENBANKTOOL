@@ -1,83 +1,146 @@
 # DATENBANKTOOL
 
-**Erledigt:** 100.000-Dateien-Large-Abnahme bestanden, geführte Zeitreihen-Vorlagenverwaltung umgesetzt, Registry-Versionierung bereinigt, schreibgeschützte SQLite-Analyse, Tabellenübersicht, validierte Text-/JSON-Ausgabe und automatische Tests.
+**Erledigt:** absturzsicheres Laufjournal, Crashberichte, zeit- und mengenbegrenztes Autosave, sichere Wiederaufnahme, SQLite-Härtung, dauerhaft atomare Konfigurationen/Exporte/Sicherungen, Startklar-Prüfung und stark vereinfachte Nutzeransprache.
 
-**Offen:** reale Laienabnahme, Mehrordner-Zeitreihe, Abnahmehistorie, weitere Datenbanktreiber und eine grafische Oberfläche.
+**Offen:** reale Laienabnahme auf einem Zielsystem.
 
-**Entwicklungsfortschritt:** **99 %** (Alpha-Funktionsstand stabil; reale Laienabnahme offen).
+**Entwicklungsfortschritt:** **99 %** · **58 Hauptpunkte erledigt** · **1 Hauptpunkt offen**.
 
-**Mögliche Upgrades aus `UPGRADE_POOL.md`:** Mehrordner-Zeitreihe, reale Laienabnahme, Abnahmehistorie und später barrierefreie GUI.
+**Mögliche Upgrades aus `UPGRADE_POOL.md`:** geführter Wiederherstellungsassistent, Mehrordner-Zeitreihe, Abnahmehistorie und später eine barrierefreie grafische Oberfläche.
 
-> Sicheres Linux-Werkzeug zum Finden, Prüfen und übersichtlichen Strukturieren großer Dateisammlungen.
+> Findet, erklärt und vergleicht große Dateisammlungen, ohne persönliche Dateien automatisch zu verändern. Technisch: lokales Linux-Indexwerkzeug mit SQLite.
 
 ## Projektstatus
 
 | Bereich | Stand |
 |---|---|
-| Projektversion | `0.14.0-alpha.1` |
-| Paketversion | `0.14.0a1` |
+| Projektversion | `0.15.0-alpha.1` |
+| Paketversion | `0.15.0a1` |
+| Python | `>=3.10` |
 | SQLite-Schema | `3` |
-| Entwicklungsfortschritt | **99 %** |
-| Erledigte Hauptpunkte | **54** |
-| Offene Hauptpunkte | **1** – reale Laienabnahme auf einem Zielsystem durchführen |
-| Automatische Originaldateiänderungen | **Gesperrt** |
+| Originaldateiänderungen | **technisch gesperrt** |
 | Externe Laufzeitabhängigkeiten | **0** |
-| Automatisierte Tests | **87/87** unter Python 3.10 und 3.12 |
-| Quick-Abnahme | **600 Dateien · 11/11 bestanden** |
-| Standard-Abnahme | **10.000 Dateien · 11/11 bestanden** |
-| Large-Abnahme | **100.000 Dateien · 11/11 bestanden · 218,722 s · 107.011.474 Byte Python-Peak** |
+| Reale Laienabnahme | **offen** |
 
-Das DATENBANKTOOL arbeitet standardmäßig rein lesend. Es erstellt einen lokalen, versionierten SQLite-Index und zeigt Dateibestände, Änderungen, Suchen, Ordnerberichte, Zeitreihen und sichere Exportberichte, ohne Originaldateien zu verändern. Es benötigt Python 3.10 oder neuer und keine zusätzlichen Laufzeitpakete.
-
-## Installation
-
-```bash
-python -m pip install -e .
-```
-
-## Verwendung
-
-Aktuelle Einstiegspunkte:
+## Einfach starten
 
 ```bash
 datenbanktool start
-datenbanktool help
-datenbanktool index build ~/Daten --database index.sqlite3
+```
+
+Prüfen, ob alles startklar ist:
+
+```bash
+datenbanktool check
+```
+
+Zusätzlich eine vorhandene Indexdatei prüfen:
+
+```bash
+datenbanktool check --database index.sqlite3
+```
+
+Die Ausgabe nennt zuerst verständlich, was los ist. Der Fachbegriff steht erst danach als technische Einzelheit.
+
+## Autosave und Wiederaufnahme
+
+Beim Aufbau oder Aktualisieren einer Dateiliste wird spätestens nach **5 Sekunden** oder **500 verarbeiteten Einträgen** gespeichert – je nachdem, was zuerst eintritt.
+
+```bash
+datenbanktool index build ~/Daten \
+  --database index.sqlite3 \
+  --autosave-seconds 5
+```
+
+Nach Abbruch oder Programmfehler denselben Schritt mit `--resume` fortsetzen:
+
+```bash
+datenbanktool index build ~/Daten \
+  --database index.sqlite3 \
+  --resume
+```
+
+Für eine Änderungsprüfung gilt dasselbe:
+
+```bash
+datenbanktool index rescan ~/Daten \
+  --database index.sqlite3 \
+  --resume
+```
+
+Eine gerade einzeln gelesene oder gehashte sehr große Datei kann nach einem Absturz erneut geprüft werden. Bereits bestätigte Dateien werden nicht erneut vollständig aufgebaut.
+
+## Was bei einem Absturz erhalten bleibt
+
+- Konfigurationen und Berichte zeigen entweder den alten oder den vollständig neuen Stand, niemals eine absichtlich freigegebene Halbdatei.
+- SQLite verwendet `WAL` und `synchronous=FULL`.
+- Scan-Zwischenstände werden fest bestätigt und besitzen einen Fortsetzungspunkt.
+- Ein normaler Tastaturabbruch wird als **unterbrochen**, nicht als beschädigt gespeichert.
+- Unerwartete Programmfehler erzeugen einen lokalen Crashbericht.
+- Werte hinter typischen Passwort-, Token- und Secret-Schaltern werden im Crashbericht ausgeblendet.
+- Originaldateien werden durch diese Fehlergrenze nicht automatisch verändert.
+
+Laufjournal und Crashberichte liegen standardmäßig hier:
+
+```text
+$XDG_STATE_HOME/datenbanktool/
+```
+
+Ohne gesetztes `XDG_STATE_HOME`:
+
+```text
+~/.local/state/datenbanktool/
+```
+
+## Wie weit reicht die Garantie?
+
+Der geprüfte **Softwarevertrag** garantiert:
+
+1. Schreiben in eine neue Datei, vollständiges Leeren des Dateipuffers und atomare Umschaltung.
+2. Bestätigung des Ordnerzustands nach der Umschaltung.
+3. Dauerhafte SQLite-Transaktionen mit fortsetzbaren Checkpoints.
+4. Kontrollierte Rückgabecodes: `2` für verständliche Bedienfehler, `70` für unerwartete Programmfehler und `130` für Tastaturabbruch.
+5. Startdiagnose, Integritätsprüfung, Sicherheitskopie und Wiederaufnahme.
+
+Keine Software kann absolute Lauffähigkeit bei defekter Hardware, vollem Datenträger, fehlerhaftem Dateisystem oder Controller, Kernelabsturz, physischem Verlust oder einer Stromunterbrechung mit nicht wahrheitsgemäßem Gerätepuffer garantieren. Deshalb bleiben geprüfte Sicherungen notwendig:
+
+```bash
+datenbanktool index backup index.sqlite3
+```
+
+## Sichere Wiederherstellung
+
+```bash
+datenbanktool check --database index.sqlite3
 datenbanktool index status index.sqlite3
+datenbanktool index backup index.sqlite3
+datenbanktool index repair index.sqlite3
 ```
 
-`start` öffnet die geführte Terminal-Bedienung. `help` erklärt Themen in einfacher Sprache. `index build` erstellt einen lokalen Index für einen Ordner. `index status` zeigt den Zustand eines vorhandenen Index. Weitere aktuelle Indexbefehle sind unter anderem `search`, `folders`, `changes`, `folder-compare`, `folder-timeline`, `presets` und `timeline-presets`. Eingabefehler enden mit Statuscode `2`.
+`repair` erstellt standardmäßig zuerst eine Sicherheitskopie. `restore` erzeugt standardmäßig zusätzlich eine Rückfallsicherung des aktuellen Index.
 
-## Lokale Zeitreihen-Vorlagen
+## Nutzeransprache
 
-Häufig geprüfte relative Ordnerpfade können unter einem verständlichen Namen gespeichert werden. Eine Vorlage enthält bewusst **keinen Datenbankpfad**, keine Scan-Ergebnisse und keine Originaldateien.
+Öffentliche Einstiege und neue Fehlermeldungen folgen diesem Aufbau:
+
+1. **Alltagssprache:** Was ist passiert?
+2. **Auswirkung:** Wurden persönliche Dateien verändert?
+3. **Nächster Schritt:** Was ist jetzt zu tun?
+4. **Fachbegriff:** Technische Einzelheit in Klammern oder einer eigenen Zeile.
+
+Beispiel:
+
+```text
+Der letzte bestätigte Zwischenstand bleibt erhalten.
+Starte denselben Scan mit --resume erneut.
+Technische Einzelheit: Wiederaufnahme am Checkpoint.
+```
+
+## Entwicklung und Prüfung
 
 ```bash
-datenbanktool index timeline-presets save Musik Musik/Archiv \
-  --description "Wöchentliche Größenprüfung"
+python -m compileall -q src tests
+PYTHONWARNINGS=error python -m unittest discover -s tests -v
 ```
 
-Verwalten:
-
-```bash
-datenbanktool index timeline-presets list
-datenbanktool index timeline-presets show Musik
-datenbanktool index timeline-presets delete Musik --yes
-```
-
-Sicherheitsvertrag:
-
-- Ordnerpfade sind relativ; absolute Pfade und `..` werden abgelehnt.
-- Namen besitzen 1 bis 64 Zeichen, Beschreibungen höchstens 240 Zeichen.
-- Gleichnamige Vorlagen werden ohne `--replace` nicht überschrieben.
-- Löschen benötigt `--yes`.
-- Die JSON-Konfiguration wird atomar mit Dateiberechtigung `0600` geschrieben.
-- Standardpfad: `$XDG_CONFIG_HOME/datenbanktool/timeline-presets.json` beziehungsweise `~/.config/datenbanktool/timeline-presets.json`.
-
-## Entwicklung
-
-```bash
-PYTHONPATH=src python -m unittest discover -s tests -v
-```
-
-Die technische Paketversion wird als PEP 440 in `registry.json` gepflegt (`0.14.0a1`). Die menschenlesbare Projektversion lautet `0.14.0-alpha.1`. Architektur und Qualitätsregeln beschreibt die [Entwicklerdokumentation](ENTWICKLERDOKU.md).
+Die maßgebliche Version steht in `registry.json`. Architektur, Grenzen und Nachweise beschreibt die [Entwicklerdokumentation](ENTWICKLERDOKU.md).
