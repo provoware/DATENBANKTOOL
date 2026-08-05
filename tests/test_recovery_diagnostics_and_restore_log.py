@@ -184,7 +184,7 @@ class RestoreLogTests(unittest.TestCase):
                 audit["sha256"]["active_after_restore"],
                 audit["sha256"]["selected_backup"],
             )
-            self.assertNotIn("presets", audit_text)
+            self.assertNotIn("presets", audit)
             self.assertNotIn("NICHT_INS_PROTOKOLL_SECRET_TOKEN", audit_text)
 
     def test_no_restore_log_is_created_without_explicit_option(self) -> None:
