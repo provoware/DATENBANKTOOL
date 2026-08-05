@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "datenbanktool"
-version = "0.16.0a1"
-description = "Absturzsicheres lokales Linux-Werkzeug mit geführtem Wiederanlauf und geprüften Sicherungen"
+version = "0.17.0a1"
+description = "Absturzsicheres lokales Linux-Werkzeug mit mehreren geführten Wiederanläufen und geprüften Konfigurationssicherungen"
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [{ name = "provoware" }]
