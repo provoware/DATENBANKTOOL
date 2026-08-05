@@ -14,12 +14,16 @@ from datenbanktool.core.backup_catalog import delete_backup
 from datenbanktool.core.incremental import IncrementalScanOptions, incremental_rescan
 from datenbanktool.core.index_admin import backup_index
 from datenbanktool.core.index_database import IndexBuildOptions, build_index
-from datenbanktool.core.recovery import load_recovery_candidate
+from datenbanktool.core.recovery import (
+    discard_recovery_candidate,
+    load_recovery_candidate,
+    load_recovery_candidates,
+)
 from datenbanktool.core.run_journal import RunJournal, load_resume_record
 
 
 class RecoveryEdgeTests(unittest.TestCase):
-    def test_stale_marker_is_removed_when_database_has_no_resumable_session(self) -> None:
+    def test_stale_marker_stays_visible_until_consciously_discarded(self) -> None:
         with TemporaryDirectory() as directory, patch.dict(
             os.environ,
             {"XDG_STATE_HOME": directory, "XDG_CONFIG_HOME": directory},
@@ -40,6 +44,12 @@ class RecoveryEdgeTests(unittest.TestCase):
             journal.record_active_command(command)
             self.assertIsNotNone(load_resume_record())
             self.assertIsNone(load_recovery_candidate())
+            candidates = load_recovery_candidates()
+            self.assertEqual(len(candidates), 1)
+            self.assertFalse(candidates[0].resumable)
+            self.assertIn("Kein fortsetzbarer", candidates[0].validation_label)
+            self.assertIsNotNone(load_resume_record())
+            self.assertTrue(discard_recovery_candidate(candidates[0].record_id))
             self.assertIsNone(load_resume_record())
 
     def test_incremental_interruption_creates_verified_rescan_candidate(self) -> None:
@@ -80,6 +90,7 @@ class RecoveryEdgeTests(unittest.TestCase):
             assert candidate is not None
             self.assertEqual(candidate.operation, "rescan")
             self.assertEqual(candidate.operation_label, "Änderungsprüfung")
+            self.assertTrue(candidate.resumable)
             self.assertEqual(candidate.command[-1], "--resume")
 
 
