@@ -4,10 +4,10 @@ import csv
 import html
 import io
 import json
-import os
 from dataclasses import dataclass
 from pathlib import Path
 
+from datenbanktool.core.durable_files import atomic_write_bytes
 from datenbanktool.core.folder_compare import FolderComparisonPage
 
 
@@ -20,20 +20,14 @@ class FolderComparisonExportResult:
 
 
 def _atomic_bytes(path: Path, content: bytes, *, overwrite: bool) -> str:
-    target = path.expanduser().resolve(strict=False)
-    if target.exists() and not overwrite:
-        raise FileExistsError(
-            f"Bericht existiert bereits: {target}. Nutze --overwrite-report."
-        )
-    target.parent.mkdir(parents=True, exist_ok=True)
-    temporary = target.with_name(f".{target.name}.tmp-{os.getpid()}")
     try:
-        temporary.write_bytes(content)
-        temporary.replace(target)
-    except Exception:
-        temporary.unlink(missing_ok=True)
-        raise
-    return str(target)
+        return atomic_write_bytes(path, content, overwrite=overwrite)
+    except FileExistsError as error:
+        target = path.expanduser().resolve(strict=False)
+        raise FileExistsError(
+            f"Der Bericht existiert schon: {target}. Wähle einen neuen Namen oder "
+            "nutze bewusst --overwrite-report."
+        ) from error
 
 
 def _human_size(size_bytes: int) -> str:
