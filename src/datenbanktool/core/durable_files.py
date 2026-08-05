@@ -5,6 +5,11 @@ import tempfile
 from pathlib import Path
 
 
+def _absolute_path(path: Path) -> Path:
+    """Normalize spelling without following the final path component."""
+    return Path(os.path.abspath(os.fspath(path.expanduser())))
+
+
 def _sync_directory(path: Path) -> None:
     """Persist a completed directory entry change where the platform supports it."""
     flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
@@ -35,15 +40,21 @@ def publish_temp_file(
     mode: int | None = None,
 ) -> str:
     """Durably publish a fully prepared same-directory temporary file."""
-    source = temporary.expanduser().resolve(strict=True)
-    destination = target.expanduser().resolve(strict=False)
+    source = _absolute_path(temporary)
+    destination = _absolute_path(target)
+    if source.is_symlink() or not source.is_file():
+        raise ValueError("Temporärdatei muss eine normale Datei sein")
     if source.parent != destination.parent:
         raise ValueError("Temporärdatei und Ziel müssen im selben Ordner liegen")
+    if destination.is_symlink():
+        raise ValueError(f"Symbolische Verknüpfung wird nicht überschrieben: {destination}")
     if destination.exists() and not overwrite:
         raise FileExistsError(f"Datei existiert bereits: {destination}")
     sync_file(source)
     if mode is not None:
         os.chmod(source, mode)
+    if destination.is_symlink():
+        raise ValueError(f"Symbolische Verknüpfung wird nicht überschrieben: {destination}")
     if destination.exists() and not overwrite:
         raise FileExistsError(f"Datei existiert bereits: {destination}")
     os.replace(source, destination)
@@ -59,7 +70,9 @@ def atomic_write_bytes(
     mode: int | None = None,
 ) -> str:
     """Write, flush and atomically publish one file without exposing partial data."""
-    target = path.expanduser().resolve(strict=False)
+    target = _absolute_path(path)
+    if target.is_symlink():
+        raise ValueError(f"Symbolische Verknüpfung wird nicht überschrieben: {target}")
     if target.exists() and not overwrite:
         raise FileExistsError(f"Datei existiert bereits: {target}")
     target.parent.mkdir(parents=True, exist_ok=True)
@@ -103,12 +116,14 @@ def atomic_write_text(
 
 def durable_remove(path: Path, *, missing_ok: bool = False) -> bool:
     """Remove exactly one regular file and persist the directory entry change."""
-    target = path.expanduser().resolve(strict=False)
+    target = _absolute_path(path)
+    if target.is_symlink():
+        raise ValueError(f"Symbolische Verknüpfung wird nicht entfernt: {target}")
     if not target.exists():
         if missing_ok:
             return False
         raise FileNotFoundError(f"Datei nicht gefunden: {target}")
-    if target.is_symlink() or not target.is_file():
+    if not target.is_file():
         raise ValueError(f"Nur eine normale Datei darf entfernt werden: {target}")
     target.unlink()
     _sync_directory(target.parent)
