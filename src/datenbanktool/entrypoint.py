@@ -7,7 +7,7 @@ from typing import Sequence, TextIO
 
 from datenbanktool import __version__, cli
 from datenbanktool.core.run_journal import RunJournal
-from datenbanktool.core.terminal_home import TerminalHome
+from datenbanktool.core.terminal_home_restore_audit import TerminalHome
 from datenbanktool.help_command import run_help_command
 
 
