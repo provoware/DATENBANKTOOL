@@ -1,52 +1,49 @@
 # Schwachstellen und Grenzen
 
-Stand: Version `0.20.0-alpha.1`
+Stand: Version `0.21.0-alpha.1`
 
 ## Behobene Schwachstellen
 
-1. **Restore-Protokoll nur beim Schreiben geprüft:** `index backups verify-log` kann einen vorhandenen Nachweis später erneut vollständig kontrollieren.
-2. **Unklares oder erweitertes JSON-Schema:** Fehlende und zusätzliche Felder werden abgelehnt; unterstützt wird ausschließlich das feste Schema `1`.
-3. **Zeitangaben ohne belastbare Zeitzone:** Beide Zeiten müssen gültige ISO-8601-Werte mit UTC-Offset null sein.
-4. **Unlogische Zeitreihenfolge:** Die Protokollerzeugung darf nicht vor dem abgeschlossenen Restore liegen.
-5. **Beliebige oder doppelte Pfade:** Genau drei unterschiedliche absolute Dateipfade sind erforderlich.
-6. **Unklare Prüfsummen:** Genau drei benannte kleingeschriebene SHA-256-Werte mit jeweils 64 Hexzeichen sind zulässig.
-7. **Symlink-Folgen beim Prüfen:** Protokoll und referenzierte Dateien werden mit `O_NOFOLLOW` geöffnet; Symlinks werden nicht verfolgt.
-8. **Große Datei vollständig im Speicher:** Referenzdateien werden in Blöcken gestreamt und gehasht.
-9. **Fehlen und Abweichung vermischt:** Fehlende Datei wird gelb als unvollständiger Nachweis, Hashabweichung rot als Integritätsfehler dargestellt.
-10. **Prüfbefehl mit versteckter Wirkung:** Die Policy besitzt keine Schreibwirkung; es gibt keinen Restore-, Änderungs- oder Löschhandler.
+1. **Geführter Restore konnte kein optionales Protokollziel erfassen:** Nach exakter Sicherungsnamensbestätigung wird nun optional ein ausdrücklich eingegebener neuer Pfad aufgenommen.
+2. **Leere Eingabe hätte unbeabsichtigt einen Pfad erzeugen können:** Leer bedeutet eindeutig kein Protokoll; der bisherige Befehl bleibt unverändert.
+3. **Vorhandenes Protokollziel könnte überschrieben werden:** Existierende Ziele und Symlinks werden im Assistenten vor der Befehlsfreigabe abgelehnt.
+4. **Automatische Zielwahl könnte falsche Dateien erzeugen:** Es gibt keinen Vorschlag, keine Suche, keine automatische Benennung oder Speicherung.
+5. **Protokollprüfung war nur technisch per CLI erreichbar:** Die Startseite bietet nun eine eigene rein lesende Aktion an.
+6. **Geführte Prüfung könnte unnötig eine Indexdatei verlangen:** `Protokoll prüfen` benötigt ausschließlich den ausdrücklich gewählten Protokollpfad.
+7. **Falsche Protokolldatei könnte trotz gültigem Schema gewählt werden:** Optional kann exakt ihr erwarteter SHA-256-Wert verlangt werden.
+8. **Pinprüfung nach der Schemaauswertung wäre zu spät:** Die Identität wird vor jedem JSON-Decoding und vor dem Schema-Prüfer bestätigt.
+9. **Pin könnte unbemerkt automatisch ermittelt werden:** Nur der ausdrücklich eingegebene Wert wird verwendet; es gibt keine automatische Berechnung oder Historie.
+10. **Groß-/Kleinschreibung oder verkürzte Hashes wären uneindeutig:** Akzeptiert werden ausschließlich 64 kleingeschriebene Hexzeichen.
+11. **Große Startseitenklasse würde weiter wachsen:** Die neuen Dialoge liegen in einer kleinen Erweiterungsschicht; bestehende Abläufe bleiben unverändert.
 
 ## Verbleibende Grenzen
 
-1. **Pfade sind sensible Metadaten:** Das Protokoll enthält keine Konfigurationsinhalte, aber lokale Dateipfade können Organisationsinformationen offenlegen.
-2. **Dateien können später legitim verändert sein:** Eine Hashabweichung beweist nur, dass die aktuelle Datei nicht mehr dem protokollierten Stand entspricht; sie erklärt nicht den Grund.
-3. **Fehlende Datei wird nicht rekonstruiert:** Der Prüfbefehl meldet den unvollständigen Nachweis und unternimmt bewusst keine Wiederherstellung.
-4. **Nur Schema 1:** Unbekannte künftige Schemata werden nicht automatisch migriert oder interpretiert.
-5. **Keine Signatur:** Das Protokoll besitzt drei Inhaltsprüfsummen, ist selbst aber noch nicht durch einen ausdrücklich vorgegebenen Hash oder eine Signatur gebunden.
-6. **Keine automatische Protokollsuche:** Der Nutzer muss exakt die zu prüfende Datei auswählen.
-7. **Noch keine geführte Startseitenaktion:** Die Prüfung ist derzeit ein Terminalbefehl.
-8. **Zeitprüfung ist syntaktisch und logisch begrenzt:** Sie beweist keine vertrauenswürdige Systemuhr zum Erstellungszeitpunkt.
-9. **Keine absolute Hardwaregarantie:** Defekter Datenträger, beschädigtes Dateisystem, Kerneldefekt und physischer Verlust bleiben außerhalb des Anwendungsschutzes.
-10. **Reale Laienabnahme offen:** Automatisierte Tests ersetzen keine Beobachtung einer unerfahrenen Person.
+1. **Reale Laienabnahme offen:** Automatisierte Tests ersetzen keine Beobachtung einer unerfahrenen Person auf Kubuntu.
+2. **Pfade bleiben sensible Metadaten:** Restore-Protokolle enthalten keine Konfigurationsinhalte, aber drei lokale Dateipfade.
+3. **Kein automatischer Protokollfund:** Der Nutzer muss den vollständigen Pfad kennen und ausdrücklich eingeben.
+4. **Kein Prüfbericht als Datei:** Terminal und JSON stehen bereit; ein eigener neuer Berichtspfad ist noch nicht implementiert.
+5. **Pin muss extern bekannt sein:** Das Tool ermittelt oder speichert ihn bewusst nicht automatisch.
+6. **Zentraler Prozessrahmen schreibt internes Laufjournal:** Die Fachprüfung verändert keine Prüfobjekte; das allgemeine Absturzjournal bleibt aktiv.
+7. **Hardwaregrenzen:** Defekter Datenträger, beschädigtes oder volles Dateisystem, Kerneldefekt und physischer Verlust bleiben außerhalb des Anwendungsschutzes.
 
 ## Schutzverträge
 
-- Nur ein ausdrücklich angegebener Protokollpfad wird geprüft.
-- Protokoll muss normale UTF-8-JSON-Datei sein; Symlink wird abgelehnt.
-- Schema, Ereignis, Konfigurationsart, UTC-Zeiten, drei Pfade und drei Hashrollen werden vor dem Dateizugriff geprüft.
-- Referenzpfade werden nicht aufgelöst oder über Symlinks verfolgt.
-- Dateien werden ausschließlich lesend und gestreamt gehasht.
-- Grün nur bei drei vorhandenen und übereinstimmenden Dateien.
-- Gelb bei mindestens einer fehlenden Datei ohne weiteren roten Befund.
-- Rot bei Hashabweichung, Symlink, falschem Dateityp oder Lesefehler.
-- Keine Wiederherstellung, Änderung, Neuanlage oder Löschung.
-- Keine automatische Auswahl, Rotation oder Historie.
-- Originaldateien bleiben schreibgeschützt.
+- Geführter Restore ergänzt `--restore-log` nur bei ausdrücklicher nicht leerer Eingabe.
+- Protokollziele müssen absolut beziehungsweise mit `~` angegeben, neu und nicht symlinkbasiert sein.
+- Geführte Prüfung zeigt den vollständigen normalisierten Pfad vor der Freigabe.
+- Keine automatische Suche, Auswahl, Benennung, Rotation oder Löschung.
+- SHA-Pin-Prüfung erfolgt mit sicherer Nur-Lese-Öffnung und vor der Schemaauswertung.
+- Falscher oder ungültiger Pin beendet fail-closed mit Code `2`.
+- Protokoll und referenzierte Dateien bleiben unverändert.
+- Originaldatei-Schreibzugriffe bleiben technisch gesperrt.
 
 ## Praktische Folge
 
 ```bash
-datenbanktool index backups verify-log /pfad/restore-nachweis.json
-datenbanktool index backups verify-log /pfad/restore-nachweis.json --json
+datenbanktool start
+
+datenbanktool index backups verify-log /pfad/restore.json \
+  --expected-protocol-sha256 64_kleingeschriebene_hexzeichen
 ```
 
-Der Prüfbefehl bestätigt einen lokalen Nachweis kontrolliert, ersetzt jedoch keine kryptografische Signatur, externe Datenträgersicherung oder reale Zielsystemabnahme.
+Der Vertrag verhindert automatische Pfadwahl und falsche Protokollidentität, ersetzt jedoch keine externe Datenträgersicherung oder reale Zielsystemabnahme.
