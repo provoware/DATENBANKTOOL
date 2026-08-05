@@ -1,174 +1,172 @@
 # Entwicklerdokumentation
 
-## Architekturstand `0.20.0-alpha.1` / `0.20.0a1`
+## Architekturstand `0.21.0-alpha.1` / `0.21.0a1`
 
-Diese Iteration ergänzt einen vollständig lesenden Prüfvertrag für ein ausdrücklich ausgewähltes Wiederherstellungsprotokoll. Das feste JSON-Schema wird zuerst vollständig validiert. Erst danach werden die drei referenzierten Dateien ohne Symlink-Folgen geöffnet, gestreamt gehasht und mit den protokollierten SHA-256-Werten verglichen.
+Diese Iteration ergänzt drei zusammenhängende, aber technisch getrennte Verträge:
 
-Es gibt keine Wiederherstellung, Reparatur, Änderung, Neuanlage oder Löschung. Originaldatei-Schreibzugriffe bleiben gesperrt; Shell-Auswertung und neue Laufzeitabhängigkeiten bleiben ausgeschlossen.
+1. optionale Erfassung eines neuen Restore-Protokollpfads in der geführten Startseite,
+2. geführte rein lesende Prüfung genau eines Restore-Protokolls,
+3. optionaler SHA-256-Pin der Protokolldatei vor jeder JSON-Schemaauswertung.
+
+Originaldatei-Schreibzugriffe bleiben gesperrt. Es gibt keine Shell-Auswertung, automatische Protokollsuche, Zielwahl, Pin-Ermittlung, Historie, Rotation oder Löschung.
 
 ## Fachmodule
 
 | Modul | Verantwortung |
 |---|---|
-| `core/restore_audit.py` | Protokollschema, atomare Erzeugung, strikte Validierung und rein lesender Dateinachweis |
-| `cli_restore_audit.py` | Parser `verify-log`, Terminal-/JSON-Darstellung und Rückgabecodes |
-| `cli_backups.py` | Registrierung des eigenständigen Fachparsers innerhalb `index backups` |
-| `tests/test_restore_audit_verification.py` | Schema-, UTC-, Pfad-, Hash-, Symlink-, Integritäts- und Lesewirkungstests |
-| `tests/test_cli_architecture.py` | Handler-, Policy-, Modulgrößen- und Shellverbotsvertrag |
+| `core/terminal_home.py` | bestehende Recovery-, Sicherungs- und Restore-Basis |
+| `core/terminal_home_restore_audit.py` | kleine Erweiterung für optionalen Restore-Protokollpfad und geführte Protokollprüfung |
+| `entrypoint.py` | aktiviert die erweiterte Startseitenklasse |
+| `core/restore_audit.py` | bestehende Protokollerzeugung, Schema- und Drei-Dateien-Prüfung |
+| `core/restore_audit_identity.py` | Pinformat und sichere Protokollidentitätsprüfung vor Schemaauswertung |
+| `cli_restore_audit.py` | Parser, Prüfungsreihenfolge sowie Terminal-/JSON-Darstellung |
+| `tests/test_guided_restore_audit.py` | geführte Pfad-, Nichtüberschreibungs- und Argumentlistenverträge |
+| `tests/test_restore_audit_identity.py` | Pin-, Reihenfolge- und Unverändertheitstests |
 
-## Öffentlicher Befehl
+## Geführter Restore-Protokollpfad
+
+Die Basisklasse erstellt nach Vergleich, exakter Namenswiederholung und `--yes` weiterhin dieselbe sichere Restore-Argumentliste. Die Erweiterungsklasse prüft anschließend ausschließlich, ob die Liste mit
 
 ```text
-index backups verify-log PROTOCOL [--json]
+index backups restore
 ```
 
-Policy:
+beginnt. Nur dann wird optional gefragt:
 
 ```text
-CommandPolicy("index.backups.verify-log")
+Optionaler neuer Protokollpfad; leer bedeutet kein Protokoll
 ```
 
-Alle Schreibflags bleiben `False`.
+### Vertrag
 
-## Prüfungsreihenfolge
+1. Leere Eingabe liefert die bestehende Argumentliste unverändert zurück.
+2. Nicht leere Eingabe muss absolut oder über `~` angegeben werden.
+3. Der Pfad wird lexikalisch normalisiert und vollständig angezeigt.
+4. Ein vorhandenes Ziel wird abgelehnt.
+5. Ein Symlink-Ziel wird abgelehnt.
+6. Nur ein akzeptierter Pfad ergänzt `--restore-log PFAD`.
+7. Danach bleibt die vollständige Befehlsbestätigung der Startseite erforderlich.
+8. Es gibt keinen Standardpfad und keine automatische Verzeichnis- oder Dateinamenswahl.
 
-`verify_restore_audit_log()` arbeitet fail-closed in dieser Reihenfolge:
+Die eigentliche Restore- und Protokollschreiblogik bleibt unverändert in `cli_backups.py`, `core/config_restore.py` und `core/restore_audit.py`.
 
-1. Protokollpfad lexikalisch absolut normalisieren, ohne Symlinks aufzulösen.
-2. Protokoll-Symlink ablehnen.
-3. Datei mit `O_RDONLY`, `O_CLOEXEC` und `O_NOFOLLOW` öffnen.
-4. Über `fstat()` bestätigen, dass der geöffnete Deskriptor eine normale Datei ist.
-5. Inhalt als UTF-8-JSON-Objekt lesen.
-6. Exakten obersten Schlüsselsatz prüfen.
-7. `schema_version == 1` und `event == configuration_restore` prüfen.
-8. `configuration_kind` auf `search` oder `timeline` begrenzen.
-9. `created_utc` und `restore_completed_utc` als ISO-8601-Zeiten lesen.
-10. Für beide Zeiten einen UTC-Offset von null verlangen.
-11. Sicherstellen, dass die Protokollzeit nicht vor dem Restore-Abschluss liegt.
-12. Drei nicht leere absolute Pfade lesen und auf gegenseitige Eindeutigkeit prüfen.
-13. Exakten SHA-256-Schlüsselsatz prüfen.
-14. Drei kleingeschriebene Werte mit jeweils 64 Hexzeichen validieren.
-15. Erst jetzt jede referenzierte Datei rein lesend prüfen und hashen.
+## Geführte Protokollprüfung
 
-Ungültige Struktur verhindert jeden Zugriff auf protokollierte Referenzpfade.
+Die neue Aktion ist unter „Sicherungen verwalten“ über `Protokoll prüfen`, `prüfen`, `p` oder `verify-log` erreichbar.
 
-## Festes Protokollschema
+### Ablauf
+
+1. Genau einen vollständigen Protokollpfad eingeben.
+2. Absolute Form oder `~` verlangen.
+3. Normalisierten vollständigen Pfad anzeigen.
+4. Optional einen erwarteten SHA-256-Pin eingeben.
+5. Leere Pin-Eingabe überspringt den Pin vollständig.
+6. Nicht leerer Pin wird vorab auf exakt 64 kleingeschriebene Hexzeichen geprüft.
+7. Sichere Argumentliste erzeugen:
+
+```text
+index backups verify-log PROTOKOLL
+```
+
+oder
+
+```text
+index backups verify-log PROTOKOLL
+  --expected-protocol-sha256 SHA256
+```
+
+8. Der vorhandene Startseitenvertrag zeigt den vollständigen Befehl und verlangt die finale Bestätigung.
+9. Die CLI liefert danach dieselbe Grün-/Gelb-/Rot-Auswertung wie bei direktem Terminalaufruf.
+
+Die geführte Prüfung fragt bewusst nicht nach einer Indexdatei und durchsucht keine Ordner.
+
+## Optionaler Protokoll-SHA-Pin
+
+Öffentlicher Befehl:
+
+```text
+index backups verify-log PROTOKOLL
+  [--expected-protocol-sha256 SHA256]
+  [--json]
+```
+
+### Reihenfolge
+
+`run_restore_audit_verification()` führt strikt aus:
+
+1. Nur wenn die Option gesetzt ist: `verify_restore_audit_identity()`.
+2. Erst nach erfolgreicher Identitätsbestätigung: `verify_restore_audit_log()`.
+3. Danach Terminal- oder JSON-Ausgabe.
+
+Tests patchen den Schema-Prüfer und bestätigen, dass er bei falschem oder ungültigem Pin nicht aufgerufen wird.
+
+### Sichere Identitätsprüfung
+
+`verify_restore_audit_identity()` verlangt:
+
+- exakt 64 kleingeschriebene Hexzeichen,
+- ausdrücklich ausgewählten Pfad,
+- kein Symlink-Protokoll,
+- normale Datei über `fstat()`,
+- Öffnung mit `O_RDONLY`, `O_CLOEXEC` und – sofern verfügbar – `O_NOFOLLOW`,
+- Streaming-SHA-256 in 1-MiB-Blöcken.
+
+Bei Abweichung wird `ValueError` ausgelöst. Die allgemeine CLI-Grenze übersetzt dies in Rückgabecode `2`. JSON-Schema und referenzierte Dateien werden nicht geprüft.
+
+### Ausgabe
+
+Bei erfolgreichem Pin zeigt das Terminal erwarteten und tatsächlichen Protokoll-SHA-256-Wert. JSON ergänzt:
 
 ```json
 {
-  "schema_version": 1,
-  "event": "configuration_restore",
-  "created_utc": "2026-08-05T10:00:00+00:00",
-  "restore_completed_utc": "2026-08-05T09:59:59+00:00",
-  "configuration_kind": "search",
-  "active_file": "/.../search-presets.json",
-  "selected_backup": "/.../search-presets.json.backup-....json",
-  "rollback_backup": "/.../search-presets.json.backup-....json",
-  "sha256": {
-    "active_after_restore": "...",
-    "selected_backup": "...",
-    "rollback_backup": "..."
+  "protocol_identity": {
+    "protocol": "/absoluter/pfad/restore.json",
+    "expected_sha256": "...",
+    "actual_sha256": "...",
+    "matches": true
   }
 }
 ```
 
-Fehlende oder zusätzliche Felder werden abgelehnt. Dadurch können Konfigurationsinhalte, Argumente oder beliebige Erweiterungsdaten nicht unbemerkt als gültiges Schema erscheinen.
-
-## Rein lesendes Dateiöffnen
-
-`_open_regular_no_follow()` verwendet auf Linux:
-
-```text
-O_RDONLY | O_CLOEXEC | O_NOFOLLOW
-```
-
-Nach dem Öffnen bestätigt `fstat()` den Typ `S_ISREG`. Das verhindert sowohl offensichtliche Symlinks als auch einen Zielwechsel zwischen Vorprüfung und Öffnen. Referenzdateien werden in 1-MiB-Blöcken gelesen und direkt in SHA-256 eingespeist.
-
-Es gibt keinen Aufruf von:
-
-- `resolve()` für protokollierte Pfade,
-- `atomic_write_*`,
-- `durable_remove()`,
-- Restore- oder Backup-Funktionen,
-- Shell oder Subprozess.
-
-## Ergebniszustände je Datei
-
-| Zustand | Ampel | Bedeutung |
-|---|---|---|
-| `match` | Grün | normale Datei vorhanden, tatsächlicher SHA-256 stimmt überein |
-| `missing` | Gelb | Datei derzeit nicht vorhanden; Nachweis nicht vollständig bestätigbar |
-| `mismatch` | Rot | Datei vorhanden, SHA-256 weicht ab |
-| `symlink-rejected` | Rot | Pfad ist ein Symlink und wird nicht verfolgt |
-| `unreadable` | Rot | falscher Dateityp, Berechtigungs- oder Lesefehler |
-
-Gesamtstatus:
-
-- Grün nur, wenn alle drei Einträge `match` sind.
-- Rot, sobald ein roter Dateibefund existiert.
-- Gelb nur bei fehlender Datei ohne roten Befund.
-
-## JSON-Ausgabe
-
-`RestoreAuditVerification.to_dict()` enthält:
-
-- Protokollpfad,
-- Schema, Ereignis und beide UTC-Zeiten,
-- Konfigurationsart,
-- `read_only: true`,
-- Gesamtstatus und technische Begründung,
-- Datei-, Treffer-, Fehl- und Abweichungszähler,
-- `all_files_match`,
-- drei Dateiobjekte mit Rolle, Pfad, Soll- und Ist-Hash sowie Einzelstatus.
-
-Die Ausgabe enthält keine ANSI-Sequenzen und keine Dateiinhalte.
-
-## Rückgabecodes
-
-| Code | Vertrag |
-|---:|---|
-| `0` | Schema gültig und alle drei Dateien bestätigt |
-| `1` | Schema gültig, Dateinachweis aber fehlend, abweichend oder nicht sicher lesbar |
-| `2` | CLI-Eingabe, Protokolldatei oder Schema ungültig |
+Ohne Option bleibt die bisherige Ausgabe kompatibel und enthält kein `protocol_identity`-Feld.
 
 ## Architekturgrenzen
 
-- `cli_restore_audit.py` ist ein eigenes Fachmodul und importiert `cli.py` nicht.
-- `cli_backups.py` registriert nur den Unterparser und enthält keine zweite Prüflogik.
-- Alle `cli_*.py` bleiben unter 500 Zeilen; `cli.py` bleibt unter 150 Zeilen.
-- Kein `subprocess`, `shell=True`, `os.system`, `eval` oder `exec` in CLI-Fachmodulen.
+- Die bestehende umfangreiche Startseitenklasse wird nicht weiter vergrößert.
+- Erweiterung erfolgt per kleiner Unterklasse und überschreibt nur `_backup_action()` und `_build_backup()` sowie neue Hilfsmethoden.
+- `entrypoint.py` tauscht ausschließlich den importierten Startseitentyp aus.
+- `cli_restore_audit.py` bleibt deutlich unter 500 Zeilen.
+- Keine zyklischen CLI-Importe.
+- Kein `subprocess`, `shell=True`, `os.system`, `eval` oder `exec`.
 - Keine neue Laufzeitabhängigkeit.
 - Keine Änderung der Originaldatei-Sperre.
 
 ## Automatische Prüfungen
 
-Die Version enthält 151 Tests, darunter:
+Die Version enthält 158 Tests, darunter:
 
-- gültiges Protokoll mit drei bestätigten Dateien,
-- bytegenau unverändertes Protokoll und unveränderte Referenzdateien,
-- keine neuen oder gelöschten Pfade durch die Prüfung,
-- rote Hashabweichung nach bewusster Dateiveränderung,
-- gelber unvollständiger Nachweis bei fehlender Datei,
-- Zusatzfeld, Nicht-UTC-Zeit und falsche Zeitreihenfolge,
-- relativer und doppelter Pfad,
-- fehlende Hashrolle und großgeschriebener Hash,
-- abgelehnter Protokoll-Symlink,
-- Terminal- und JSON-Ausgabe,
-- Rückgabecode 0 und 1,
-- Handler, rein lesende Policy und Modulzuständigkeit,
-- Größenlimits, Shellverbot und Versionsdrift.
+- expliziter neuer Restore-Protokollpfad wird korrekt angehängt,
+- leere Eingabe lässt die Argumentliste unverändert,
+- vorhandenes Ziel wird nicht überschrieben oder angehängt,
+- geführte Prüfung benötigt keine Datenbank,
+- vollständiger Pfad wird sichtbar ausgegeben,
+- Pin kann gesetzt oder übersprungen werden,
+- richtiger Pin erscheint in JSON und bestätigt die Datei,
+- falscher Pin stoppt vor Schemaauswertung,
+- ungültiges Pinformat stoppt vor Schemaauswertung,
+- Protokoll und Referenzdateien bleiben unverändert,
+- bestehende Restore-, Rückfall-, Protokoll-, Recovery- und Architekturtests bleiben grün,
+- Versionsdrift wird geprüft.
 
-Die Matrix läuft unter Python 3.10 und 3.12 mit `PYTHONWARNINGS=error`. Quick- und Standardabnahme verwenden ausschließlich synthetische Daten.
+Die Matrix läuft unter Python 3.10 und 3.12 mit `PYTHONWARNINGS=error`. Quick- und Standardabnahme verwenden ausschließlich synthetische Daten und bestehen jeweils 11/11 Kriterien.
 
 ## Verbleibende Grenzen
 
-- Der Grund einer Hashabweichung wird nicht automatisch interpretiert.
-- Fehlende Dateien werden nicht gesucht oder rekonstruiert.
-- Nur Protokollschema 1 wird akzeptiert.
-- Die Protokolldatei selbst ist noch nicht an einen extern vorgegebenen Hash oder eine Signatur gebunden.
-- Die Prüfung ist noch nicht in die geführte Startseite integriert.
-- Pfade können sensible lokale Metadaten darstellen.
-- Reale Laienabnahme bleibt offen.
+- Reale Laienabnahme auf Kubuntu ist offen.
+- Nutzer müssen Protokollpfad und optionalen Pin selbst kennen.
+- Ein eigener Prüfberichtsexport ist noch nicht implementiert.
+- Das zentrale Laufjournal des Prozessrahmens bleibt bei Fachbefehlen aktiv, verändert aber keine Prüfobjekte.
+- Hardware-, Kernel-, Dateisystem- und physischer Verlust bleiben außerhalb des Anwendungsschutzes.
 
 ## Releaseprüfung
 
@@ -178,7 +176,7 @@ python -m json.tool project_registry.json >/dev/null
 python -m compileall -q src tests
 PYTHONWARNINGS=error python -m unittest discover -s tests -v
 python -m datenbanktool --version
-python -m datenbanktool index backups verify-log /pfad/restore-nachweis.json --json
+python -m datenbanktool index backups verify-log --help
 python -m datenbanktool check
 ```
 
