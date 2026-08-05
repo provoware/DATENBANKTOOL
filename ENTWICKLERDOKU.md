@@ -1,177 +1,202 @@
 # Entwicklerdokumentation
 
-## Architekturstand `0.15.0-alpha.1` / `0.15.0a1`
+## Architekturstand `0.16.0-alpha.1` / `0.16.0a1`
 
-Diese Iteration ergänzt einen begrenzten, überprüfbaren Wiederanlaufvertrag. Sie verspricht keine Unabhängigkeit von defekter Hardware, verhindert aber innerhalb des Anwendungs- und Dateisystemvertrags halb veröffentlichte Dateien, unklare Prozessenden und verlorene bestätigte Scanbatches.
+Diese Iteration ergänzt zwei eng begrenzte Verträge:
 
-## Neue Fachmodule
+1. einen geführten, gegen SQLite validierten Wiederanlauf für unterbrochene Vollscans und Re-Scans,
+2. einen nur lesenden Sicherungskatalog mit genau einer ausdrücklich bestätigten Löschung.
+
+Originaldatei-Schreibzugriffe bleiben gesperrt. Es gibt keine Shell-Auswertung, automatische Rotation oder Sammellöschung.
+
+## Neue und erweiterte Fachmodule
 
 | Modul | Verantwortung |
 |---|---|
-| `core/durable_files.py` | dauerhafte atomare Veröffentlichung von Dateien |
-| `core/run_journal.py` | Laufstatus, Crashberichte und Argument-Ausblendung |
-| `core/diagnostics.py` | Start-, Schreib-, Laufjournal- und Nur-Lese-Indexdiagnose |
-| `cli_check.py` | verständlicher öffentlicher Befehl `datenbanktool check` |
-| `tests/test_crash_safety.py` | Ausfall-, Abbruch-, Wiederaufnahme- und Sprachtests |
+| `core/run_journal.py` | allgemeines Laufjournal plus dauerhafter `resume-run.json`-Datensatz |
+| `core/recovery.py` | Befehlsanalyse und Nur-Lese-Abgleich mit der fortsetzbaren SQLite-Sitzung |
+| `core/backup_catalog.py` | Sicherungsfindung, Gesundheitsprüfung und begrenzte Einzellöschung |
+| `cli_backups.py` | öffentliche Befehle `index backups list/delete` |
+| `core/terminal_home.py` | Startseiten-Erweiterung für Wiederanlauf und Sicherungsverwaltung |
+| `core/durable_files.py` | atomare Veröffentlichung und dauerhafte Einzellöschung ohne Symlink-Folgen |
+| `tests/test_guided_recovery_backups.py` | Dialog-, Katalog- und Löschverträge |
+| `tests/test_recovery_backup_edges.py` | Re-Scan, stale marker, CLI und Symlink-Negativfälle |
+| `tests/test_durable_symlinks.py` | zentrale Schreib- und Löschsperre für Symlinks |
 
-## Prozessgrenze
+## Wiederanlaufdatensatz
 
-Der installierte Konsolenbefehl endet in `entrypoint.main()`. `_run_safely()` umschließt Hilfe, Startseite und normale CLI-Ausführung.
-
-| Zustand | Rückgabecode | Laufjournal |
-|---|---:|---|
-| Erfolg | `0` | `complete` |
-| kontrollierter Bedien-/Datenfehler | `1` oder `2` | `controlled-error` |
-| unerwartete Ausnahme | `70` | `failed` plus Crashbericht |
-| Tastaturabbruch | `130` | `interrupted` |
-
-`SystemExit` aus argparse bleibt argparse-kompatibel, schließt das Journal jedoch kontrolliert. Unerwartete Ausnahmen werden nicht in der inneren CLI als Bedienfehler maskiert.
-
-## Laufjournal und Crashbericht
-
-Standardordner:
+Standardpfad:
 
 ```text
-$XDG_STATE_HOME/datenbanktool/
+$XDG_STATE_HOME/datenbanktool/resume-run.json
 ```
 
 Fallback:
 
 ```text
-~/.local/state/datenbanktool/
+~/.local/state/datenbanktool/resume-run.json
 ```
 
-`last-run.json` enthält Schema, Status, Zeiten, Exitcode, Version, Python, Plattform, Prozess-ID und bereinigte Argumente. Crashberichte besitzen einen eindeutigen Zeit-/PID-Namen und zusätzlich Traceback und Python-Executable.
-
-Argumente hinter Schaltern mit `token`, `password`, `passwort`, `secret`, `apikey` oder `api-key` werden durch `<ausgeblendet>` ersetzt. Dies ist eine Mindestbarriere, kein allgemeiner Geheimnisscanner.
-
-## Dauerhafte Dateifreigabe
-
-`atomic_write_bytes()` und `atomic_write_text()` verwenden:
-
-1. `mkstemp()` im Zielordner,
-2. vollständiges Schreiben,
-3. `flush()` und Datei-`fsync`,
-4. optionalen Dateimodus,
-5. erneute Überschreibprüfung,
-6. `os.replace()` im selben Dateisystem,
-7. Verzeichnis-`fsync`,
-8. Temp-Bereinigung bei jedem `BaseException`.
-
-`publish_temp_file()` veröffentlicht bereits vorbereitete Dateien, beispielsweise geprüfte SQLite-Sicherungen. Ein fehlgeschlagenes `replace` lässt die alte Zieldatei bestehen.
-
-## SQLite-Vertrag
-
-Schreibende `IndexDatabase`-Verbindungen setzen:
-
-```sql
-PRAGMA foreign_keys = ON;
-PRAGMA busy_timeout = 5000;
-PRAGMA journal_mode = WAL;
-PRAGMA synchronous = FULL;
-PRAGMA wal_autocheckpoint = 1000;
-```
-
-`durable_checkpoint()` bestätigt zuerst die Transaktion. Danach wird ein passiver WAL-Checkpoint versucht. `busy` oder `locked` bedeutet nur, dass die WAL-Aufräumphase später stattfindet; der Commit bleibt gültig. Andere SQLite-Fehler werden weitergegeben.
-
-Abschluss, Unterbrechung und Fehlerstatus werden jeweils committed. `close()` darf einen bereits laufenden fachlichen Fehler nicht durch einen sekundären Close-Fehler verdecken.
-
-## Autosave
-
-`IndexBuildOptions` und `IncrementalScanOptions` besitzen:
-
-```python
-batch_size: int = 500
-autosave_seconds: float = 5.0
-```
-
-Ein Batch wird bestätigt, sobald eine Bedingung erfüllt ist:
+Der Datensatz wird nur für bestätigte Befehle mit folgendem Muster erstellt:
 
 ```text
-Anzahl gepufferter Datensätze >= batch_size
-ODER
-monotonic() - last_save >= autosave_seconds
+index build ...
+index rescan ...
 ```
 
-Dies gilt für Metadatenscan und Prüfsummenphase. Nach jedem Autosave wird ein Fortschrittsereignis gespeichert.
+Er enthält Schema, Status, Zeiten, Exitcode und die exakte Argumentliste. Das allgemeine `last-run.json` bleibt davon getrennt, damit ein normaler späterer Startseitenabschluss den fortsetzbaren Scan nicht überschreibt.
 
-### Wiederaufnahme
+### Lebenszyklus
 
-- `last_relative_path` setzt den Dateiscan fort.
-- `last_hash_path` setzt die Prüfsummenphase fort.
-- Fingerprint und Scanart müssen zum unterbrochenen Lauf passen.
-- Der Checkpoint muss weiterhin im Ordner vorkommen; andernfalls wird ein kontrollierter `ResumeCheckpointError` ausgelöst.
-- Ein Hash kann nicht innerhalb einer einzelnen Datei fortgesetzt werden. Nur diese Datei wird nach Absturz erneut gehasht.
+1. Vor Ausführung speichert `RunJournal.record_active_command()` den bestätigten Scanbefehl.
+2. Rückgabecode `0` entfernt nur `resume-run.json`.
+3. Nichtnull, Tastaturabbruch oder unerwartete Ausnahme erhalten den Datensatz mit aktualisiertem Zustand.
+4. Ein normaler Startseitenabbruch verändert den Datensatz nicht.
+5. `load_recovery_candidate()` prüft den Datensatz erneut gegen Dateisystem und SQLite.
 
-## Sicherung und Wiederherstellung
+## Wiederanlaufvalidierung
 
-Sicherung:
+`core/recovery.py` akzeptiert ausschließlich `build` und `rescan`.
 
-1. SQLite-Backup-API in eine neue Temp-Datenbank,
-2. Zielverbindung schließen,
-3. `quick_check`,
-4. Datei-`fsync`, atomare Veröffentlichung und Ordner-`fsync`.
+Prüfungen:
 
-Wiederherstellung:
+1. Argumentliste ist vollständig und enthält `--database`.
+2. Quellordner existiert als Ordner.
+3. Index existiert als Datei.
+4. SQLite wird per URI `mode=ro` geöffnet.
+5. `PRAGMA query_only = ON` wird gesetzt.
+6. `scan_sessions` enthält für denselben normalisierten Stammordner und dieselbe Scanart eine neueste Sitzung mit `running`, `interrupted` oder `failed`.
+7. Der zurückgegebene Befehl enthält genau ein abschließendes `--resume`.
 
-1. Eingangssicherung validieren,
-2. standardmäßig Rückfallsicherung des aktiven Index,
-3. Backup-API in Temp-Ziel,
-4. Temp-Ziel validieren,
-5. aktiven WAL abschließen,
-6. dauerhafte atomare Veröffentlichung,
-7. Ziel erneut validieren,
-8. bei Fehler Rückfallsicherung verwenden.
+Zuordnung:
 
-## Startklar-Prüfung
+| Befehl | SQLite-Scanart | Nutzertext |
+|---|---|---|
+| `index build` | `full` | erste Ordnerprüfung |
+| `index rescan` | `incremental` | Änderungsprüfung |
 
-`datenbanktool check` prüft:
+Ist Ordner oder Datenträger vorübergehend nicht verfügbar, bleibt der Marker erhalten. Beweist die Datenbank dagegen, dass keine passende fortsetzbare Sitzung existiert, wird der veraltete Marker entfernt.
 
-- Python-Mindestversion,
-- SQLite-Verfügbarkeit,
-- dauerhaften Schreibtest im eigenen Konfigurationsordner,
-- dauerhaften Schreibtest im Statusordner,
-- Hinweis auf früheren unvollständigen Lauf,
-- optional Indexexistenz, Nur-Lese-Öffnung, Schema und `quick_check`.
+## Startseitenablauf
 
-Die Diagnose verändert keine Originaldateien. Die beiden Schreibtests erzeugen nur kurzlebige Dateien in den eigenen Toolordnern.
+`core/terminal_home.TerminalHome` erweitert die bestehende Dialogklasse.
 
-## Nutzeransprache
+Vor dem normalen Menü:
 
-Neue zentrale Texte folgen diesem Vertrag:
+1. `load_recovery_candidate()` ausführen.
+2. Art, Ordner, Index, Sitzung, Status, Phase und Dateizahl anzeigen.
+3. Vollständigen Befehl mit `shlex.join()` sichtbar darstellen.
+4. Ja/Nein abfragen; Standard ist Nein.
+5. Nur bei Ja dieselbe Argumentliste an den vorhandenen `CommandRunner` übergeben.
 
-1. verständliche Aussage,
-2. Auswirkung auf persönliche Dateien,
-3. konkrete nächste Handlung,
-4. technische Einzelheit danach.
+Nein, `q` oder geschlossene Eingabe startet nichts und erhält den Marker. Der `entrypoint` umschließt den Startseiten-Runner so, dass der tatsächlich innere Befehl vor der Ausführung im Journal registriert und nachher mit seinem Rückgabecode abgeschlossen wird.
 
-Technische Begriffe werden nicht entfernt, sondern nachgeordnet. Maschinenlesbare JSON-Ausgaben bleiben sachlich und frei von ANSI-Sequenzen.
+## Sicherungskatalog
+
+Öffentliche Befehle:
+
+```text
+index backups list DATABASE [--config-directory DIR] [--json]
+index backups delete DATABASE BACKUP --confirm-name NAME --yes
+```
+
+### Erkennung
+
+Index-Sicherungen liegen neben der aktiven Datenbank und folgen den vom Tool erzeugten Mustern:
+
+```text
+<datenbankname>.backup-*.sqlite3
+<datenbankname>.pre-restore-*.sqlite3
+```
+
+Unterstützte Konfigurationssicherungen beziehen sich auf:
+
+```text
+search-presets.json
+timeline-presets.json
+```
+
+Nur bekannte `.backup-*`, `-backup-*`, `.bak`- oder `.backup`-Muster werden katalogisiert. Dadurch wird eine beliebige Datei nicht allein aufgrund ihrer Lage löschbar.
+
+### Gesundheitsprüfung
+
+Index-Sicherung:
+
+- URI `mode=ro`,
+- `query_only`,
+- `PRAGMA user_version`,
+- `PRAGMA quick_check`,
+- grün bei nutzbarer unterstützter Version,
+- gelb bei neuerer Schemaversion,
+- rot bei Lesefehler oder beschädigtem `quick_check`.
+
+Konfigurations-Sicherung:
+
+- UTF-8-JSON,
+- oberste Ebene ist Objekt,
+- `schema_version` ist Ganzzahl,
+- `presets` ist Liste,
+- grün bei Schema 1,
+- gelb bei unbekannter Version,
+- rot bei beschädigter oder unvollständiger Struktur.
+
+Jeder `BackupItem` enthält Pfad, Name, Typ, Bytes, UTC-Änderungszeit, Alter in Sekunden, Status und technische Begründung. Sortiert wird nach kleinstem Alter: neueste zuerst.
+
+## Einzellöschvertrag
+
+`delete_backup()` verlangt gleichzeitig:
+
+1. `yes=True`,
+2. Pfad kommt in der unmittelbar neu aufgebauten geprüften Übersicht vor,
+3. `confirm_name` stimmt exakt mit dem Dateinamen überein,
+4. Ziel ist kein Symlink,
+5. Ziel ist eine normale Datei.
+
+Danach entfernt `durable_remove()` genau diesen Verzeichniseintrag und bestätigt das Elternverzeichnis mit `fsync`.
+
+Aktive Indexdatei, aktive Vorlagendatei, unbekannte Datei, Verzeichnis und Symlink sind nicht löschbar. Es gibt keine Mehrfachauswahl und keine Altersautomatik.
+
+## Symlink-Härtung
+
+Dauerhafte Zielpfade werden lexikalisch absolut normalisiert, ohne die letzte Pfadkomponente aufzulösen. Dadurch können `atomic_write_*()`, `publish_temp_file()` und `durable_remove()` einen vorhandenen Symlink erkennen und ablehnen.
+
+Der Schutz liegt im zentralen Helfer und nicht nur in den aufrufenden Sicherungsfunktionen. Tests bestätigen, dass Link und echtes Ziel unverändert bleiben.
+
+## CommandPolicy
+
+| Befehl | Policy |
+|---|---|
+| `index backups list` | rein lesend |
+| `index backups delete` | `writes_backups=True` |
+| geführter Wiederanlauf | bestehende Policy von `index.build` oder `index.rescan` |
+
+`tests/test_cli_architecture.py` prüft Parser, Handler, Policy, Modulzuständigkeit, Größenlimits und Shellverbot.
 
 ## Automatische Prüfungen
 
-`tests/test_crash_safety.py` simuliert:
+Geprüft werden unter anderem:
 
-- vorhandenes Ziel ohne Überschreibfreigabe,
-- fehlgeschlagenes `os.replace`,
-- Modus `0600`,
-- Crashbericht und Geheimnis-Ausblendung,
-- Tastaturabbruch,
-- kontrollierte Scanunterbrechung und `--resume`,
-- `synchronous=FULL`,
-- unveränderte Indexdatei durch Diagnose,
-- Parser- und Policy-Anbindung,
-- Alltagssprache vor technischem Detail.
-
-`tests/test_cli_architecture.py` bindet `check` an `cli_check.py` und prüft weiterhin Modulgrenzen, Seiteneffektverträge, Shellverbot und Größenlimits.
-
-Der Versionstest leitet die erwarteten Werte aus `registry.json` ab und liest `pyproject.toml` ohne Python-3.11-Abhängigkeit.
+- Vollscan- und Re-Scan-Kandidat,
+- genau ein `--resume`,
+- sichtbarer Befehl entspricht ausgeführter Argumentliste,
+- Nein und Abbruch erhalten den Marker,
+- Erfolg entfernt nur den Marker,
+- stale marker ohne SQLite-Sitzung,
+- gültige und beschädigte Sicherungen,
+- Größe, Alter und UTC-Zeit,
+- JSON-CLI-Ausgabe,
+- tatsächliche Einzellöschung,
+- fehlendes `--yes`, falscher Name und aktive Datei,
+- Symlink auf Sicherung,
+- zentrale Symlink-Sperre bei Schreiben und Löschen.
 
 ## Verbleibende Grenzen
 
-- `last-run.json` beschreibt den zuletzt gestarteten Prozess; parallele unabhängige Nur-Lese-Befehle können diesen Hinweis ersetzen.
-- Journalfehler dürfen den eigentlichen Befehl nicht blockieren; `check` macht fehlende Schreibbarkeit sichtbar.
-- Hardware-, Kernel-, Dateisystem- und Datenträgerverlust bleiben außerhalb des Anwendungsschutzes.
-- Reale Laienabnahme ist noch offen.
+- Genau ein Scan kann vorgemerkt sein; eine begrenzte Mehrfachliste ist offen.
+- Nicht eingehängte Datenträger verhindern vorübergehend die Anzeige, löschen den Marker aber nicht.
+- Vorlagenänderungen erstellen noch keine automatische Konfigurationssicherung.
+- Hardware-, Kernel-, Dateisystem- und physischer Verlust bleiben außerhalb des Anwendungsschutzes.
+- Reale Laienabnahme ist offen.
 
 ## Releaseprüfung
 
