@@ -1,60 +1,62 @@
 # Analyse-Punkte
 
-Stand: Version `0.18.0-alpha.1`
+Stand: Version `0.19.0-alpha.1`
 
 ## Gesamtergebnis dieser Iteration
 
 | Bereich | Befund | Professionelle Korrektur |
 |---|---|---|
-| Wirkungsvorschau | Eine Sicherung ließ ihre konkrete Wirkung auf die aktive Datei nicht sicher erkennen | rein lesender Vergleich mit Hinzufügen, Entfernen, Ersetzen und Unverändert |
-| Zuordnung | Ein beliebiger JSON-Pfad könnte der falschen Konfigurationsart zugeordnet werden | ausschließlich frischer Katalogeintrag plus unterstütztes Such-/Zeitreihen-Dateinamensmuster |
-| Sicherungszustand | Syntaktisch vorhandene Datei war nicht automatisch wiederherstellbar | nur grüner Gesundheitsstatus und vollständige fachliche Deserialisierung |
-| Mehrdeutige Namen | Doppelte Vorlagennamen könnten den Vergleich verfälschen | case-insensitive Eindeutigkeitsprüfung vor jeder Freigabe |
-| Veralteter Vergleich | Aktive Datei oder Sicherung könnte sich nach der Vorschau ändern | erneuter SHA-256-Abgleich unmittelbar vor der Mutation |
-| Rückfallsicherheit | Überschreiben ohne neuen Ausgangspunkt erschwerte eine sichere Rückkehr | automatische geprüfte Rückfallsicherung unmittelbar vor dem Restore |
-| Veröffentlichung | Teilweise geschriebene Konfiguration wäre unbrauchbar | atomare Veröffentlichung mit Modus `0600`, Datei- und Ordner-`fsync` |
-| Nachprüfung | Erfolgreicher Schreibaufruf beweist keinen gültigen Inhalt | bytegenaue SHA-256- und vollständige Schema-/Vorlagenprüfung |
-| Fehler nach Mutation | Fehlgeschlagene Nachprüfung könnte die aktive Datei im falschen Stand lassen | automatisches Rückspielen und erneutes Prüfen der Rückfallsicherung |
-| Nutzerentscheidung | Eine einzelne Ja/Nein-Frage wäre für eine weitreichende Änderung zu schwach | exakter Sicherungsname, sichtbare Argumentliste und `--yes` |
-| Unnötige Mutation | Identische Datei könnte ohne Nutzen neu geschrieben werden | bytegenaue Identität führt kontrolliert zu keiner Änderung |
-| Aufbewahrung | Komfortautomatik könnte wichtige Rückfallstände löschen | keine Auswahl-, Rotations-, Sammel- oder Altersautomatik |
-| Architektur | Vergleich und Restore benötigten eine eigene Vertrauensgrenze | Fachlogik in `core/config_restore.py`, CLI nur Parser und Darstellung |
-| Testrealismus | Erfolgspfad allein deckt den kritischsten Fehler nicht ab | simulierte fehlgeschlagene Nachprüfung mit bestätigtem automatischem Rückfall |
+| Diagnosezugang | Mehrere Wiederanläufe waren außerhalb der Startseite nicht vollständig prüfbar | eigener Terminal- und JSON-Befehl `index recovery` |
+| Diagnoseumfang | Ein grober Hinweis reichte für Ursachenanalyse und Dokumentation nicht | Prüfstatus, Ordner, Index, Sitzung, Zustand, Phase, Dateizahl, UTC und Startbarkeit gemeinsam ausgeben |
+| Seiteneffekte | Ein Diagnosebefehl dürfte keinen Scan starten oder Hinweis entfernen | reine `CommandPolicy` ohne Schreibwirkung; kein Start-, Verwerfen- oder Löschhandler |
+| Nachweis der Lesewirkung | Nur ein erklärender Text beweist keine Unverändertheit | Tests vergleichen Bytes von `resume-run.json` und Indexdatei vor und nach Diagnose |
+| Maschinenlesbarkeit | Terminalfarben und Bedienhinweise erschweren Automatisierung | stabiles JSON-Schema ohne ANSI mit Summen und vollständiger Eintragsliste |
+| Leerer Zustand | Fehlende Einträge könnten als Fehler missverstanden werden | erfolgreicher Nullbefund mit `record_count: 0` und leerer Liste |
+| Restore-Nachvollziehbarkeit | Erfolgreiche Wiederherstellung war später nur über Dateien rekonstruierbar | optionales kleines JSON-Protokoll nach bestätigtem Restore |
+| Datenminimierung | Ein allgemeines Protokoll könnte Konfigurationsinhalte oder Geheimnisse erfassen | festes Schema nur mit UTC-Zeiten, drei Pfaden und drei SHA-256-Werten |
+| Explizite Entscheidung | Automatisches Protokollieren würde neue Dateien ohne Nutzerauftrag erzeugen | ausschließlich bei `--restore-log PFAD` |
+| Zielschutz | Bestehende Nachweise könnten überschrieben werden | existierende Datei und Symlink ablehnen; kein `overwrite=True` |
+| Veröffentlichungsqualität | Teilweise geschriebenes JSON wäre kein belastbarer Nachweis | atomare Veröffentlichung, Modus `0600`, erneutes Lesen und vollständiger Payload-Vergleich |
+| Teilfehler | Nachweisfehler nach erfolgreichem Restore darf den bestätigten Konfigurationsstand nicht verfälschen | Restore erhalten, separater Protokollfehler mit Rückgabecode `1` und technischer Ursache |
+| Aufbewahrung | Automatische Ablage oder Rotation könnte Pfade und Nachweise unkontrolliert vermehren oder löschen | keine Benennung, Auswahl, Rotation oder Löschung |
+| Architektur | Diagnose und Nachweis brauchten klar getrennte Zuständigkeiten | `cli_recovery.py` für Darstellung, `core/restore_audit.py` für den Schreibvertrag |
 
 ## Automatisch geprüfte Verträge
 
-1. Suchvorlagen-Vergleich meldet Hinzufügen, Entfernen und Ersetzen korrekt.
-2. Zeitreihen-Sicherung wird ausschließlich der Zeitreihen-Konfiguration zugeordnet.
-3. Vergleich verändert weder Sicherung noch aktive Datei.
-4. Wiederherstellung erstellt eine bytegenaue Rückfallsicherung des vorherigen aktiven Stands.
-5. Ausgewählte Sicherung und Rückfallsicherung bleiben erhalten.
-6. Aktive Datei und Rückfallsicherung besitzen Dateimodus `0600`.
-7. Fehlendes `--yes` wird abgelehnt.
-8. Falsch wiederholter Dateiname wird abgelehnt.
-9. Bereits identische Dateien werden nicht erneut überschrieben oder gesichert.
-10. Unbekannte, beschädigte und Indexsicherungen werden abgelehnt.
-11. Eine simulierte fehlgeschlagene Nachprüfung setzt die aktive Datei automatisch zurück.
-12. CLI-Vergleich und Restore liefern stabile JSON-Strukturen.
-13. Die geführte Startseite zeigt die Wirkung und dispatcht exakt die sichtbare Argumentliste.
-14. Eine falsche Namenswiederholung führt zu keinem Dispatch.
-15. Parser, Handler, `CommandPolicy`, Modulzuständigkeit und Shellverbot bleiben konsistent.
-16. 139 Tests laufen unter Python 3.10 und 3.12 mit Warnungen als Fehler.
-17. Quick- und Standardabnahme bestehen jeweils 11/11 Kriterien.
+1. Terminaldiagnose zeigt alle geforderten Felder eines fortsetzbaren Eintrags.
+2. JSON-Diagnose enthält Schema, Summen und vollständige Eintragsdaten ohne ANSI.
+3. Leere Wiederanlaufliste liefert Rückgabecode 0 und eine leere JSON-Liste.
+4. Diagnose verändert die Wiederanlaufdatei bytegenau nicht.
+5. Diagnose verändert die geprüfte SQLite-Indexdatei bytegenau nicht.
+6. Öffentlicher Diagnosebefehl besitzt Handler und rein lesende `CommandPolicy`.
+7. Optionales Restore-Protokoll wird erst nach erfolgreichem Restore erzeugt.
+8. Protokoll besitzt Modus `0600` und gültiges UTF-8-JSON.
+9. Protokoll enthält exakt die drei benannten SHA-256-Rollen.
+10. Aktiver Restore-Hash und Hash der ausgewählten Sicherung stimmen überein.
+11. Eingebauter Geheimniswert und Konfigurationsdatensätze erscheinen nicht im Protokoll.
+12. Ohne `--restore-log` entsteht keine Protokolldatei und die bisherige JSON-Ausgabe bleibt kompatibel.
+13. Ein vorhandenes Ziel wird nicht überschrieben.
+14. Bei Protokollfehler bleibt die erfolgreich wiederhergestellte aktive Datei erhalten.
+15. Teilfehler wird maschinenlesbar mit `restore_log_error` und Rückgabecode 1 ausgegeben.
+16. Parser, Handler, `CommandPolicy`, Modulzuständigkeit, Größenlimits und Shellverbot bleiben konsistent.
+17. 145 Tests laufen unter Python 3.10 und 3.12 mit Warnungen als Fehler.
+18. Quick- und Standardabnahme bestehen jeweils 11/11 Kriterien.
 
 ## Wartbarkeitsentscheidung
 
-- Katalogisierung und Gesundheitsstatus bleiben in `core/backup_catalog.py`.
-- Vorsicherungen bleiben in `core/config_backups.py`.
-- Vergleich, Restore, Prüfsummen, Rückfallsicherung und automatischer Rückfall liegen zusammen in `core/config_restore.py`.
-- `cli_backups.py` registriert die öffentlichen Befehle und formatiert Terminal/JSON.
-- `core/terminal_home.py` zeigt den Vergleich und baut ausschließlich sichere Argumentlisten.
-- Bestehende Such- und Zeitreihen-Deserialisierung dient als fachliche Validierung; keine zweite Schemaimplementierung.
+- Speicherung und Sperre der Wiederanlaufliste verbleiben in `core/run_journal.py`.
+- Unabhängige SQLite-Nur-Lese-Prüfung verbleibt in `core/recovery.py`.
+- `cli_recovery.py` enthält ausschließlich Parser, Summen und Terminal-/JSON-Darstellung.
+- Restore und automatischer Rückfall verbleiben unverändert in `core/config_restore.py`.
+- `core/restore_audit.py` erhält ausschließlich das minimale Nachweisschema und den atomaren Schreibvertrag.
+- `cli_backups.py` steuert die Reihenfolge: Restore zuerst bestätigen, optional danach Protokoll schreiben.
+- Ein Protokollfehler wird nicht fälschlich als fehlgeschlagener Restore dargestellt.
 - Keine neue Laufzeitabhängigkeit.
 - Keine Änderung der Originaldatei-Sperre.
 
 ## Nächste Analysepunkte
 
-1. Rein lesenden Terminal-/JSON-Diagnosebefehl für alle Wiederanlaufeinträge entwerfen.
-2. Optionales manipulationsarmes Wiederherstellungsprotokoll mit Pfaden, UTC und Prüfsummen definieren.
-3. Reale Laienabnahme für Vergleich, Namensbestätigung und Rückfallverständnis durchführen.
-4. Datenträger-voll- und Prozessabbruchtests ausschließlich mit synthetischen Konfigurationen dokumentieren.
+1. Rein lesenden Prüfbefehl für eine ausdrücklich ausgewählte Restore-Protokolldatei definieren.
+2. Optionalen neuen Protokollpfad in den geführten Restore-Ablauf integrieren, ohne automatische Zielwahl.
+3. Reale Laienabnahme für Diagnosefelder, Startbarkeit und Teilfehlermeldung durchführen.
+4. Ausgehängten Datenträger, vorhandenes Protokollziel und vollen Datenträger ausschließlich mit synthetischen Daten dokumentieren.
