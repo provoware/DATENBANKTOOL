@@ -137,10 +137,10 @@
     "configuration_restore_automatic_selection_allowed": false
   },
   "validation": {
-    "status": "passed-preversion-functional-run",
-    "functional_reference_commit": "886047b4492087ebaa615247705d9992f14dfd1d",
-    "workflow_run_id": 30990967880,
-    "package_built": "datenbanktool-0.17.0a1",
+    "status": "passed-reference-run",
+    "functional_reference_commit": "f22f3e68c3564170ac8eef2fdcae0a1b8ce4d2a9",
+    "workflow_run_id": 30991729873,
+    "package_built": "datenbanktool-0.18.0a1",
     "python_3_10_tests": 139,
     "python_3_12_tests": 139,
     "warnings_as_errors": true,
@@ -161,24 +161,24 @@
     "configuration_restore_guided_flow_test": true,
     "cli_module_size_test": true,
     "quick_acceptance_reference": {
-      "reference_commit": "886047b4492087ebaa615247705d9992f14dfd1d",
+      "reference_commit": "f22f3e68c3564170ac8eef2fdcae0a1b8ce4d2a9",
       "file_count": 600,
       "checks_passed": 11,
       "checks_total": 11,
-      "duration_seconds": 1.124,
-      "peak_python_memory_bytes": 907816,
-      "artifact_id": 8924069373,
-      "artifact_sha256": "4b821b936d5044d6067672abc45486f71ea2ba123fb058275dd6c813991df478"
+      "duration_seconds": 1.046,
+      "peak_python_memory_bytes": 907557,
+      "artifact_id": 8924393528,
+      "artifact_sha256": "577acd7e484e2989f4ef55da0ad23cf4e837ba892a530413831a2fed2e7ea6a3"
     },
     "standard_acceptance_reference": {
-      "reference_commit": "886047b4492087ebaa615247705d9992f14dfd1d",
+      "reference_commit": "f22f3e68c3564170ac8eef2fdcae0a1b8ce4d2a9",
       "file_count": 10000,
       "checks_passed": 11,
       "checks_total": 11,
-      "duration_seconds": 18.119,
-      "peak_python_memory_bytes": 13938557,
-      "artifact_id": 8924078681,
-      "artifact_sha256": "fb22798e14f8c7d7a714c8adf8664d200e2ec5b3e04ded502c7a54faa4afa30e"
+      "duration_seconds": 16.571,
+      "peak_python_memory_bytes": 13945057,
+      "artifact_id": 8924402625,
+      "artifact_sha256": "f6f7481538445a26107441cc5b6b839a0687a1b57072fb336f26dfeb786b33d6"
     },
     "large_acceptance_reference": {
       "reference_commit": "c6312a29176f420db052f2e48b85e3b613e13946",
