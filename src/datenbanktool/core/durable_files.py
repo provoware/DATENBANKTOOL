@@ -18,6 +18,39 @@ def _sync_directory(path: Path) -> None:
         os.close(descriptor)
 
 
+def sync_file(path: Path) -> None:
+    """Flush one already written file before it becomes the visible final version."""
+    descriptor = os.open(path, os.O_RDONLY)
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+
+
+def publish_temp_file(
+    temporary: Path,
+    target: Path,
+    *,
+    overwrite: bool = False,
+    mode: int | None = None,
+) -> str:
+    """Durably publish a fully prepared same-directory temporary file."""
+    source = temporary.expanduser().resolve(strict=True)
+    destination = target.expanduser().resolve(strict=False)
+    if source.parent != destination.parent:
+        raise ValueError("Temporärdatei und Ziel müssen im selben Ordner liegen")
+    if destination.exists() and not overwrite:
+        raise FileExistsError(f"Datei existiert bereits: {destination}")
+    sync_file(source)
+    if mode is not None:
+        os.chmod(source, mode)
+    if destination.exists() and not overwrite:
+        raise FileExistsError(f"Datei existiert bereits: {destination}")
+    os.replace(source, destination)
+    _sync_directory(destination.parent)
+    return str(destination)
+
+
 def atomic_write_bytes(
     path: Path,
     content: bytes,
@@ -40,12 +73,12 @@ def atomic_write_bytes(
             handle.write(content)
             handle.flush()
             os.fsync(handle.fileno())
-        if mode is not None:
-            os.chmod(temporary, mode)
-        if target.exists() and not overwrite:
-            raise FileExistsError(f"Datei existiert bereits: {target}")
-        os.replace(temporary, target)
-        _sync_directory(target.parent)
+        publish_temp_file(
+            temporary,
+            target,
+            overwrite=overwrite,
+            mode=mode,
+        )
     except BaseException:
         temporary.unlink(missing_ok=True)
         raise
