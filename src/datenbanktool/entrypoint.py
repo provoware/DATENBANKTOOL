@@ -41,6 +41,10 @@ def _run_safely(
     journal = RunJournal.begin(arguments, version=__version__)
     try:
         result = int(operation())
+    except SystemExit as error:
+        code = error.code if isinstance(error.code, int) else 2
+        journal.complete(code)
+        raise
     except KeyboardInterrupt:
         journal.interrupted()
         error_stream.write(
