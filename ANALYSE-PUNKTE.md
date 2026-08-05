@@ -1,59 +1,54 @@
 # Analyse-Punkte
 
-Stand: Version `0.20.0-alpha.1`
+Stand: Version `0.21.0-alpha.1`
 
 ## Gesamtergebnis dieser Iteration
 
 | Bereich | Befund | Professionelle Korrektur |
 |---|---|---|
-| Spätere Nachprüfung | Restore-Protokoll wurde beim Erzeugen bestätigt, aber später nicht erneut gegen Dateien geprüft | eigener Befehl `index backups verify-log PROTOKOLL` |
-| Dateiauswahl | Automatische Suche könnte den falschen Nachweis auswählen | ausschließlich ausdrücklich übergebener Protokollpfad |
-| Schema-Drift | Zusätzliche, fehlende oder umbenannte Felder könnten unbemerkt bleiben | exakter Schlüsselsatz für oberste Ebene und SHA-256-Objekt |
-| Zeitqualität | Beliebige Zeittexte oder lokale Offsets wären nicht eindeutig | ISO-8601-Parsing, Pflicht-UTC und logische Reihenfolge |
-| Pfadqualität | Relative oder doppelte Pfade machen den Nachweis uneindeutig | genau drei unterschiedliche absolute Pfade |
-| Hashqualität | Falsche Länge, Rolle oder Schreibweise könnte als Prüfsumme erscheinen | exakt drei Rollen und 64 kleingeschriebene Hexzeichen |
-| Symlink-Risiko | Prüfen könnte auf ein anderes Ziel umgelenkt werden | `O_NOFOLLOW`, normale Datei per `fstat`, keine Auflösung |
-| Speicherbedarf | Große Referenzdateien vollständig einzulesen wäre unnötig | SHA-256 in 1-MiB-Blöcken streamen |
-| Ergebnisdeutung | Fehlende und abweichende Datei haben unterschiedliche Bedeutung | Gelb für fehlend, Rot für Abweichung oder unsicheren Zugriff |
-| Seiteneffekte | Ein Prüfbefehl darf keinen Restore oder Reparaturversuch auslösen | reine `CommandPolicy`, kein Schreib-, Lösch- oder Restore-Handler |
-| Maschinenlesbarkeit | Automatisierung braucht stabile Einzelzustände | JSON mit Status, Soll-/Ist-Hash, Zählern und `all_files_match` |
-| Wartbarkeit | Sicherungs-CLI war bereits umfangreich | eigener Parser und Handler in `cli_restore_audit.py` |
+| Geführter Restore | CLI konnte ein Protokoll schreiben, Startseite aber keinen optionalen Zielpfad erfassen | kleine Erweiterungsschicht fragt erst nach exakter Sicherungsnamensbestätigung optional nach einem neuen Pfad |
+| Leere Eingabe | Optionalität musste ohne versteckten Standardwert erhalten bleiben | leer lässt die sichere Restore-Argumentliste vollständig unverändert |
+| Zielschutz | Vorhandene Datei oder Symlink darf nicht in einen später scheiternden Überschreibversuch gelangen | Ziel vor Befehlsfreigabe normalisieren, sichtbar anzeigen und bei Existenz/Symlink ablehnen |
+| Automatikrisiko | Ein vorgeschlagener Zielpfad könnte unbeabsichtigte Dateien erzeugen | kein Vorschlag, keine Suche, keine automatische Benennung oder Speicherung |
+| Geführte Prüfung | `verify-log` war nur über technische CLI erreichbar | eigene Aktion „Protokoll prüfen“ unter „Sicherungen verwalten“ |
+| Unnötige Eingaben | Protokollprüfung benötigt keine Indexdatei | direkter Pfaddialog ohne Datenbankabfrage |
+| Transparenz | Nutzer muss exakt sehen, welche Datei geprüft wird | normalisierten vollständigen Protokollpfad vor der finalen Befehlsbestätigung ausgeben |
+| Identität | Gültiges Schema allein beweist nicht, dass die erwartete Protokolldatei gewählt wurde | optionaler expliziter SHA-256-Pin |
+| Prüfungsreihenfolge | Ein falsches Protokoll darf nicht erst nach JSON-Auswertung auffallen | sichere Hashprüfung vor Decoding und Schema-Prüfer |
+| Pinformat | Flexible Hashdarstellung wäre mehrdeutig | exakt 64 kleingeschriebene Hexzeichen |
+| Datenschutz | Automatische Pin-Ermittlung oder Historie würde neue Metadaten erzeugen | Pin ausschließlich aus aktueller ausdrücklicher Eingabe verwenden |
+| Wartbarkeit | Bestehende Startseitenklasse ist bereits umfangreich | neue Funktionen in `terminal_home_restore_audit.py` kapseln und über Entry-Point aktivieren |
+| Lesesicherheit | Pinprüfung darf Symlinks oder Sonderdateien nicht akzeptieren | `O_RDONLY`, `O_CLOEXEC`, `O_NOFOLLOW`, `fstat()` und Streaming-Hashing |
 
 ## Automatisch geprüfte Verträge
 
-1. Gültiges Schema mit drei vorhandenen Dateien ergibt Grün und Rückgabecode 0.
-2. Alle drei tatsächlichen SHA-256-Werte stimmen mit den protokollierten Rollen überein.
-3. Protokoll und referenzierte Dateien bleiben bytegenau unverändert.
-4. Die Prüfung erzeugt keine neue Datei und entfernt keinen Pfad.
-5. Veränderter aktiver Stand wird als rote Hashabweichung erkannt.
-6. Fehlende ausgewählte Sicherung wird gelb als unvollständiger Nachweis gemeldet.
-7. Zusatzfelder im Protokoll werden abgelehnt.
-8. Nicht-UTC-Zeit und unlogische Zeitreihenfolge werden abgelehnt.
-9. Relative und doppelte Pfade werden abgelehnt.
-10. Fehlende Hashrolle und großgeschriebener Hash werden abgelehnt.
-11. Protokoll-Symlink wird abgelehnt und nicht verfolgt.
-12. Terminal nennt ausdrücklich die rein lesende Wirkung.
-13. JSON enthält keine ANSI-Sequenzen und genau drei Dateiobjekte.
-14. Hashabweichung liefert maschinenlesbar Rückgabecode 1.
-15. Parser, Handler und rein lesende Policy sind korrekt gebunden.
-16. CLI-Modulgrenzen, Größenlimits und Shellverbot bleiben eingehalten.
-17. 151 Tests laufen unter Python 3.10 und 3.12 mit Warnungen als Fehler.
-18. Quick- und Standardabnahme bestehen jeweils 11/11 Kriterien.
+1. Ausdrücklicher neuer Restore-Protokollpfad wird exakt als `--restore-log` angehängt.
+2. Leere Eingabe ergänzt kein Argument.
+3. Vorhandenes Ziel bleibt bytegenau unverändert und wird nicht angehängt.
+4. Geführte Protokollprüfung verlangt keine Indexdatei.
+5. Vollständiger Protokollpfad wird sichtbar ausgegeben.
+6. Geführte Prüfung kann den Pin ausdrücklich setzen oder überspringen.
+7. Richtiger Pin wird in Terminal und JSON bestätigt.
+8. Falscher Pin liefert Code `2`.
+9. Ungültiges Pinformat liefert Code `2`.
+10. Bei falschem oder ungültigem Pin wird der Schema-Prüfer nicht aufgerufen.
+11. Protokoll und drei Referenzdateien bleiben bei erfolgreicher Pinprüfung bytegenau unverändert.
+12. Keine zusätzliche Laufzeitabhängigkeit oder Shell-Auswertung.
+13. 158 Tests laufen unter Python 3.10 und 3.12 mit Warnungen als Fehler.
+14. Quick- und Standardabnahme bestehen jeweils 11/11 Kriterien.
 
-## Wartbarkeitsentscheidung
+## Architekturentscheidung
 
-- Protokollerzeugung und -prüfung teilen das feste Schema in `core/restore_audit.py`.
-- Lesen normaler Dateien ohne Symlink-Folgen ist eine gemeinsame interne Hilfsgrenze.
-- `cli_restore_audit.py` enthält nur Parser, Ampeldarstellung, JSON und Rückgabecode.
-- `cli_backups.py` registriert das Fachmodul, enthält aber keine zweite Prüflogik.
-- Ungültiges Schema wird vor dem Zugriff auf protokollierte Dateipfade abgelehnt.
-- Fehlende Dateien sind Ergebnisdaten und keine Ausnahme.
-- Keine neue Laufzeitabhängigkeit.
-- Keine Änderung der Originaldatei-Sperre.
+- `core/terminal_home.py` bleibt unverändert und enthält weiterhin die bestehenden Recovery- und Sicherungsabläufe.
+- `core/terminal_home_restore_audit.py` erweitert ausschließlich Backup-Aktionswahl, optionalen Restore-Protokollpfad und geführte Protokollprüfung.
+- Der Entry-Point verwendet die Erweiterungsklasse; bestehende Basistests bleiben weiterhin gültig.
+- `core/restore_audit_identity.py` enthält nur Pinformat, sichere Dateileseöffnung und SHA-256-Identitätsprüfung.
+- `cli_restore_audit.py` steuert die Reihenfolge: optionaler Pin zuerst, bestehender Schema- und Dateiprüfer danach.
+- Der Restore-Kern, die Protokollerzeugung und die drei Dateivergleiche bleiben unverändert.
 
 ## Nächste Analysepunkte
 
-1. Rein lesende Protokollprüfung in die geführte Startseite integrieren.
-2. Optionalen erwarteten SHA-256-Wert für die Protokolldatei als Identitäts-Pin definieren.
-3. Reale Laienabnahme für Grün/Gelb/Rot und Soll-/Ist-Hash durchführen.
-4. Große synthetische Referenzdatei und ausgehängten Datenträger auf dem Kubuntu-Zielsystem prüfen.
+1. Geführte synthetische Kubuntu-Abnahmesitzung zur Schließung des letzten Hauptpunkts definieren.
+2. Optionalen Prüfberichtsexport mit neuem nicht überschreibbarem Zielpfad untersuchen.
+3. Ampelverständnis, leere optionale Eingabe und falschen Pin mit einer unerfahrenen Testperson beobachten.
+4. Reale ext4- und USB-Zielpfade ausschließlich mit synthetischen Dateien prüfen.
