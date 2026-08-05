@@ -33,7 +33,7 @@ class ConfigRestoreTests(unittest.TestCase):
         config.mkdir()
         active = config / "search-presets.json"
         save_preset("Audio", SearchFilter(text="alt"), path=active)
-        save_preset("Archiv", SearchFilter(extension="zip"), path=active)
+        save_preset("Archiv", SearchFilter(categories=("archive",)), path=active)
         backup = Path(create_config_backup(active).backup)
         save_preset(
             "Audio",
@@ -42,7 +42,7 @@ class ConfigRestoreTests(unittest.TestCase):
             replace=True,
         )
         delete_preset("Archiv", path=active)
-        save_preset("Neu", SearchFilter(extension="wav"), path=active)
+        save_preset("Neu", SearchFilter(categories=("audio",)), path=active)
         return config, active, backup, active.read_bytes()
 
     def _cli(self, arguments: list[str]) -> tuple[int, str, str]:
