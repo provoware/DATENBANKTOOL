@@ -1,12 +1,12 @@
 # DATENBANKTOOL
 
-**Erledigt:** vollständig lesende Wiederanlauf-Diagnose für alle gespeicherten Einträge sowie optionales inhaltsfreies Wiederherstellungsprotokoll nach erfolgreichem Konfigurations-Restore. Weiterhin vorhanden: geführte Konfigurations-Wiederherstellung, automatischer geprüfter Rückfall, Mehrfach-Wiederanlauf, Konfigurationsvorsicherungen, Sicherungskatalog, Autosave, Crashberichte und SQLite-Härtung.
+**Erledigt:** vollständig lesender Prüfungsbefehl für ausdrücklich ausgewählte Wiederherstellungsprotokolle. Er validiert das feste Schema, beide UTC-Zeiten, drei unterschiedliche absolute Pfade und drei SHA-256-Werte und vergleicht vorhandene Dateien ohne Wiederherstellung, Änderung oder Löschung. Weiterhin vorhanden: Wiederanlauf-Diagnose, optionales Restore-Protokoll, geprüfter Konfigurations-Restore, automatischer Rückfall, Sicherungskatalog, Autosave, Crashberichte und SQLite-Härtung.
 
 **Offen:** reale Laienabnahme auf einem Kubuntu-Zielsystem.
 
-**Entwicklungsfortschritt:** **99 %** · **65 Hauptpunkte erledigt** · **1 Hauptpunkt offen**.
+**Entwicklungsfortschritt:** **99 %** · **66 Hauptpunkte erledigt** · **1 Hauptpunkt offen**.
 
-**Mögliche Upgrades aus `UPGRADE_POOL.md`:** Prüfbefehl für Wiederherstellungsprotokolle, geführte Protokollauswahl auf der Startseite, Mehrordner-Zeitreihe und später eine barrierefreie grafische Oberfläche.
+**Mögliche Upgrades aus `UPGRADE_POOL.md`:** geführte Protokollprüfung auf der Startseite, optionaler SHA-256-Pin für die Protokolldatei, Mehrordner-Zeitreihe und später eine barrierefreie grafische Oberfläche.
 
 > Lokales Linux-Indexwerkzeug für große Dateisammlungen. Persönliche Originaldateien werden nicht automatisch verändert.
 
@@ -14,14 +14,14 @@
 
 | Bereich | Stand |
 |---|---|
-| Projektversion | `0.19.0-alpha.1` |
-| Paketversion | `0.19.0a1` |
+| Projektversion | `0.20.0-alpha.1` |
+| Paketversion | `0.20.0a1` |
 | Python | `>=3.10` |
 | SQLite-Schema | `3` |
 | Wiederanlauflimit | **12 verschiedene Indexdateien** |
 | Originaldateiänderungen | **technisch gesperrt** |
 | Externe Laufzeitabhängigkeiten | **0** |
-| Automatische Tests | **145 unter Python 3.10 und 3.12** |
+| Automatische Tests | **151 unter Python 3.10 und 3.12** |
 | Reale Laienabnahme | **offen** |
 
 ## Einfach starten
@@ -30,46 +30,64 @@
 datenbanktool start
 ```
 
-## Alle Wiederanläufe nur prüfen
+## Wiederherstellungsprotokoll vollständig lesend prüfen
 
-Terminalübersicht:
-
-```bash
-datenbanktool index recovery
-```
-
-JSON-Ausgabe:
+Terminalausgabe:
 
 ```bash
-datenbanktool index recovery --json
-```
-
-Die Diagnose zeigt für jeden gespeicherten Eintrag:
-
-- Prüfstatus,
-- Quellordner,
-- Indexdatei,
-- SQLite-Sitzungsnummer,
-- Zustand und Phase,
-- bestätigte Dateizahl,
-- Aktualisierungszeit in UTC,
-- Startbarkeit und technische Begründung.
-
-Der Befehl startet keinen Scan, verwirft keinen Eintrag und verändert weder `resume-run.json` noch die geprüften Indexdateien. Die JSON-Ausgabe enthält zusätzlich Gesamtzahl, startbare und nicht startbare Einträge sowie die vollständigen geprüften Datensätze ohne ANSI-Farbcodes.
-
-## Konfigurationssicherung zuerst nur vergleichen
-
-```bash
-datenbanktool index backups compare index.sqlite3 SICHERUNG
+datenbanktool index backups verify-log /pfad/restore-nachweis.json
 ```
 
 Maschinenlesbar:
 
 ```bash
+datenbanktool index backups verify-log /pfad/restore-nachweis.json --json
+```
+
+Der Befehl prüft zuerst die ausdrücklich ausgewählte Protokolldatei:
+
+1. normales UTF-8-JSON und keine symbolische Verknüpfung,
+2. exakt das unterstützte Protokollschema `1`,
+3. Ereignis `configuration_restore`,
+4. Konfigurationsart `search` oder `timeline`,
+5. zwei gültige UTC-Zeiten in richtiger Reihenfolge,
+6. genau drei unterschiedliche absolute Dateipfade,
+7. genau drei kleingeschriebene SHA-256-Werte mit jeweils 64 Hexzeichen,
+8. keine fehlenden oder unerwarteten Schemafelder.
+
+Anschließend werden die drei referenzierten Dateien ausschließlich lesend geöffnet und gehasht:
+
+- aktive Datei nach der Wiederherstellung,
+- ausgewählte Sicherung,
+- automatische Rückfallsicherung.
+
+Symlinks werden nicht verfolgt. Fehlende Dateien werden als unvollständiger Nachweis, abweichende Hashes als Integritätsfehler und vollständig übereinstimmende Dateien als bestätigt ausgegeben.
+
+| Rückgabecode | Bedeutung |
+|---:|---|
+| `0` | Protokoll gültig und alle drei Dateien stimmen überein |
+| `1` | Protokoll gültig, aber Datei fehlt, ist nicht sicher lesbar oder weicht ab |
+| `2` | Protokolldatei oder festes Schema ist ungültig |
+
+Es wird keine Wiederherstellung gestartet. Das Protokoll und seine referenzierten Dateien werden nicht verändert oder gelöscht.
+
+## Alle Wiederanläufe nur prüfen
+
+```bash
+datenbanktool index recovery
+datenbanktool index recovery --json
+```
+
+Die Diagnose zeigt Prüfstatus, Quellordner, Indexdatei, SQLite-Sitzung, Zustand, Phase, bestätigte Dateizahl, UTC-Zeit und Startbarkeit. Sie startet keinen Scan und verwirft keinen Eintrag.
+
+## Konfigurationssicherung zuerst nur vergleichen
+
+```bash
+datenbanktool index backups compare index.sqlite3 SICHERUNG
 datenbanktool index backups compare index.sqlite3 SICHERUNG --json
 ```
 
-Der Vergleich ist vollständig lesend. Er zeigt aktive Datei, Vorlagenzahlen, Hinzufügungen, Entfernungen, Ersetzungen, unveränderte Vorlagen und die SHA-256-Werte beider Dateien.
+Der Vergleich zeigt aktive Datei, Vorlagenzahlen, Hinzufügungen, Entfernungen, Ersetzungen, unveränderte Vorlagen und die SHA-256-Werte beider Dateien, ohne etwas zu verändern.
 
 ## Genau eine Konfigurationssicherung wiederherstellen
 
@@ -79,44 +97,18 @@ datenbanktool index backups restore index.sqlite3 SICHERUNG \
   --yes
 ```
 
-Der Sicherheitsablauf ist fest:
+Vor dem Überschreiben entsteht eine neue geprüfte Rückfallsicherung. Aktive Datei und ausgewählte Sicherung werden erneut per SHA-256 geprüft. Die Veröffentlichung erfolgt atomar mit Modus `0600`; eine fehlgeschlagene Nachprüfung löst den automatisch bestätigten Rückfall aus.
 
-1. Die Sicherung muss im frisch aufgebauten Sicherungskatalog vorkommen.
-2. Sie muss eine grün geprüfte Such- oder Zeitreihen-Konfigurationssicherung sein.
-3. Sicherung und aktive Datei werden erneut vollständig verglichen.
-4. Der Sicherungsdateiname muss exakt wiederholt werden.
-5. `--yes` ist zwingend.
-6. Vor dem Überschreiben entsteht eine neue geprüfte Rückfallsicherung.
-7. Aktive Datei und ausgewählte Sicherung werden unmittelbar vorher erneut per SHA-256 geprüft.
-8. Die Veröffentlichung erfolgt atomar mit Dateimodus `0600`.
-9. Inhalt, Schema, Vorlagen und SHA-256 werden nachgeprüft.
-10. Scheitert die Nachprüfung, wird automatisch aus der Rückfallsicherung zurückgesetzt und erneut geprüft.
-
-## Optionales Wiederherstellungsprotokoll
-
-Nur bei ausdrücklich angegebenem Ziel:
+## Optionales Wiederherstellungsprotokoll erzeugen
 
 ```bash
 datenbanktool index backups restore index.sqlite3 SICHERUNG \
   --confirm-name EXAKTER_DATEINAME \
   --yes \
-  --restore-log /pfad/restore-nachweis.json
+  --restore-log /neuer/pfad/restore-nachweis.json
 ```
 
-Das Protokoll wird erst nach einer erfolgreich bestätigten Wiederherstellung geschrieben. Es enthält ausschließlich:
-
-- UTC-Zeit des Protokolls,
-- UTC-Zeit der abgeschlossenen Wiederherstellung,
-- aktive Konfigurationsdatei,
-- ausgewählte Sicherung,
-- automatische Rückfallsicherung,
-- SHA-256 der aktiven Datei nach Restore,
-- SHA-256 der ausgewählten Sicherung,
-- SHA-256 der Rückfallsicherung.
-
-Es enthält keine Vorlagen, Antwortwerte, Konfigurationsinhalte, Kommandozeilenargumente oder Geheimnisse. Das Ziel wird atomar mit Modus `0600` angelegt. Eine vorhandene Datei wird nicht überschrieben. Es gibt keine automatische Benennung, Auswahl, Rotation oder Löschung.
-
-Kann das ausdrücklich gewünschte Protokoll nicht geschrieben werden, bleibt die zuvor erfolgreich bestätigte Wiederherstellung bestehen. Der Befehl meldet diesen Teilfehler mit Rückgabecode `1` und nennt die technische Ursache.
+Das Protokoll entsteht erst nach einer erfolgreich bestätigten Wiederherstellung und enthält ausschließlich UTC-Zeiten, drei Pfade und drei SHA-256-Werte. Vorlagen, Konfigurationsinhalte, Argumente und Geheimnisse sind ausgeschlossen. Das Ziel wird atomar mit Modus `0600` angelegt und niemals überschrieben, automatisch benannt, rotiert oder gelöscht.
 
 ## Optionale Sicherung vor Vorlagenänderungen
 
@@ -129,20 +121,12 @@ datenbanktool index timeline-presets save Musik Archiv \
 
 Ohne `--backup-before-change` entsteht keine Sicherung. Vorhandene Sicherungen werden niemals automatisch rotiert oder gelöscht.
 
-## Mehrere unabhängige Wiederanläufe
-
-Die Startseite führt höchstens zwölf unterbrochene Scans verschiedener Indexdateien. Jeder Eintrag wird getrennt gegen Ordner, Indexdatei und SQLite-Sitzung geprüft und kann einzeln fortgesetzt, erhalten oder bewusst verworfen werden.
-
-Nicht verfügbare Ordner oder Indexdateien bleiben sichtbar, sind aber nicht startbar. Erfolg oder Verwerfen entfernt ausschließlich den ausgewählten internen Hinweis.
-
 ## Sicherungsübersicht und Einzellöschung
 
 ```bash
 datenbanktool index backups list index.sqlite3
 datenbanktool index backups list index.sqlite3 --json
 ```
-
-Genau eine Sicherung löschen:
 
 ```bash
 datenbanktool index backups delete index.sqlite3 SICHERUNG \
@@ -163,10 +147,10 @@ datenbanktool check --database index.sqlite3
 
 - Originaldateien bleiben schreibgeschützt.
 - CLI-Fachmodule verwenden keine Shell-Auswertung.
-- Konfigurationen, Statusdateien und Protokolle werden atomar veröffentlicht.
-- SQLite verwendet `WAL` und `synchronous=FULL`.
-- Wiederanlauf-Diagnose verändert keine Wiederanlauf- oder Indexdaten.
-- Protokollfehler rollen eine bereits erfolgreiche Konfigurations-Wiederherstellung nicht zurück.
+- Protokollprüfung besitzt eine `CommandPolicy` ohne Schreibwirkung.
+- Protokoll und referenzierte Dateien werden mit `O_NOFOLLOW` ausschließlich lesend geöffnet.
+- Fehlende Dateien werden nicht neu angelegt oder rekonstruiert.
+- Abweichende Dateien werden nur gemeldet und niemals automatisch ersetzt.
 - Hardwaredefekte, volles oder beschädigtes Dateisystem, Kerneldefekte und physischer Verlust bleiben außerhalb des Anwendungsschutzes.
 
 ## Entwicklung und Prüfung
