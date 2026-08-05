@@ -1,62 +1,59 @@
 # Analyse-Punkte
 
-Stand: Version `0.19.0-alpha.1`
+Stand: Version `0.20.0-alpha.1`
 
 ## Gesamtergebnis dieser Iteration
 
 | Bereich | Befund | Professionelle Korrektur |
 |---|---|---|
-| Diagnosezugang | Mehrere Wiederanläufe waren außerhalb der Startseite nicht vollständig prüfbar | eigener Terminal- und JSON-Befehl `index recovery` |
-| Diagnoseumfang | Ein grober Hinweis reichte für Ursachenanalyse und Dokumentation nicht | Prüfstatus, Ordner, Index, Sitzung, Zustand, Phase, Dateizahl, UTC und Startbarkeit gemeinsam ausgeben |
-| Seiteneffekte | Ein Diagnosebefehl dürfte keinen Scan starten oder Hinweis entfernen | reine `CommandPolicy` ohne Schreibwirkung; kein Start-, Verwerfen- oder Löschhandler |
-| Nachweis der Lesewirkung | Nur ein erklärender Text beweist keine Unverändertheit | Tests vergleichen Bytes von `resume-run.json` und Indexdatei vor und nach Diagnose |
-| Maschinenlesbarkeit | Terminalfarben und Bedienhinweise erschweren Automatisierung | stabiles JSON-Schema ohne ANSI mit Summen und vollständiger Eintragsliste |
-| Leerer Zustand | Fehlende Einträge könnten als Fehler missverstanden werden | erfolgreicher Nullbefund mit `record_count: 0` und leerer Liste |
-| Restore-Nachvollziehbarkeit | Erfolgreiche Wiederherstellung war später nur über Dateien rekonstruierbar | optionales kleines JSON-Protokoll nach bestätigtem Restore |
-| Datenminimierung | Ein allgemeines Protokoll könnte Konfigurationsinhalte oder Geheimnisse erfassen | festes Schema nur mit UTC-Zeiten, drei Pfaden und drei SHA-256-Werten |
-| Explizite Entscheidung | Automatisches Protokollieren würde neue Dateien ohne Nutzerauftrag erzeugen | ausschließlich bei `--restore-log PFAD` |
-| Zielschutz | Bestehende Nachweise könnten überschrieben werden | existierende Datei und Symlink ablehnen; kein `overwrite=True` |
-| Veröffentlichungsqualität | Teilweise geschriebenes JSON wäre kein belastbarer Nachweis | atomare Veröffentlichung, Modus `0600`, erneutes Lesen und vollständiger Payload-Vergleich |
-| Teilfehler | Nachweisfehler nach erfolgreichem Restore darf den bestätigten Konfigurationsstand nicht verfälschen | Restore erhalten, separater Protokollfehler mit Rückgabecode `1` und technischer Ursache |
-| Aufbewahrung | Automatische Ablage oder Rotation könnte Pfade und Nachweise unkontrolliert vermehren oder löschen | keine Benennung, Auswahl, Rotation oder Löschung |
-| Architektur | Diagnose und Nachweis brauchten klar getrennte Zuständigkeiten | `cli_recovery.py` für Darstellung, `core/restore_audit.py` für den Schreibvertrag |
+| Spätere Nachprüfung | Restore-Protokoll wurde beim Erzeugen bestätigt, aber später nicht erneut gegen Dateien geprüft | eigener Befehl `index backups verify-log PROTOKOLL` |
+| Dateiauswahl | Automatische Suche könnte den falschen Nachweis auswählen | ausschließlich ausdrücklich übergebener Protokollpfad |
+| Schema-Drift | Zusätzliche, fehlende oder umbenannte Felder könnten unbemerkt bleiben | exakter Schlüsselsatz für oberste Ebene und SHA-256-Objekt |
+| Zeitqualität | Beliebige Zeittexte oder lokale Offsets wären nicht eindeutig | ISO-8601-Parsing, Pflicht-UTC und logische Reihenfolge |
+| Pfadqualität | Relative oder doppelte Pfade machen den Nachweis uneindeutig | genau drei unterschiedliche absolute Pfade |
+| Hashqualität | Falsche Länge, Rolle oder Schreibweise könnte als Prüfsumme erscheinen | exakt drei Rollen und 64 kleingeschriebene Hexzeichen |
+| Symlink-Risiko | Prüfen könnte auf ein anderes Ziel umgelenkt werden | `O_NOFOLLOW`, normale Datei per `fstat`, keine Auflösung |
+| Speicherbedarf | Große Referenzdateien vollständig einzulesen wäre unnötig | SHA-256 in 1-MiB-Blöcken streamen |
+| Ergebnisdeutung | Fehlende und abweichende Datei haben unterschiedliche Bedeutung | Gelb für fehlend, Rot für Abweichung oder unsicheren Zugriff |
+| Seiteneffekte | Ein Prüfbefehl darf keinen Restore oder Reparaturversuch auslösen | reine `CommandPolicy`, kein Schreib-, Lösch- oder Restore-Handler |
+| Maschinenlesbarkeit | Automatisierung braucht stabile Einzelzustände | JSON mit Status, Soll-/Ist-Hash, Zählern und `all_files_match` |
+| Wartbarkeit | Sicherungs-CLI war bereits umfangreich | eigener Parser und Handler in `cli_restore_audit.py` |
 
 ## Automatisch geprüfte Verträge
 
-1. Terminaldiagnose zeigt alle geforderten Felder eines fortsetzbaren Eintrags.
-2. JSON-Diagnose enthält Schema, Summen und vollständige Eintragsdaten ohne ANSI.
-3. Leere Wiederanlaufliste liefert Rückgabecode 0 und eine leere JSON-Liste.
-4. Diagnose verändert die Wiederanlaufdatei bytegenau nicht.
-5. Diagnose verändert die geprüfte SQLite-Indexdatei bytegenau nicht.
-6. Öffentlicher Diagnosebefehl besitzt Handler und rein lesende `CommandPolicy`.
-7. Optionales Restore-Protokoll wird erst nach erfolgreichem Restore erzeugt.
-8. Protokoll besitzt Modus `0600` und gültiges UTF-8-JSON.
-9. Protokoll enthält exakt die drei benannten SHA-256-Rollen.
-10. Aktiver Restore-Hash und Hash der ausgewählten Sicherung stimmen überein.
-11. Eingebauter Geheimniswert und Konfigurationsdatensätze erscheinen nicht im Protokoll.
-12. Ohne `--restore-log` entsteht keine Protokolldatei und die bisherige JSON-Ausgabe bleibt kompatibel.
-13. Ein vorhandenes Ziel wird nicht überschrieben.
-14. Bei Protokollfehler bleibt die erfolgreich wiederhergestellte aktive Datei erhalten.
-15. Teilfehler wird maschinenlesbar mit `restore_log_error` und Rückgabecode 1 ausgegeben.
-16. Parser, Handler, `CommandPolicy`, Modulzuständigkeit, Größenlimits und Shellverbot bleiben konsistent.
-17. 145 Tests laufen unter Python 3.10 und 3.12 mit Warnungen als Fehler.
+1. Gültiges Schema mit drei vorhandenen Dateien ergibt Grün und Rückgabecode 0.
+2. Alle drei tatsächlichen SHA-256-Werte stimmen mit den protokollierten Rollen überein.
+3. Protokoll und referenzierte Dateien bleiben bytegenau unverändert.
+4. Die Prüfung erzeugt keine neue Datei und entfernt keinen Pfad.
+5. Veränderter aktiver Stand wird als rote Hashabweichung erkannt.
+6. Fehlende ausgewählte Sicherung wird gelb als unvollständiger Nachweis gemeldet.
+7. Zusatzfelder im Protokoll werden abgelehnt.
+8. Nicht-UTC-Zeit und unlogische Zeitreihenfolge werden abgelehnt.
+9. Relative und doppelte Pfade werden abgelehnt.
+10. Fehlende Hashrolle und großgeschriebener Hash werden abgelehnt.
+11. Protokoll-Symlink wird abgelehnt und nicht verfolgt.
+12. Terminal nennt ausdrücklich die rein lesende Wirkung.
+13. JSON enthält keine ANSI-Sequenzen und genau drei Dateiobjekte.
+14. Hashabweichung liefert maschinenlesbar Rückgabecode 1.
+15. Parser, Handler und rein lesende Policy sind korrekt gebunden.
+16. CLI-Modulgrenzen, Größenlimits und Shellverbot bleiben eingehalten.
+17. 151 Tests laufen unter Python 3.10 und 3.12 mit Warnungen als Fehler.
 18. Quick- und Standardabnahme bestehen jeweils 11/11 Kriterien.
 
 ## Wartbarkeitsentscheidung
 
-- Speicherung und Sperre der Wiederanlaufliste verbleiben in `core/run_journal.py`.
-- Unabhängige SQLite-Nur-Lese-Prüfung verbleibt in `core/recovery.py`.
-- `cli_recovery.py` enthält ausschließlich Parser, Summen und Terminal-/JSON-Darstellung.
-- Restore und automatischer Rückfall verbleiben unverändert in `core/config_restore.py`.
-- `core/restore_audit.py` erhält ausschließlich das minimale Nachweisschema und den atomaren Schreibvertrag.
-- `cli_backups.py` steuert die Reihenfolge: Restore zuerst bestätigen, optional danach Protokoll schreiben.
-- Ein Protokollfehler wird nicht fälschlich als fehlgeschlagener Restore dargestellt.
+- Protokollerzeugung und -prüfung teilen das feste Schema in `core/restore_audit.py`.
+- Lesen normaler Dateien ohne Symlink-Folgen ist eine gemeinsame interne Hilfsgrenze.
+- `cli_restore_audit.py` enthält nur Parser, Ampeldarstellung, JSON und Rückgabecode.
+- `cli_backups.py` registriert das Fachmodul, enthält aber keine zweite Prüflogik.
+- Ungültiges Schema wird vor dem Zugriff auf protokollierte Dateipfade abgelehnt.
+- Fehlende Dateien sind Ergebnisdaten und keine Ausnahme.
 - Keine neue Laufzeitabhängigkeit.
 - Keine Änderung der Originaldatei-Sperre.
 
 ## Nächste Analysepunkte
 
-1. Rein lesenden Prüfbefehl für eine ausdrücklich ausgewählte Restore-Protokolldatei definieren.
-2. Optionalen neuen Protokollpfad in den geführten Restore-Ablauf integrieren, ohne automatische Zielwahl.
-3. Reale Laienabnahme für Diagnosefelder, Startbarkeit und Teilfehlermeldung durchführen.
-4. Ausgehängten Datenträger, vorhandenes Protokollziel und vollen Datenträger ausschließlich mit synthetischen Daten dokumentieren.
+1. Rein lesende Protokollprüfung in die geführte Startseite integrieren.
+2. Optionalen erwarteten SHA-256-Wert für die Protokolldatei als Identitäts-Pin definieren.
+3. Reale Laienabnahme für Grün/Gelb/Rot und Soll-/Ist-Hash durchführen.
+4. Große synthetische Referenzdatei und ausgehängten Datenträger auf dem Kubuntu-Zielsystem prüfen.
