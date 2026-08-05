@@ -97,6 +97,17 @@ class CliArchitectureTests(unittest.TestCase):
             ["index", "timeline-presets", "save", "beispiel", "Musik"],
             ["index", "timeline-presets", "delete", "beispiel"],
             ["index", "backup", "/tmp/index.sqlite3"],
+            ["index", "backups", "list", "/tmp/index.sqlite3"],
+            [
+                "index",
+                "backups",
+                "delete",
+                "/tmp/index.sqlite3",
+                "/tmp/index.sqlite3.backup-20260805.sqlite3",
+                "--confirm-name",
+                "index.sqlite3.backup-20260805.sqlite3",
+                "--yes",
+            ],
             [
                 "index",
                 "restore",
@@ -150,6 +161,12 @@ class CliArchitectureTests(unittest.TestCase):
                 "timeline-presets",
                 "list",
             ): "datenbanktool.cli_timeline_presets",
+            (
+                "index",
+                "backups",
+                "list",
+                "/tmp/index.sqlite3",
+            ): "datenbanktool.cli_backups",
             (
                 "index",
                 "build",
