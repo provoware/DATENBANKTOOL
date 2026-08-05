@@ -7,6 +7,11 @@ from pathlib import Path
 from datenbanktool.cli_common import colour_mode, human_size, print_hint
 from datenbanktool.cli_contract import CommandPolicy, bind_handler
 from datenbanktool.core.backup_catalog import delete_backup, list_backups
+from datenbanktool.core.config_restore import (
+    ConfigRestoreComparison,
+    compare_config_backup,
+    restore_config_backup,
+)
 from datenbanktool.core.presentation import TrafficLight, traffic_text
 
 
@@ -18,19 +23,58 @@ def register_backup_catalog_parser(
         help="Index- und Konfigurationssicherungen prüfen und einzeln verwalten",
         description=(
             "Zeigt erkannte Sicherungen mit Alter, Größe und Prüfergebnis. "
-            "Nichts wird automatisch gelöscht. (Technisch: Nur-Lese-Katalog.)"
+            "Nichts wird automatisch gelöscht."
         ),
     )
     actions = backups.add_subparsers(dest="backup_action", required=True)
 
-    listing = actions.add_parser(
-        "list",
-        help="Sicherungen nur anzeigen und prüfen",
-    )
+    listing = actions.add_parser("list", help="Sicherungen nur anzeigen und prüfen")
     listing.add_argument("database", type=Path)
     listing.add_argument("--config-directory", type=Path)
     listing.add_argument("--json", action="store_true")
     bind_handler(listing, run_backup_list, CommandPolicy("index.backups.list"))
+
+    comparison = actions.add_parser(
+        "compare",
+        help="Eine Konfigurationssicherung nur mit der aktiven Datei vergleichen",
+        description=(
+            "Vergleicht genau eine katalogisierte Such- oder Zeitreihen-Sicherung "
+            "mit der zugehörigen aktiven Konfiguration. Es wird nichts verändert."
+        ),
+    )
+    comparison.add_argument("database", type=Path)
+    comparison.add_argument("backup", type=Path)
+    comparison.add_argument("--config-directory", type=Path)
+    comparison.add_argument("--json", action="store_true")
+    bind_handler(
+        comparison,
+        run_backup_compare,
+        CommandPolicy("index.backups.compare"),
+    )
+
+    restoration = actions.add_parser(
+        "restore",
+        help="Genau eine geprüfte Konfigurationssicherung wiederherstellen",
+        description=(
+            "Vergleicht erneut, erstellt automatisch eine geprüfte Rückfallsicherung "
+            "und ersetzt erst danach genau die zugehörige aktive Vorlagendatei."
+        ),
+    )
+    restoration.add_argument("database", type=Path)
+    restoration.add_argument("backup", type=Path)
+    restoration.add_argument("--config-directory", type=Path)
+    restoration.add_argument("--confirm-name", required=True)
+    restoration.add_argument("--yes", action="store_true")
+    restoration.add_argument("--json", action="store_true")
+    bind_handler(
+        restoration,
+        run_backup_restore,
+        CommandPolicy(
+            "index.backups.restore",
+            writes_backups=True,
+            writes_configuration=True,
+        ),
+    )
 
     deletion = actions.add_parser(
         "delete",
@@ -93,6 +137,87 @@ def run_backup_list(arguments: argparse.Namespace) -> int:
     print_hint(
         arguments,
         "Löschen nur mit exakt angezeigtem Pfad, Dateinamen und ausdrücklichem --yes.",
+    )
+    return 0
+
+
+def _print_names(label: str, values: tuple[str, ...]) -> None:
+    text = ", ".join(values) if values else "keine"
+    print(f"{label}: {text}")
+
+
+def _print_comparison(comparison: ConfigRestoreComparison) -> None:
+    level = "yellow" if comparison.can_restore else "green"
+    label = "Wiederherstellung würde Änderungen ausführen" if comparison.can_restore else "Keine Änderung nötig"
+    print(
+        traffic_text(
+            TrafficLight(level, label, comparison.validation_detail),
+            mode="never",
+        )
+    )
+    print(f"Art: {comparison.kind_label}")
+    print(f"Ausgewählte Sicherung: {comparison.backup}")
+    print(f"Aktive Konfiguration: {comparison.active}")
+    print(
+        f"Vorlagen: Sicherung {comparison.backup_preset_count} | "
+        f"aktiv {comparison.active_preset_count}"
+    )
+    _print_names("Würde hinzufügen", comparison.add_names)
+    _print_names("Würde entfernen", comparison.remove_names)
+    _print_names("Würde ersetzen", comparison.change_names)
+    _print_names("Unverändert", comparison.unchanged_names)
+    print(f"SHA-256 Sicherung: {comparison.backup_sha256}")
+    print(f"SHA-256 aktiv:     {comparison.active_sha256}")
+
+
+def run_backup_compare(arguments: argparse.Namespace) -> int:
+    comparison = compare_config_backup(
+        arguments.database,
+        arguments.backup,
+        config_directory=arguments.config_directory,
+    )
+    if arguments.json:
+        print(json.dumps(comparison.to_dict(), ensure_ascii=False, indent=2))
+        return 0
+    print("Konfigurations-Wiederherstellung – Nur-Lese-Vergleich")
+    _print_comparison(comparison)
+    print("Es wurde nichts verändert, gesichert, wiederhergestellt oder gelöscht.")
+    if comparison.can_restore:
+        print(
+            "Eine Wiederherstellung erstellt zuerst automatisch eine neue geprüfte "
+            "Rückfallsicherung der aktiven Datei."
+        )
+    return 0
+
+
+def run_backup_restore(arguments: argparse.Namespace) -> int:
+    result = restore_config_backup(
+        arguments.database,
+        arguments.backup,
+        confirm_name=arguments.confirm_name,
+        yes=arguments.yes,
+        config_directory=arguments.config_directory,
+    )
+    if arguments.json:
+        print(json.dumps(result.to_dict(), ensure_ascii=False, indent=2))
+        return 0
+    print(
+        traffic_text(
+            TrafficLight(
+                "green",
+                "Konfiguration geprüft wiederhergestellt",
+                result.comparison.active,
+            ),
+            mode=colour_mode(arguments),
+        )
+    )
+    print(f"Wiederhergestellt aus: {result.comparison.backup}")
+    print(f"Aktive Konfiguration: {result.comparison.active}")
+    print(f"Automatische Rückfallsicherung: {result.rollback_backup.backup}")
+    print(f"Bestätigte SHA-256: {result.restored_sha256}")
+    print(
+        "Ausgewählte Sicherung und Rückfallsicherung bleiben erhalten. "
+        "Es gibt keine automatische Rotation oder Löschung."
     )
     return 0
 
