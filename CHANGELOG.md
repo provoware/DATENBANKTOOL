@@ -1,41 +1,47 @@
 # Changelog
 
+## 0.18.0-alpha.1 – 2026-08-05
+
+### Geführte Konfigurations-Wiederherstellung
+
+- Neuer rein lesender Befehl `index backups compare` für genau eine katalogisierte Konfigurationssicherung.
+- Vergleich ordnet die Sicherung eindeutig der aktiven Such- oder Zeitreihen-Konfiguration zu.
+- Terminal und JSON zeigen Vorlagen, die hinzukämen, entfernt, ersetzt oder unverändert blieben.
+- Sicherung und aktive Datei erhalten getrennte SHA-256-Nachweise.
+- Neuer Befehl `index backups restore` stellt genau eine grün geprüfte Konfigurationssicherung wieder her.
+- Wiederherstellung verlangt den exakten Sicherungsdateinamen und `--yes`.
+- Vor dem Überschreiben wird zwingend eine neue geprüfte Rückfallsicherung der aktiven Datei erstellt.
+- Sicherung und aktive Datei werden unmittelbar vor der Mutation erneut gegen die Vergleichsprüfsummen kontrolliert.
+- Veröffentlichung erfolgt atomar mit Dateimodus `0600`.
+- Nach der Wiederherstellung werden Bytes, SHA-256 und das vollständige Such- oder Zeitreihen-Schema erneut validiert.
+- Bei fehlgeschlagener Nachprüfung wird automatisch die neue Rückfallsicherung zurückgespielt und kontrolliert.
+- Ausgewählte Sicherung und Rückfallsicherung bleiben erhalten.
+- Keine automatische Auswahl, Rotation, Alterslöschung oder Sammellöschung.
+
+### Geführte Startseite
+
+- Menüpunkt 7 enthält nun die Aktion `wiederherstellen`.
+- Angezeigt werden ausschließlich erkannte Konfigurationssicherungen.
+- Vor der Bestätigung erscheint ein Nur-Lese-Vergleich mit aktiver Datei und allen Vorlagenänderungen.
+- Bereits identische Dateien werden nicht überschrieben.
+- Der Sicherungsname muss exakt wiederholt werden.
+- Erst danach wird der vollständige Argumentlistenbefehl sichtbar bestätigt.
+
+### Härtung und Prüfung
+
+- Indexsicherungen, beschädigte JSON-Dateien, unbekannte Pfade und Symlinks werden abgelehnt.
+- Fehlende aktive Konfigurationen führen zu keiner Neuanlage oder Überschreibung.
+- Gleichnamige Vorlagen innerhalb einer Datei werden als uneindeutig abgelehnt.
+- Tests simulieren eine fehlgeschlagene Nachprüfung und bestätigen den automatischen Rückfall.
+- CLI-Parser, Handler, Policies, Modulgrenzen und Shellverbot wurden erweitert.
+- Funktionsreferenz: 139 Tests unter Python 3.10 und 3.12; Quick- und Standardabnahme jeweils 11/11.
+
 ## 0.17.0-alpha.1 – 2026-08-05
 
-### Mehrere unabhängige Wiederanläufe
-
-- `resume-run.json` wurde von einem Einzelstand auf Schema 2 mit begrenzter Eintragsliste migriert.
-- Bis zu zwölf verschiedene Indexdateien können gleichzeitig einen Wiederanlaufhinweis besitzen.
-- Dieselbe normalisierte Indexdatei wird nur einmal geführt; ein neuerer Lauf aktualisiert ihren Eintrag.
-- Dateisperre schützt paralleles Lesen und Schreiben der Wiederanlaufliste.
-- Jeder Eintrag wird getrennt gegen Ordner, Indexdatei, Scanart, Stammordner und SQLite-Sitzung validiert.
-- Die Startseite zeigt alle Einträge mit Ordner, Indexdatei und verständlichem Prüfstatus.
-- Ein auswählbarer Eintrag kann einzeln fortgesetzt, erhalten oder bewusst verworfen werden.
-- Nicht mehr verfügbare Einträge bleiben sichtbar, sind aber nicht startbar.
-- Erfolgreiche Scans entfernen ausschließlich den eigenen Eintrag.
-- Begrenzung oder Verwerfen verändert keine Index- oder Originaldatei.
-
-### Geprüfte Konfigurationssicherungen vor Änderungen
-
-- Neuer gemeinsamer Sicherungsvertrag für Such- und Zeitreihen-Vorlagen.
-- `--backup-before-change` ist bei bewusstem Ersetzen und Löschen verfügbar.
-- Die geführte Startseite fragt vor diesen Änderungen optional nach einer Sicherung.
-- Quelle wird auf normale Datei, Symlinkfreiheit, UTF-8-JSON, Objektstruktur, `schema_version` und `presets`-Liste geprüft.
-- Sicherungen erhalten UTC-Zeitstempel, Prozesskennung und Dateimodus `0600`.
-- Inhalt, Schemaversion, Vorlagenzahl und SHA-256 werden nach dem Schreiben erneut geprüft.
-- Eine fehlgeschlagene Sicherung verhindert die nachfolgende Vorlagenänderung.
-- Ohne ausdrückliche Option wird keine Sicherung erzeugt.
-- Es gibt keine automatische Rotation, Alterslöschung oder Sammellöschung.
-- Neue Sicherungen erscheinen in der vorhandenen Sicherungsübersicht.
-
-### Architektur und Prüfung
-
-- Gemeinsame CLI-Hilfe für Vorlagenänderungen verhindert doppelte Sicherungslogik.
-- `cli_search.py` bleibt wieder unter der verbindlichen 500-Zeilen-Grenze.
-- Kompatibilitätsschicht enthält keine zweite Implementierung.
-- Tests decken zwei unabhängige Indexdateien, Deduplizierung, Listenlimit, Einzelverwerfen und nicht startbare Einträge ab.
-- Tests decken Suchvorlagen-Ersetzen, Zeitreihen-Vorlagen-Löschen, optionales Auslassen, mehrere erhaltene Sicherungen, beschädigtes JSON und Sicherungskatalog ab.
-- Funktionsreferenz: 130 Tests unter Python 3.10 und 3.12; Quick- und Standardabnahme jeweils 11/11.
+- Begrenzte Wiederanlaufliste für zwölf verschiedene Indexdateien.
+- Deduplizierung, Dateisperre, Einzelvalidierung und bewusstes Einzelverwerfen.
+- Optionale geprüfte JSON-Sicherung vor dem Ersetzen oder Löschen von Vorlagen.
+- Keine automatische Rotation oder Löschung.
 
 ## 0.16.0-alpha.1 – 2026-08-05
 
