@@ -116,6 +116,7 @@ class CliArchitectureTests(unittest.TestCase):
                 "search-presets.json.backup-test.json",
                 "--yes",
             ],
+            ["index", "backups", "verify-log", "/tmp/restore.json"],
             [
                 "index",
                 "backups",
@@ -203,6 +204,12 @@ class CliArchitectureTests(unittest.TestCase):
                 "search-presets.json.backup-test.json",
                 "--yes",
             ): "datenbanktool.cli_backups",
+            (
+                "index",
+                "backups",
+                "verify-log",
+                "/tmp/restore.json",
+            ): "datenbanktool.cli_restore_audit",
             (
                 "index",
                 "build",
