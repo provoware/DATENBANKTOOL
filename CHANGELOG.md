@@ -1,47 +1,48 @@
 # Changelog
 
+## 0.17.0-alpha.1 – 2026-08-05
+
+### Mehrere unabhängige Wiederanläufe
+
+- `resume-run.json` wurde von einem Einzelstand auf Schema 2 mit begrenzter Eintragsliste migriert.
+- Bis zu zwölf verschiedene Indexdateien können gleichzeitig einen Wiederanlaufhinweis besitzen.
+- Dieselbe normalisierte Indexdatei wird nur einmal geführt; ein neuerer Lauf aktualisiert ihren Eintrag.
+- Dateisperre schützt paralleles Lesen und Schreiben der Wiederanlaufliste.
+- Jeder Eintrag wird getrennt gegen Ordner, Indexdatei, Scanart, Stammordner und SQLite-Sitzung validiert.
+- Die Startseite zeigt alle Einträge mit Ordner, Indexdatei und verständlichem Prüfstatus.
+- Ein auswählbarer Eintrag kann einzeln fortgesetzt, erhalten oder bewusst verworfen werden.
+- Nicht mehr verfügbare Einträge bleiben sichtbar, sind aber nicht startbar.
+- Erfolgreiche Scans entfernen ausschließlich den eigenen Eintrag.
+- Begrenzung oder Verwerfen verändert keine Index- oder Originaldatei.
+
+### Geprüfte Konfigurationssicherungen vor Änderungen
+
+- Neuer gemeinsamer Sicherungsvertrag für Such- und Zeitreihen-Vorlagen.
+- `--backup-before-change` ist bei bewusstem Ersetzen und Löschen verfügbar.
+- Die geführte Startseite fragt vor diesen Änderungen optional nach einer Sicherung.
+- Quelle wird auf normale Datei, Symlinkfreiheit, UTF-8-JSON, Objektstruktur, `schema_version` und `presets`-Liste geprüft.
+- Sicherungen erhalten UTC-Zeitstempel, Prozesskennung und Dateimodus `0600`.
+- Inhalt, Schemaversion, Vorlagenzahl und SHA-256 werden nach dem Schreiben erneut geprüft.
+- Eine fehlgeschlagene Sicherung verhindert die nachfolgende Vorlagenänderung.
+- Ohne ausdrückliche Option wird keine Sicherung erzeugt.
+- Es gibt keine automatische Rotation, Alterslöschung oder Sammellöschung.
+- Neue Sicherungen erscheinen in der vorhandenen Sicherungsübersicht.
+
+### Architektur und Prüfung
+
+- Gemeinsame CLI-Hilfe für Vorlagenänderungen verhindert doppelte Sicherungslogik.
+- `cli_search.py` bleibt wieder unter der verbindlichen 500-Zeilen-Grenze.
+- Kompatibilitätsschicht enthält keine zweite Implementierung.
+- Tests decken zwei unabhängige Indexdateien, Deduplizierung, Listenlimit, Einzelverwerfen und nicht startbare Einträge ab.
+- Tests decken Suchvorlagen-Ersetzen, Zeitreihen-Vorlagen-Löschen, optionales Auslassen, mehrere erhaltene Sicherungen, beschädigtes JSON und Sicherungskatalog ab.
+- Funktionsreferenz: 130 Tests unter Python 3.10 und 3.12; Quick- und Standardabnahme jeweils 11/11.
+
 ## 0.16.0-alpha.1 – 2026-08-05
 
-### Geführter Wiederanlauf
-
-- Bestätigte `index build`- und `index rescan`-Befehle werden zusätzlich als eigener fortsetzbarer Scanstand gespeichert.
-- Die Startseite prüft Wiederanlaufdatensatz, Ordner, Indexdatei, Scanart und SQLite-Sitzung nur lesend gegeneinander.
-- Ein gültiger Wiederanlauf zeigt Art, Ordner, Indexdatei, Sitzung, Phase, Dateizahl und den vollständigen `--resume`-Befehl.
-- Fortsetzung startet ausschließlich nach sichtbarer Ja/Nein-Bestätigung.
-- Ablehnen, Abbrechen oder geschlossene Eingabe lässt den Wiederanlauf für später erhalten.
-- Ein erfolgreicher Scan entfernt nur den internen Wiederanlaufhinweis; Laufjournal und Index bleiben erhalten.
-- Veraltete Hinweise ohne fortsetzbare SQLite-Sitzung werden kontrolliert entfernt.
-- Vollscan und inkrementeller Re-Scan besitzen getrennte geprüfte Wiederanlaufpfade.
-
-### Sicherungsübersicht
-
-- Neuer Befehl `index backups list` für Index- und Konfigurationssicherungen.
-- Anzeige von Typ, Pfad, Größe, UTC-Zeitpunkt, verständlichem Alter, Status und technischer Begründung.
-- SQLite-Sicherungen werden im Nur-Lese-Modus mit `quick_check` und Schemaversion geprüft.
-- Konfigurationssicherungen werden auf gültiges JSON, Schemaversion und Vorlagenliste geprüft.
-- Neuer Befehl `index backups delete` löscht genau eine katalogisierte Datei.
-- Löschen benötigt vollständigen Pfad, exakten Dateinamen und `--yes`.
-- Aktive Dateien, unbekannte Pfade und symbolische Verknüpfungen sind ausgeschlossen.
-- Startseitenpunkt 7 bündelt Erstellen, Anzeigen und einzelne bestätigte Löschung.
-- Keine automatische Rotation, Sammellöschung oder Löschung nach Alter.
-
-### Zusätzliche Härtung
-
-- Dauerhafte Dateioperationen folgen keine symbolischen Verknüpfungen mehr.
-- Atomare Veröffentlichung verweigert Symlink-Ziele auch bei ausdrücklichem Überschreiben.
-- Dauerhafte Einzellöschung prüft selbst auf normale Datei und bestätigt anschließend den Ordnerzustand mit `fsync`.
-- Sortierung der Sicherungsübersicht ist eindeutig „neueste zuerst“.
-
-### Prüfung
-
-- Wiederanlauf für Vollscan und Re-Scan.
-- Ablehnen und späteres Fortsetzen.
-- Veralteter Wiederanlaufhinweis.
-- Exakte sichtbare Argumentliste ohne Shell.
-- Gültige, beschädigte und unbekannte Sicherungen.
-- CLI-JSON-Ausgabe und tatsächliche Einzellöschung.
-- Fehlendes `--yes`, falscher Name, aktive Datei und Symlink.
-- Zentrale Symlink-Sperre für Schreiben und Löschen.
+- Geführter, gegen SQLite geprüfter Wiederanlauf eines unterbrochenen Vollscans oder Re-Scans.
+- Sicherungsübersicht für Index- und Konfigurationssicherungen.
+- Kataloggebundene, einzeln bestätigte Sicherungslöschung.
+- Zentrale Symlink-Sperre für dauerhafte Schreib- und Löschvorgänge.
 
 ## 0.15.0-alpha.1 – 2026-08-05
 
@@ -51,7 +52,6 @@
 - SQLite `WAL` mit `synchronous=FULL`.
 - Gemeinsame dauerhafte Dateifreigabe mit Datei- und Ordner-`fsync`.
 - Startklar-Prüfung `datenbanktool check`.
-- Alltagssprache vor technischen Einzelheiten.
 
 ## Frühere Entwicklungsstufen
 
@@ -60,4 +60,4 @@
 - **0.12.x:** geführte Ordner-Zeitreihe und barrierefreie Offline-SVG-Trends.
 - **0.11.x:** Ordner-Zeitreihe und vollständige Vergleichsexporte.
 - **0.10.x:** Großbestandsabnahme und vollständige Ordnerexporte.
-- **0.1–0.9:** Scanner, SQLite-Index, Re-Scan, Suche, Berichte, Startseite, Hilfe und Ordnervergleich.
+- **0.1–0.9:** Scanner, SQLite-Index, Re-Scan, Suche, Berichte, Startseite und Hilfe.
