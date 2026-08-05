@@ -12,7 +12,11 @@ from datenbanktool.core.guided_home import (
     menu_actions,
 )
 from datenbanktool.core.presentation import TrafficLight, status_text, traffic_text
-from datenbanktool.core.recovery import RecoveryCandidate, load_recovery_candidate
+from datenbanktool.core.recovery import (
+    RecoveryCandidate,
+    discard_recovery_candidate,
+    load_recovery_candidates,
+)
 
 
 class TerminalHome(guided.TerminalHome):
@@ -84,35 +88,122 @@ class TerminalHome(guided.TerminalHome):
             self._write("  5. Den vollständig angezeigten Befehl ausdrücklich bestätigen.")
         self._write("-" * 72)
 
-    def _offer_recovery(self, candidate: RecoveryCandidate) -> None:
+    def _show_recovery_items(
+        self,
+        candidates: tuple[RecoveryCandidate, ...],
+    ) -> None:
         self._write("\n" + "!" * 72)
-        self._write("Unterbrochene Ordnerprüfung gefunden")
+        self._write(f"Gespeicherte Wiederanläufe: {len(candidates)}")
         self._write(
-            "Der letzte bestätigte Zwischenstand kann fortgesetzt werden. "
-            "Persönliche Dateien werden dabei nur gelesen."
+            "Jeder Eintrag wurde getrennt und nur lesend gegen Ordner, Indexdatei "
+            "und SQLite-Sitzung geprüft."
         )
+        for number, candidate in enumerate(candidates, 1):
+            state = (
+                "fortsetzbar" if candidate.resumable else "derzeit nicht fortsetzbar"
+            )
+            self._write(
+                f"  {number}. {candidate.operation_label} | {state} | "
+                f"{candidate.validation_label}"
+            )
+            self._write(f"     Ordner: {candidate.root}")
+            self._write(f"     Index:  {candidate.database}")
+        self._write("!" * 72)
+
+    def _choose_recovery(
+        self,
+        candidates: tuple[RecoveryCandidate, ...],
+    ) -> RecoveryCandidate | None:
+        while True:
+            value = self._read(
+                "Wiederanlauf als Nummer wählen; leer oder n öffnet die normale Startseite "
+                "[? Hilfe]: ",
+                help_text=(
+                    "Eine Nummer öffnet genau diesen Eintrag. Dort kann er fortgesetzt "
+                    "oder bewusst verworfen werden. Leer oder n verändert keinen Eintrag."
+                ),
+            ).casefold()
+            if not value or value in {"n", "nein", "normal", "weiter"}:
+                return None
+            if value.isdigit():
+                index = int(value) - 1
+                if 0 <= index < len(candidates):
+                    return candidates[index]
+            self._write("Bitte eine angezeigte Nummer, n oder ? eingeben.", error=True)
+
+    def _show_recovery_detail(self, candidate: RecoveryCandidate) -> None:
+        self._write("\n" + "-" * 72)
+        self._write("Wiederanlauf im Detail")
         self._write(f"Art: {candidate.operation_label}")
         self._write(f"Ordner: {candidate.root}")
         self._write(f"Indexdatei: {candidate.database}")
-        self._write(
-            f"Gespeicherter Stand: Prüfung #{candidate.session_id} | "
-            f"{candidate.status}/{candidate.phase} | Dateien: {candidate.imported_count}"
-        )
+        if candidate.session_id is not None:
+            self._write(
+                f"Gespeicherter Stand: Prüfung #{candidate.session_id} | "
+                f"{candidate.status}/{candidate.phase} | Dateien: {candidate.imported_count}"
+            )
+        else:
+            self._write(f"Gespeicherter Zustand: {candidate.status}/{candidate.phase}")
+        self._write(f"Prüfergebnis: {candidate.validation_label}")
+        self._write(f"Begründung: {candidate.validation_detail}")
         self._write("Geprüfter Wiederanlaufbefehl:")
         self._write("  " + shlex.join(["datenbanktool", *candidate.command]))
-        self._write("!" * 72)
-        try:
-            confirmed = self._yes_no(
-                "Diesen Scan am bestätigten Zwischenstand fortsetzen?",
-                help_text=(
-                    "Ja startet exakt den angezeigten Befehl mit --resume. Nein lässt "
-                    "den Wiederanlauf gespeichert und öffnet die normale Startseite."
-                ),
+        self._write("-" * 72)
+
+    def _recovery_action(self, candidate: RecoveryCandidate) -> str:
+        aliases = {
+            "": "back",
+            "z": "back",
+            "zurück": "back",
+            "zurueck": "back",
+            "back": "back",
+            "v": "discard",
+            "verwerfen": "discard",
+            "discard": "discard",
+        }
+        if candidate.resumable:
+            aliases.update(
+                {
+                    "f": "resume",
+                    "fortsetzen": "resume",
+                    "resume": "resume",
+                    "j": "resume",
+                    "ja": "resume",
+                }
             )
-        except UserCancelled:
-            confirmed = False
-        if not confirmed:
-            self._write("Nicht gestartet. Der Wiederanlauf bleibt für später gespeichert.")
+        choices = "fortsetzen/verwerfen/zurück" if candidate.resumable else "verwerfen/zurück"
+        while True:
+            value = self._read(
+                f"Aktion [{choices}, Standard zurück, ? Hilfe]: ",
+                help_text=(
+                    "Fortsetzen startet exakt den sichtbaren --resume-Befehl. Verwerfen "
+                    "entfernt nur diesen internen Hinweis; Index und Originaldateien "
+                    "bleiben unverändert."
+                ),
+            ).casefold()
+            if value in aliases:
+                return aliases[value]
+            self._write(f"Bitte {choices} oder ? eingeben.", error=True)
+
+    def _manage_recovery(self, candidate: RecoveryCandidate) -> None:
+        self._show_recovery_detail(candidate)
+        action = self._recovery_action(candidate)
+        if action == "back":
+            return
+        if action == "discard":
+            if not self._yes_no(
+                "Nur diesen Wiederanlaufhinweis bewusst verwerfen?",
+                help_text=(
+                    "Ja entfernt ausschließlich den internen Eintrag. Die Indexdatei, "
+                    "der Quellordner und gespeicherte Scan-Sitzungen werden nicht verändert."
+                ),
+            ):
+                self._write("Nicht verworfen. Der Eintrag bleibt gespeichert.")
+                return
+            if discard_recovery_candidate(candidate.record_id):
+                self._write("Wiederanlaufhinweis verworfen. Index und Ordner blieben unverändert.")
+            else:
+                self._write("Der Eintrag konnte nicht verworfen werden.", error=True)
             return
         result = int(self.command_runner(candidate.command))
         label = "erfolgreich fortgesetzt" if result == 0 else f"nicht abgeschlossen, Code {result}"
@@ -124,9 +215,11 @@ class TerminalHome(guided.TerminalHome):
                 stream=self.output_stream,
             )
         )
-        if result != 0:
+        if result == 0:
+            discard_recovery_candidate(candidate.record_id)
+        else:
             self._write(
-                "Der bestätigte Wiederanlauf bleibt gespeichert. Prüfe den Index mit "
+                "Dieser Wiederanlauf bleibt gespeichert. Prüfe den Index mit "
                 "datenbanktool check --database PFAD.",
                 error=True,
             )
@@ -232,14 +325,47 @@ class TerminalHome(guided.TerminalHome):
             "--yes",
         ]
 
+    def _backup_before_preset_change(self, command: list[str]) -> list[str]:
+        if self._yes_no(
+            "Vor dieser Änderung eine geprüfte Konfigurationssicherung erstellen?",
+            default=True,
+            help_text=(
+                "Ja erzeugt zuerst eine neue zeitgestempelte JSON-Sicherung. "
+                "Es gibt keine automatische Rotation oder Löschung."
+            ),
+        ):
+            command.append("--backup-before-change")
+        return command
+
+    def _build_timeline_preset_replace(self) -> list[str]:
+        return self._backup_before_preset_change(
+            super()._build_timeline_preset_replace()
+        )
+
+    def _build_timeline_preset_delete(self) -> list[str]:
+        return self._backup_before_preset_change(
+            super()._build_timeline_preset_delete()
+        )
+
     def run(self) -> int:
-        candidate = load_recovery_candidate()
-        if candidate is not None:
-            try:
-                self._offer_recovery(candidate)
-            except InputClosed:
-                self._write("Eingabe beendet. Der Wiederanlauf bleibt gespeichert.")
-                return 0
+        try:
+            while True:
+                candidates = load_recovery_candidates()
+                if not candidates:
+                    break
+                self._show_recovery_items(candidates)
+                try:
+                    candidate = self._choose_recovery(candidates)
+                except UserCancelled:
+                    self._write("Wiederanlaufwahl beendet. Alle Einträge bleiben gespeichert.")
+                    break
+                if candidate is None:
+                    self._write("Kein Eintrag verändert. Die normale Startseite wird geöffnet.")
+                    break
+                self._manage_recovery(candidate)
+        except InputClosed:
+            self._write("Eingabe beendet. Alle Wiederanläufe bleiben gespeichert.")
+            return 0
         return super().run()
 
 
