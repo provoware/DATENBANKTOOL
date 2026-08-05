@@ -7,6 +7,7 @@ from typing import Sequence
 
 from datenbanktool import __version__
 from datenbanktool.cli_acceptance import register_acceptance_parser
+from datenbanktool.cli_check import register_check_parser
 from datenbanktool.cli_common import parser
 from datenbanktool.cli_contract import dispatch
 from datenbanktool.cli_folder_compare import register_folder_compare_parser
@@ -29,14 +30,13 @@ def build_parser() -> argparse.ArgumentParser:
     root = parser(
         prog="datenbanktool",
         description=(
-            "Sicheres Linux-Werkzeug für große Datensammlungen.\n"
-            "Farben und Ampeln unterstützen die Orientierung, werden aber "
-            "immer durch Klartext ergänzt."
+            "Findet und erklärt große Datensammlungen, ohne persönliche Dateien "
+            "automatisch zu verändern. (Technisch: lokales Linux-Indexwerkzeug.)"
         ),
         epilog=(
-            "Globale Anzeigeoptionen stehen vor dem Befehl, zum Beispiel:\n"
-            "  datenbanktool --color always index folders index.sqlite3\n"
-            "Detaillierte Auswirkungen: datenbanktool explain"
+            "Einfacher Einstieg: datenbanktool start\n"
+            "Startklar prüfen: datenbanktool check\n"
+            "Technische Befehlsübersicht: datenbanktool --help"
         ),
     )
     root.add_argument("--version", action="version", version=__version__)
@@ -44,29 +44,27 @@ def build_parser() -> argparse.ArgumentParser:
         "--color",
         choices=("auto", "always", "never"),
         default="auto",
-        help=(
-            "Farben automatisch, immer oder nie verwenden. "
-            "Die Umgebungsvariable NO_COLOR wird respektiert."
-        ),
+        help="Farben automatisch, immer oder nie verwenden. Klartext bleibt sichtbar.",
     )
     root.add_argument(
         "--hints",
         action=argparse.BooleanOptionalAction,
         default=True,
-        help="Kurze Bedienhinweise ein- oder ausschalten.",
+        help="Kurze nächste Schritte ein- oder ausschalten.",
     )
     subparsers = root.add_subparsers(dest="command", required=True)
 
+    register_check_parser(subparsers)
     register_explain_parser(subparsers)
     register_scan_parser(subparsers)
     register_acceptance_parser(subparsers)
 
     index = subparsers.add_parser(
         "index",
-        help="SQLite-Index verwalten und durchsuchen",
+        help="Gespeicherte Dateiliste aufbauen, prüfen und durchsuchen",
         description=(
-            "Alle Indexfunktionen arbeiten lokal. "
-            "Originaldatei-Schreibzugriffe bleiben gesperrt."
+            "Speichert nur eine lokale Übersicht deiner Dateien. "
+            "Die Originaldateien bleiben unverändert. (Technisch: SQLite-Index.)"
         ),
     )
     index_subparsers = index.add_subparsers(dest="index_command", required=True)
@@ -101,10 +99,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         ValueError,
     ) as error:
         message = paint(
-            f"Fehler: {error}",
+            "Der Schritt konnte nicht abgeschlossen werden. "
+            f"Deine Originaldateien wurden nicht automatisch verändert. "
+            f"(Technische Einzelheit: {type(error).__name__}: {error})",
             "red",
             mode=getattr(arguments, "color", "auto"),
             stream=sys.stderr,
         )
         print(message, file=sys.stderr)
+        print("Prüfhilfe: datenbanktool check", file=sys.stderr)
         return 2
