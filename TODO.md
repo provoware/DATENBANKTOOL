@@ -1,45 +1,46 @@
 # TODO
 
-Stand: Version `0.17.0-alpha.1`
+Stand: Version `0.18.0-alpha.1`
 
 ## In dieser Iteration erledigt
 
-1. [x] Wiederanlaufdatei auf Schema 2 mit begrenzter Eintragsliste migrieren.
-2. [x] Bis zu zwölf verschiedene Indexdateien getrennt vormerken.
-3. [x] Dieselbe Indexdatei deduplizieren und nur ihren neuesten Befehl behalten.
-4. [x] Parallele Zugriffe mit lokaler Dateisperre koordinieren.
-5. [x] Jeden Eintrag getrennt gegen Ordner, Indexdatei, Scanart, Stammordner und SQLite-Sitzung prüfen.
-6. [x] Alle Wiederanläufe auf der Startseite mit Ordner, Index und Status anzeigen.
-7. [x] Einen Eintrag gezielt fortsetzen, erhalten oder bewusst verwerfen.
-8. [x] Nicht verfügbare Einträge sichtbar, aber nicht startbar halten.
-9. [x] Bei Erfolg ausschließlich den zugehörigen Eintrag entfernen.
-10. [x] Listenbegrenzung ohne Löschung von Index- oder Originaldateien prüfen.
-11. [x] Optionale Konfigurationssicherung vor Ersetzen und Löschen von Suchvorlagen ergänzen.
-12. [x] Dieselbe Sicherungsoption für Zeitreihen-Vorlagen ergänzen.
-13. [x] Vor Sicherung JSON-Struktur, Schemaversion, Vorlagenliste und Symlinkfreiheit prüfen.
-14. [x] Sicherung atomar mit Modus `0600` schreiben und danach per SHA-256 erneut prüfen.
-15. [x] Fehlgeschlagene Sicherung vor der eigentlichen Vorlagenänderung stoppen.
-16. [x] Keine automatische Rotation, Alterslöschung oder Sammellöschung einführen.
-17. [x] Sicherungen in der bestehenden Sicherungsübersicht sichtbar machen.
-18. [x] Doppelte CLI-Logik in einen gemeinsamen kleinen Helfer auslagern.
-19. [x] Modulgrenze von höchstens 500 Zeilen wieder einhalten.
-20. [x] 130 Funktions-, Negativ- und Architekturtests auf Python 3.10 und 3.12 bestehen.
+1. [x] Genau eine erkannte Konfigurationssicherung einer aktiven Vorlagendatei zuordnen.
+2. [x] Such- und Zeitreihen-Sicherungen vollständig mit der aktiven Datei vergleichen.
+3. [x] Hinzukommende, zu entfernende, zu ersetzende und unveränderte Vorlagen anzeigen.
+4. [x] Vergleich im Terminal und als stabile JSON-Ausgabe bereitstellen.
+5. [x] Den Vergleich vollständig lesend halten.
+6. [x] Wiederherstellung auf grün geprüfte Katalogeinträge begrenzen.
+7. [x] Indexsicherungen, unbekannte Pfade, beschädigte Dateien und Symlinks ablehnen.
+8. [x] Exakte Wiederholung des Sicherungsdateinamens verlangen.
+9. [x] `--yes` als zusätzliche ausdrückliche Bestätigung verlangen.
+10. [x] Bereits identische Dateien ohne Überschreiben ablehnen.
+11. [x] Vor jedem Überschreiben automatisch eine geprüfte Rückfallsicherung erzeugen.
+12. [x] Aktive Datei und Sicherung unmittelbar vor der Mutation erneut per SHA-256 prüfen.
+13. [x] Wiederherstellung atomar und mit Dateimodus `0600` veröffentlichen.
+14. [x] Wiederhergestellte Datei bytegenau, per SHA-256 und über das vollständige Vorlagenschema nachprüfen.
+15. [x] Bei fehlgeschlagener Nachprüfung automatisch aus der Rückfallsicherung zurücksetzen.
+16. [x] Auch den automatischen Rückfall erneut nachprüfen.
+17. [x] Ausgewählte Sicherung und Rückfallsicherung dauerhaft erhalten.
+18. [x] Keine automatische Auswahl, Rotation, Alterslöschung oder Sammellöschung ergänzen.
+19. [x] Geführte Startseite mit sichtbarem Nur-Lese-Vergleich und sicherer Argumentliste erweitern.
+20. [x] CLI-Policies, Modulzuständigkeit, Größenlimits und Shellverbot prüfen.
+21. [x] 139 Funktions-, Negativ-, Rückfall-, Dialog- und Architekturtests unter Python 3.10 und 3.12 bestehen.
 
 ## Offener Hauptpunkt
 
-1. [ ] Reale Laienabnahme auf einem Kubuntu-Zielsystem durch eine unerfahrene Testperson durchführen. Besonders beobachten: Auswahl mehrerer Wiederanläufe, Unterschied zwischen „zurück“, „erhalten“ und „verwerfen“, optionale Sicherungsfrage und Auffinden der erzeugten Sicherung.
+1. [ ] Reale Laienabnahme auf einem Kubuntu-Zielsystem durch eine unerfahrene Testperson durchführen. Besonders beobachten: Auswahl der richtigen Sicherung, Verständnis von Hinzufügen/Entfernen/Ersetzen, exakte Namenswiederholung, Rückfallsicherung und Unterschied zwischen Vergleich und tatsächlicher Wiederherstellung.
 
 ## Nicht blockierende Zielsystemprüfungen
 
-- [ ] Zwei große synthetische Scans verschiedener Indexdateien kontrolliert unterbrechen und nach einem Neustart getrennt fortsetzen.
-- [ ] Einen vorübergehend nicht eingehängten Quellordner anzeigen und nach erneutem Einhängen fortsetzen.
-- [ ] Mehrere Konfigurationssicherungen auf ext4 und einem USB-Ziel prüfen.
-- [ ] Fast vollen Datenträger ausschließlich mit synthetischen Testdaten simulieren.
+- [ ] Wiederherstellung einer synthetischen Suchvorlagendatei auf ext4 durchführen.
+- [ ] Wiederherstellung einer synthetischen Zeitreihen-Vorlagendatei auf einem USB-Ziel prüfen.
+- [ ] Datenträger-voll-Fehler während der Veröffentlichung ausschließlich mit synthetischen Daten simulieren.
+- [ ] Prozessabbruch vor und nach der atomaren Veröffentlichung kontrolliert dokumentieren.
 
 ## Direkt folgender technischer Entwicklungsschritt
 
-**Wiederanlauf-Diagnosebefehl:** Eine rein lesende Terminal- und JSON-Übersicht ergänzen, die alle gespeicherten Einträge, ihren Prüfstatus, Ordner, Index, Sitzung und Startbarkeit auch außerhalb der interaktiven Startseite zeigt. Keine Ausführung und kein Verwerfen über den Diagnosebefehl.
+**Wiederanlauf-Diagnosebefehl:** Eine rein lesende Terminal- und JSON-Übersicht ergänzen, die alle gespeicherten Wiederanlaufeinträge, Prüfstatus, Ordner, Index, Sitzung und Startbarkeit auch außerhalb der interaktiven Startseite zeigt. Der Befehl darf weder starten noch verwerfen.
 
 ## Alternative Verbesserung mit hohem Nutzen und geringem Risiko
 
-**Geführtes Wiederherstellen einer Konfigurationssicherung:** Eine ausgewählte geprüfte JSON-Sicherung zunächst gegen aktive Datei, Schema, Inhalt und Prüfsumme vergleichen. Wiederherstellung nur einzeln, mit automatischer Rückfallsicherung und ausdrücklicher Bestätigung; keine automatische Auswahl oder Löschung.
+**Wiederherstellungsprotokoll:** Nach einer erfolgreichen Konfigurations-Wiederherstellung optional ein kleines lokales JSON-Protokoll mit UTC-Zeit, aktiver Datei, ausgewählter Sicherung, Rückfallsicherung und den drei SHA-256-Werten erzeugen. Keine Inhalte, Geheimnisse, Rotation oder automatische Löschung.
