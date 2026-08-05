@@ -153,7 +153,7 @@ def list_backups(
             items.append(_item(path, kind))
         except OSError:
             continue
-    return tuple(sorted(items, key=lambda item: (-item.age_seconds, item.path), reverse=True))
+    return tuple(sorted(items, key=lambda item: (item.age_seconds, item.path)))
 
 
 def delete_backup(
