@@ -81,6 +81,7 @@ class CliArchitectureTests(unittest.TestCase):
             ["acceptance", "--workspace", "/tmp/neue-abnahme"],
             ["index", "build", "/tmp", "--database", "/tmp/index.sqlite3"],
             ["index", "rescan", "/tmp", "--database", "/tmp/index.sqlite3"],
+            ["index", "recovery"],
             ["index", "status", "/tmp/index.sqlite3"],
             ["index", "sessions", "/tmp/index.sqlite3"],
             ["index", "search", "/tmp/index.sqlite3"],
@@ -160,6 +161,7 @@ class CliArchitectureTests(unittest.TestCase):
                 "--workspace",
                 "/tmp/neue-abnahme",
             ): "datenbanktool.cli_acceptance",
+            ("index", "recovery"): "datenbanktool.cli_recovery",
             ("index", "search", "/tmp/index.sqlite3"): "datenbanktool.cli_search",
             ("index", "folders", "/tmp/index.sqlite3"): "datenbanktool.cli_reports",
             (
