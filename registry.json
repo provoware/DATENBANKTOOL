@@ -1,7 +1,7 @@
 {
   "name": "datenbanktool",
-  "version": "0.16.0a1",
-  "display_version": "0.16.0-alpha.1",
+  "version": "0.17.0a1",
+  "display_version": "0.17.0-alpha.1",
   "version_scheme": {
     "package_version": "PEP 440",
     "display_version": "human-readable prerelease",
