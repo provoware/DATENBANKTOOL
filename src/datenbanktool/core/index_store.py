@@ -25,7 +25,8 @@ class IndexDatabase(IndexRecordMixin):
         self.connection.execute("PRAGMA foreign_keys = ON")
         self.connection.execute("PRAGMA busy_timeout = 5000")
         self.connection.execute("PRAGMA journal_mode = WAL")
-        self.connection.execute("PRAGMA synchronous = NORMAL")
+        self.connection.execute("PRAGMA synchronous = FULL")
+        self.connection.execute("PRAGMA wal_autocheckpoint = 1000")
 
     def __enter__(self) -> "IndexDatabase":
         return self
@@ -34,7 +35,19 @@ class IndexDatabase(IndexRecordMixin):
         self.close()
 
     def close(self) -> None:
-        self.connection.close()
+        try:
+            self.connection.commit()
+            self.connection.execute("PRAGMA wal_checkpoint(PASSIVE)")
+        except sqlite3.Error:
+            # Closing must not hide the original command error. The WAL remains valid.
+            pass
+        finally:
+            self.connection.close()
+
+    def durable_checkpoint(self) -> None:
+        """Commit the current safe state and request a passive WAL checkpoint."""
+        self.connection.commit()
+        self.connection.execute("PRAGMA wal_checkpoint(PASSIVE)")
 
     def schema_version(self) -> int:
         return int(self.connection.execute("PRAGMA user_version").fetchone()[0])
@@ -86,7 +99,7 @@ class IndexDatabase(IndexRecordMixin):
     def session(self, session_id: int) -> sqlite3.Row:
         row = self.connection.execute("SELECT * FROM scan_sessions WHERE id=?", (session_id,)).fetchone()
         if row is None:
-            raise IndexErrorBase(f"Index-Sitzung nicht gefunden: {session_id}")
+            raise IndexErrorBase(f"Der gespeicherte Scan #{session_id} wurde nicht gefunden.")
         return row
 
     def latest_complete_session(
@@ -109,7 +122,7 @@ class IndexDatabase(IndexRecordMixin):
 
     def set_phase(self, session_id: int, phase: str) -> None:
         if phase not in VALID_PHASES:
-            raise ValueError(f"Ungültige Indexphase: {phase}")
+            raise ValueError(f"Unbekannter Arbeitsabschnitt. (Technisch: Indexphase {phase}.)")
         with self.connection:
             self.connection.execute(
                 "UPDATE scan_sessions SET phase=?, updated_utc=? WHERE id=?",
@@ -118,7 +131,7 @@ class IndexDatabase(IndexRecordMixin):
 
     def set_incremental_stage(self, session_id: int, stage: str, *, phase: str) -> None:
         if phase not in VALID_PHASES:
-            raise ValueError(f"Ungültige Indexphase: {phase}")
+            raise ValueError(f"Unbekannter Arbeitsabschnitt. (Technisch: Indexphase {phase}.)")
         with self.connection:
             self.connection.execute(
                 "UPDATE scan_sessions SET incremental_stage=?, phase=?, updated_utc=? WHERE id=?",
@@ -131,6 +144,7 @@ class IndexDatabase(IndexRecordMixin):
                 "UPDATE scan_sessions SET status='interrupted', truncated=?, updated_utc=? WHERE id=?",
                 (int(truncated), utc_now(), session_id),
             )
+        self.durable_checkpoint()
 
     def mark_failed(self, session_id: int, message: str) -> None:
         with self.connection:
@@ -146,6 +160,7 @@ class IndexDatabase(IndexRecordMixin):
                 """,
                 (session_id, utc_now(), session_id),
             )
+        self.durable_checkpoint()
 
     def mark_complete(self, session_id: int) -> None:
         now = utc_now()
@@ -158,6 +173,7 @@ class IndexDatabase(IndexRecordMixin):
                 """,
                 (now, now, session_id),
             )
+        self.durable_checkpoint()
 
     def latest_status(self) -> IndexStatus:
         row = self.connection.execute("SELECT * FROM scan_sessions ORDER BY id DESC LIMIT 1").fetchone()
