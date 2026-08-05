@@ -1,29 +1,30 @@
 # Entwicklerdokumentation
 
-## Architekturstand `0.16.0-alpha.1` / `0.16.0a1`
+## Architekturstand `0.17.0-alpha.1` / `0.17.0a1`
 
-Diese Iteration ergänzt zwei eng begrenzte Verträge:
+Diese Iteration erweitert den bestehenden Wiederanlauf- und Sicherungsvertrag um:
 
-1. einen geführten, gegen SQLite validierten Wiederanlauf für unterbrochene Vollscans und Re-Scans,
-2. einen nur lesenden Sicherungskatalog mit genau einer ausdrücklich bestätigten Löschung.
+1. eine begrenzte Mehrfachliste für unterbrochene Scans verschiedener Indexdateien,
+2. getrennte Nur-Lese-Validierung und Einzelentscheidung je Eintrag,
+3. optionale, geprüfte JSON-Sicherungen vor dem Ersetzen oder Löschen von Vorlagen.
 
-Originaldatei-Schreibzugriffe bleiben gesperrt. Es gibt keine Shell-Auswertung, automatische Rotation oder Sammellöschung.
+Originaldatei-Schreibzugriffe bleiben gesperrt. Es gibt keine Shell-Auswertung, automatische Sicherungsrotation oder Sammellöschung.
 
-## Neue und erweiterte Fachmodule
+## Fachmodule
 
 | Modul | Verantwortung |
 |---|---|
-| `core/run_journal.py` | allgemeines Laufjournal plus dauerhafter `resume-run.json`-Datensatz |
-| `core/recovery.py` | Befehlsanalyse und Nur-Lese-Abgleich mit der fortsetzbaren SQLite-Sitzung |
-| `core/backup_catalog.py` | Sicherungsfindung, Gesundheitsprüfung und begrenzte Einzellöschung |
-| `cli_backups.py` | öffentliche Befehle `index backups list/delete` |
-| `core/terminal_home.py` | Startseiten-Erweiterung für Wiederanlauf und Sicherungsverwaltung |
-| `core/durable_files.py` | atomare Veröffentlichung und dauerhafte Einzellöschung ohne Symlink-Folgen |
-| `tests/test_guided_recovery_backups.py` | Dialog-, Katalog- und Löschverträge |
-| `tests/test_recovery_backup_edges.py` | Re-Scan, stale marker, CLI und Symlink-Negativfälle |
-| `tests/test_durable_symlinks.py` | zentrale Schreib- und Löschsperre für Symlinks |
+| `core/run_journal.py` | allgemeines Laufjournal, Schema-2-Wiederanlaufliste, Deduplizierung, Limit und Dateisperre |
+| `core/recovery.py` | getrennte Analyse und Nur-Lese-Validierung jedes Wiederanlaufeintrags |
+| `core/terminal_home.py` | nummerierte Auswahl, Fortsetzen, Erhalten und bewusstes Einzelverwerfen |
+| `core/config_backups.py` | validierte, zeitgestempelte und nachgeprüfte JSON-Sicherung |
+| `cli_preset_change.py` | gemeinsame CLI-Option, Existenzprüfung und verständliche Sicherungsausgabe |
+| `cli_config_backups.py` | schmale Kompatibilitätsschicht ohne zweite Implementierung |
+| `cli_search.py` | Suchvorlagenverwaltung mit optionaler Vorsicherung |
+| `cli_timeline_presets.py` | Zeitreihen-Vorlagenverwaltung mit optionaler Vorsicherung |
+| `tests/test_multiple_recovery_and_config_backups.py` | Mehrfachlisten-, Auswahl-, Limit-, Sicherungs- und Negativverträge |
 
-## Wiederanlaufdatensatz
+## Wiederanlaufliste
 
 Standardpfad:
 
@@ -37,164 +38,165 @@ Fallback:
 ~/.local/state/datenbanktool/resume-run.json
 ```
 
-Der Datensatz wird nur für bestätigte Befehle mit folgendem Muster erstellt:
+Schema 2:
 
-```text
-index build ...
-index rescan ...
+```json
+{
+  "schema_version": 2,
+  "maximum_records": 12,
+  "updated_utc": "...",
+  "records": []
+}
 ```
 
-Er enthält Schema, Status, Zeiten, Exitcode und die exakte Argumentliste. Das allgemeine `last-run.json` bleibt davon getrennt, damit ein normaler späterer Startseitenabschluss den fortsetzbaren Scan nicht überschreibt.
+### Identität und Deduplizierung
 
-### Lebenszyklus
+- Nur bestätigte `index build`- und `index rescan`-Befehle werden aufgenommen.
+- Der Datenbankpfad wird expandiert, absolut und normalisiert gespeichert.
+- Aus dem normalisierten Pfad entsteht eine stabile SHA-256-Eintragskennung.
+- Pro Indexdatei existiert höchstens ein Eintrag.
+- Ein neuerer Lauf derselben Indexdatei ersetzt nur den bisherigen Eintrag dieser Datei.
+- `--resume` wird normalisiert und erscheint höchstens einmal.
 
-1. Vor Ausführung speichert `RunJournal.record_active_command()` den bestätigten Scanbefehl.
-2. Rückgabecode `0` entfernt nur `resume-run.json`.
-3. Nichtnull, Tastaturabbruch oder unerwartete Ausnahme erhalten den Datensatz mit aktualisiertem Zustand.
-4. Ein normaler Startseitenabbruch verändert den Datensatz nicht.
-5. `load_recovery_candidate()` prüft den Datensatz erneut gegen Dateisystem und SQLite.
+### Begrenzung
 
-## Wiederanlaufvalidierung
+`MAX_RESUME_RECORDS = 12`.
 
-`core/recovery.py` akzeptiert ausschließlich `build` und `rescan`.
+Nach dem Sortieren nach Aktualisierungszeit werden nur die zwölf neuesten internen Hinweise gespeichert. Diese Begrenzung entfernt oder verändert keine Index-, Quell- oder Originaldatei.
 
-Prüfungen:
+### Parallelität und Veröffentlichung
 
-1. Argumentliste ist vollständig und enthält `--database`.
-2. Quellordner existiert als Ordner.
-3. Index existiert als Datei.
-4. SQLite wird per URI `mode=ro` geöffnet.
-5. `PRAGMA query_only = ON` wird gesetzt.
-6. `scan_sessions` enthält für denselben normalisierten Stammordner und dieselbe Scanart eine neueste Sitzung mit `running`, `interrupted` oder `failed`.
-7. Der zurückgegebene Befehl enthält genau ein abschließendes `--resume`.
+- Eine separate `.resume-run.lock`-Datei verwendet `fcntl.flock`.
+- Lesen, Upsert und Einzelverwerfen laufen innerhalb dieser Sperre.
+- JSON wird atomar, dauerhaft und mit Dateimodus `0600` veröffentlicht.
+- Schema 1 wird beim Lesen in die neue Eintragsform überführt.
 
-Zuordnung:
+## Einzelvalidierung
 
-| Befehl | SQLite-Scanart | Nutzertext |
-|---|---|---|
-| `index build` | `full` | erste Ordnerprüfung |
-| `index rescan` | `incremental` | Änderungsprüfung |
+`load_recovery_candidates()` liefert für jeden gespeicherten Eintrag einen `RecoveryCandidate`.
 
-Ist Ordner oder Datenträger vorübergehend nicht verfügbar, bleibt der Marker erhalten. Beweist die Datenbank dagegen, dass keine passende fortsetzbare Sitzung existiert, wird der veraltete Marker entfernt.
+Geprüft werden:
+
+1. unterstützte Befehlsform,
+2. vollständige Argumentliste und Datenbankparameter,
+3. vorhandener Quellordner,
+4. vorhandene normale Indexdatei,
+5. SQLite-Öffnung über URI `mode=ro`,
+6. `PRAGMA query_only = ON`,
+7. passende Scanart `full` oder `incremental`,
+8. identischer normalisierter Stammordner,
+9. neueste Sitzung mit `running`, `interrupted` oder `failed`.
+
+Ein fehlender Ordner, ein nicht eingehängter Datenträger oder eine fehlende Datenbank erzeugt einen sichtbaren, nicht startbaren Kandidaten. Der Eintrag wird nicht automatisch entfernt.
 
 ## Startseitenablauf
 
-`core/terminal_home.TerminalHome` erweitert die bestehende Dialogklasse.
-
 Vor dem normalen Menü:
 
-1. `load_recovery_candidate()` ausführen.
-2. Art, Ordner, Index, Sitzung, Status, Phase und Dateizahl anzeigen.
-3. Vollständigen Befehl mit `shlex.join()` sichtbar darstellen.
-4. Ja/Nein abfragen; Standard ist Nein.
-5. Nur bei Ja dieselbe Argumentliste an den vorhandenen `CommandRunner` übergeben.
+1. alle Kandidaten laden,
+2. Anzahl und nummerierte Kurzliste anzeigen,
+3. je Eintrag Operation, Prüfstatus, Ordner und Index ausgeben,
+4. Auswahl einer Nummer oder Rückkehr ermöglichen,
+5. Detailansicht mit Sitzung, Phase, Dateizahl und vollständigem Befehl anzeigen,
+6. genau einen Eintrag fortsetzen, erhalten oder verwerfen.
 
-Nein, `q` oder geschlossene Eingabe startet nichts und erhält den Marker. Der `entrypoint` umschließt den Startseiten-Runner so, dass der tatsächlich innere Befehl vor der Ausführung im Journal registriert und nachher mit seinem Rückgabecode abgeschlossen wird.
+### Fortsetzen
 
-## Sicherungskatalog
+Nur `resumable=True` erlaubt den Start. Die angezeigte Argumentliste wird ohne Shell an den vorhandenen `CommandRunner` übergeben. Rückgabecode 0 entfernt nur den zugehörigen Eintrag.
 
-Öffentliche Befehle:
+### Verwerfen
 
-```text
-index backups list DATABASE [--config-directory DIR] [--json]
-index backups delete DATABASE BACKUP --confirm-name NAME --yes
-```
+`discard_recovery_candidate(record_id)` entfernt ausschließlich die ausgewählte interne Vormerkung. Ordner, Index und Originaldateien bleiben unverändert. Nicht startbare Einträge können nur erhalten oder bewusst verworfen werden.
 
-### Erkennung
+## Konfigurationssicherung
 
-Index-Sicherungen liegen neben der aktiven Datenbank und folgen den vom Tool erzeugten Mustern:
+Öffentliche Option:
 
 ```text
-<datenbankname>.backup-*.sqlite3
-<datenbankname>.pre-restore-*.sqlite3
+--backup-before-change
 ```
 
-Unterstützte Konfigurationssicherungen beziehen sich auf:
+Sie gilt bei:
 
-```text
-search-presets.json
-timeline-presets.json
-```
+- `index presets save --replace`,
+- `index presets delete --yes`,
+- `index timeline-presets save --replace`,
+- `index timeline-presets delete --yes`.
 
-Nur bekannte `.backup-*`, `-backup-*`, `.bak`- oder `.backup`-Muster werden katalogisiert. Dadurch wird eine beliebige Datei nicht allein aufgrund ihrer Lage löschbar.
+Die geführte Startseite ergänzt diese Option nur nach einer sichtbaren Ja/Nein-Frage.
 
-### Gesundheitsprüfung
+### Vorprüfung
 
-Index-Sicherung:
+`create_config_backup()` verlangt:
 
-- URI `mode=ro`,
-- `query_only`,
-- `PRAGMA user_version`,
-- `PRAGMA quick_check`,
-- grün bei nutzbarer unterstützter Version,
-- gelb bei neuerer Schemaversion,
-- rot bei Lesefehler oder beschädigtem `quick_check`.
-
-Konfigurations-Sicherung:
-
+- vorhandene normale Quelldatei,
+- kein Symlink,
 - UTF-8-JSON,
-- oberste Ebene ist Objekt,
-- `schema_version` ist Ganzzahl,
-- `presets` ist Liste,
-- grün bei Schema 1,
-- gelb bei unbekannter Version,
-- rot bei beschädigter oder unvollständiger Struktur.
+- oberste Ebene ist ein Objekt,
+- erwartete `schema_version`,
+- `presets` ist eine Liste.
 
-Jeder `BackupItem` enthält Pfad, Name, Typ, Bytes, UTC-Änderungszeit, Alter in Sekunden, Status und technische Begründung. Sortiert wird nach kleinstem Alter: neueste zuerst.
+### Dateiname und Veröffentlichung
 
-## Einzellöschvertrag
+```text
+<aktive-datei>.backup-<UTC-Zeit>-<PID>.json
+```
 
-`delete_backup()` verlangt gleichzeitig:
+Die Sicherung wird mit `atomic_write_bytes()` und Modus `0600` veröffentlicht. Es gibt kein Überschreiben bestehender Sicherungen.
 
-1. `yes=True`,
-2. Pfad kommt in der unmittelbar neu aufgebauten geprüften Übersicht vor,
-3. `confirm_name` stimmt exakt mit dem Dateinamen überein,
-4. Ziel ist kein Symlink,
-5. Ziel ist eine normale Datei.
+### Nachprüfung
 
-Danach entfernt `durable_remove()` genau diesen Verzeichniseintrag und bestätigt das Elternverzeichnis mit `fsync`.
+Nach der Veröffentlichung werden erneut geprüft:
 
-Aktive Indexdatei, aktive Vorlagendatei, unbekannte Datei, Verzeichnis und Symlink sind nicht löschbar. Es gibt keine Mehrfachauswahl und keine Altersautomatik.
+- vollständige Bytes,
+- SHA-256,
+- Schemaversion,
+- Vorlagenzahl,
+- JSON-Struktur.
 
-## Symlink-Härtung
+Bei jeder Abweichung wird die nicht bestätigte Sicherung entfernt und die eigentliche Vorlagenänderung nicht ausgeführt.
 
-Dauerhafte Zielpfade werden lexikalisch absolut normalisiert, ohne die letzte Pfadkomponente aufzulösen. Dadurch können `atomic_write_*()`, `publish_temp_file()` und `durable_remove()` einen vorhandenen Symlink erkennen und ablehnen.
+### Keine Rotation
 
-Der Schutz liegt im zentralen Helfer und nicht nur in den aufrufenden Sicherungsfunktionen. Tests bestätigen, dass Link und echtes Ziel unverändert bleiben.
+Der Sicherungscode enthält keine Anzahl-, Alters- oder Speicherplatzrotation. Mehrere ausdrücklich erstellte Sicherungen bleiben bestehen und werden vom vorhandenen Sicherungskatalog erkannt.
 
-## CommandPolicy
+## CLI-Architektur
 
-| Befehl | Policy |
-|---|---|
-| `index backups list` | rein lesend |
-| `index backups delete` | `writes_backups=True` |
-| geführter Wiederanlauf | bestehende Policy von `index.build` oder `index.rescan` |
+Die zunächst duplizierten Parser- und Ausgabefunktionen wurden in `cli_preset_change.py` vereinheitlicht. Dadurch bleibt `cli_search.py` unter dem verbindlichen Limit von 500 Zeilen. `tests/test_cli_architecture.py` prüft weiterhin:
 
-`tests/test_cli_architecture.py` prüft Parser, Handler, Policy, Modulzuständigkeit, Größenlimits und Shellverbot.
+- Größenlimits,
+- Handler und `CommandPolicy`,
+- eindeutige Modulzuständigkeit,
+- Shellverbot,
+- Sperre von Originaldatei-Schreibzugriffen.
 
 ## Automatische Prüfungen
 
-Geprüft werden unter anderem:
+Die Version enthält 130 Tests, darunter:
 
-- Vollscan- und Re-Scan-Kandidat,
+- zwei verschiedene Indexdateien gleichzeitig,
+- Deduplizierung derselben Indexdatei,
 - genau ein `--resume`,
-- sichtbarer Befehl entspricht ausgeführter Argumentliste,
-- Nein und Abbruch erhalten den Marker,
-- Erfolg entfernt nur den Marker,
-- stale marker ohne SQLite-Sitzung,
-- gültige und beschädigte Sicherungen,
-- Größe, Alter und UTC-Zeit,
-- JSON-CLI-Ausgabe,
-- tatsächliche Einzellöschung,
-- fehlendes `--yes`, falscher Name und aktive Datei,
-- Symlink auf Sicherung,
-- zentrale Symlink-Sperre bei Schreiben und Löschen.
+- Listenlimit zwölf,
+- erfolgreiches Entfernen nur des eigenen Eintrags,
+- bewusstes Einzelverwerfen,
+- nicht verfügbare Einträge bleiben sichtbar und nicht startbar,
+- Suchvorlagen-Ersetzen sichert den alten Inhalt,
+- Zeitreihen-Vorlagen-Löschen sichert die alte Konfiguration,
+- optionale Sicherung kann ausgelassen werden,
+- mehrere Sicherungen werden nicht rotiert,
+- beschädigtes JSON wird abgelehnt,
+- neue Sicherung erscheint grün im Katalog,
+- CLI-Modulgrenzen bleiben eingehalten.
+
+Die Matrix läuft unter Python 3.10 und 3.12 mit `PYTHONWARNINGS=error`. Quick- und Standardabnahme verwenden ausschließlich synthetische Daten.
 
 ## Verbleibende Grenzen
 
-- Genau ein Scan kann vorgemerkt sein; eine begrenzte Mehrfachliste ist offen.
-- Nicht eingehängte Datenträger verhindern vorübergehend die Anzeige, löschen den Marker aber nicht.
-- Vorlagenänderungen erstellen noch keine automatische Konfigurationssicherung.
+- Die Liste ist bewusst auf zwölf Einträge begrenzt.
+- Nicht startbare Einträge werden nicht automatisch verworfen.
+- Eine eigenständige rein lesende Diagnose-CLI für die Wiederanlaufliste fehlt noch.
+- Konfigurationssicherungen besitzen noch keinen geführten Restore-Assistenten.
 - Hardware-, Kernel-, Dateisystem- und physischer Verlust bleiben außerhalb des Anwendungsschutzes.
 - Reale Laienabnahme ist offen.
 
