@@ -180,7 +180,7 @@ class AutosaveAndDiagnosticTests(unittest.TestCase):
         ):
             output = StringIO()
             with redirect_stdout(output), redirect_stderr(StringIO()):
-                code = cli_main(["check", "--color", "never"])
+                code = cli_main(["--color", "never", "check"])
             self.assertEqual(code, 0)
             text = output.getvalue()
             self.assertLess(text.index("Sicheres Speichern"), text.index("fsync"))
