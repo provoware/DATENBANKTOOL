@@ -34,20 +34,31 @@ class IndexDatabase(IndexRecordMixin):
     def __exit__(self, exc_type: object, exc: object, traceback: object) -> None:
         self.close()
 
+    def _passive_checkpoint(self) -> bool:
+        """Try WAL housekeeping without turning a safe commit into a command error."""
+        try:
+            self.connection.execute("PRAGMA wal_checkpoint(PASSIVE)")
+        except sqlite3.OperationalError as error:
+            detail = str(error).casefold()
+            if "locked" in detail or "busy" in detail:
+                return False
+            raise
+        return True
+
     def close(self) -> None:
         try:
             self.connection.commit()
-            self.connection.execute("PRAGMA wal_checkpoint(PASSIVE)")
+            self._passive_checkpoint()
         except sqlite3.Error:
-            # Closing must not hide the original command error. The WAL remains valid.
+            # Closing must not hide the original command error. The committed WAL stays valid.
             pass
         finally:
             self.connection.close()
 
-    def durable_checkpoint(self) -> None:
-        """Commit the current safe state and request a passive WAL checkpoint."""
+    def durable_checkpoint(self) -> bool:
+        """Commit durably; return whether optional WAL housekeeping also succeeded."""
         self.connection.commit()
-        self.connection.execute("PRAGMA wal_checkpoint(PASSIVE)")
+        return self._passive_checkpoint()
 
     def schema_version(self) -> int:
         return int(self.connection.execute("PRAGMA user_version").fetchone()[0])
