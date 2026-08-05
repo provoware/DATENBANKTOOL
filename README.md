@@ -1,12 +1,12 @@
 # DATENBANKTOOL
 
-**Erledigt:** vollständig lesender Prüfungsbefehl für ausdrücklich ausgewählte Wiederherstellungsprotokolle. Er validiert das feste Schema, beide UTC-Zeiten, drei unterschiedliche absolute Pfade und drei SHA-256-Werte und vergleicht vorhandene Dateien ohne Wiederherstellung, Änderung oder Löschung. Weiterhin vorhanden: Wiederanlauf-Diagnose, optionales Restore-Protokoll, geprüfter Konfigurations-Restore, automatischer Rückfall, Sicherungskatalog, Autosave, Crashberichte und SQLite-Härtung.
+**Erledigt:** geführte optionale Auswahl eines neuen Wiederherstellungsprotokollpfads, geführte rein lesende Protokollprüfung und optionaler SHA-256-Pin vor jeder Schemaauswertung. Weiterhin vorhanden: geprüfter Konfigurations-Restore mit automatischer Rückfallsicherung, Wiederanlauf-Diagnose, Sicherungskatalog, Autosave, Crashberichte und SQLite-Härtung.
 
 **Offen:** reale Laienabnahme auf einem Kubuntu-Zielsystem.
 
-**Entwicklungsfortschritt:** **99 %** · **66 Hauptpunkte erledigt** · **1 Hauptpunkt offen**.
+**Entwicklungsfortschritt:** **99 %** · **69 Hauptpunkte erledigt** · **1 Hauptpunkt offen**.
 
-**Mögliche Upgrades aus `UPGRADE_POOL.md`:** geführte Protokollprüfung auf der Startseite, optionaler SHA-256-Pin für die Protokolldatei, Mehrordner-Zeitreihe und später eine barrierefreie grafische Oberfläche.
+**Mögliche Upgrades aus `UPGRADE_POOL.md`:** geführte synthetische Kubuntu-Abnahmesitzung, optionaler Prüfberichtsexport und später eine barrierefreie grafische Oberfläche.
 
 > Lokales Linux-Indexwerkzeug für große Dateisammlungen. Persönliche Originaldateien werden nicht automatisch verändert.
 
@@ -14,14 +14,14 @@
 
 | Bereich | Stand |
 |---|---|
-| Projektversion | `0.20.0-alpha.1` |
-| Paketversion | `0.20.0a1` |
+| Projektversion | `0.21.0-alpha.1` |
+| Paketversion | `0.21.0a1` |
 | Python | `>=3.10` |
 | SQLite-Schema | `3` |
 | Wiederanlauflimit | **12 verschiedene Indexdateien** |
 | Originaldateiänderungen | **technisch gesperrt** |
 | Externe Laufzeitabhängigkeiten | **0** |
-| Automatische Tests | **151 unter Python 3.10 und 3.12** |
+| Automatische Tests | **158 unter Python 3.10 und 3.12** |
 | Reale Laienabnahme | **offen** |
 
 ## Einfach starten
@@ -30,9 +30,31 @@
 datenbanktool start
 ```
 
-## Wiederherstellungsprotokoll vollständig lesend prüfen
+Unter **7 – Sicherungen verwalten** stehen nun zusätzlich zwei geführte Verträge bereit.
 
-Terminalausgabe:
+### Optionales Protokoll nach geführtem Restore
+
+Nach dem Nur-Lese-Vergleich und der exakten Wiederholung des Sicherungsnamens fragt die Startseite optional nach einem neuen Protokollpfad.
+
+- Leere Eingabe: kein `--restore-log`.
+- Ausdrücklicher neuer absoluter Pfad: `--restore-log PFAD` wird an die sichere Argumentliste angehängt.
+- Existierende Datei oder Symlink: wird abgelehnt und nicht überschrieben.
+- Es wird kein Pfad vorgeschlagen, gesucht oder automatisch gespeichert.
+- Der vollständige Befehl bleibt vor dem Start sichtbar und bestätigungspflichtig.
+
+### Geführte Protokollprüfung
+
+Aktion **Protokoll prüfen**:
+
+1. genau einen vollständigen Protokollpfad eingeben,
+2. vollständigen normalisierten Pfad prüfen,
+3. optional einen ausdrücklich bekannten SHA-256-Pin eingeben,
+4. vollständigen Nur-Lese-Befehl bestätigen,
+5. dieselbe Grün-/Gelb-/Rot-Auswertung wie im Terminal erhalten.
+
+Es gibt keine automatische Suche, Auswahl, Wiederherstellung, Änderung oder Löschung.
+
+## Wiederherstellungsprotokoll im Terminal prüfen
 
 ```bash
 datenbanktool index backups verify-log /pfad/restore-nachweis.json
@@ -44,50 +66,43 @@ Maschinenlesbar:
 datenbanktool index backups verify-log /pfad/restore-nachweis.json --json
 ```
 
-Der Befehl prüft zuerst die ausdrücklich ausgewählte Protokolldatei:
-
-1. normales UTF-8-JSON und keine symbolische Verknüpfung,
-2. exakt das unterstützte Protokollschema `1`,
-3. Ereignis `configuration_restore`,
-4. Konfigurationsart `search` oder `timeline`,
-5. zwei gültige UTC-Zeiten in richtiger Reihenfolge,
-6. genau drei unterschiedliche absolute Dateipfade,
-7. genau drei kleingeschriebene SHA-256-Werte mit jeweils 64 Hexzeichen,
-8. keine fehlenden oder unerwarteten Schemafelder.
-
-Anschließend werden die drei referenzierten Dateien ausschließlich lesend geöffnet und gehasht:
-
-- aktive Datei nach der Wiederherstellung,
-- ausgewählte Sicherung,
-- automatische Rückfallsicherung.
-
-Symlinks werden nicht verfolgt. Fehlende Dateien werden als unvollständiger Nachweis, abweichende Hashes als Integritätsfehler und vollständig übereinstimmende Dateien als bestätigt ausgegeben.
-
-| Rückgabecode | Bedeutung |
-|---:|---|
-| `0` | Protokoll gültig und alle drei Dateien stimmen überein |
-| `1` | Protokoll gültig, aber Datei fehlt, ist nicht sicher lesbar oder weicht ab |
-| `2` | Protokolldatei oder festes Schema ist ungültig |
-
-Es wird keine Wiederherstellung gestartet. Das Protokoll und seine referenzierten Dateien werden nicht verändert oder gelöscht.
-
-## Alle Wiederanläufe nur prüfen
+Optional kann vor jeder JSON-Schemaauswertung exakt die erwartete Protokolldatei bestätigt werden:
 
 ```bash
-datenbanktool index recovery
-datenbanktool index recovery --json
+datenbanktool index backups verify-log /pfad/restore-nachweis.json \
+  --expected-protocol-sha256 64_KLEINGESCHRIEBENE_HEXZEICHEN
 ```
 
-Die Diagnose zeigt Prüfstatus, Quellordner, Indexdatei, SQLite-Sitzung, Zustand, Phase, bestätigte Dateizahl, UTC-Zeit und Startbarkeit. Sie startet keinen Scan und verwirft keinen Eintrag.
+Der Pin:
 
-## Konfigurationssicherung zuerst nur vergleichen
+- wird nur bei ausdrücklicher Eingabe verwendet,
+- wird nicht automatisch ermittelt oder gespeichert,
+- muss exakt 64 kleingeschriebene Hexzeichen besitzen,
+- wird über eine sichere, nicht symlink-folgende Leseöffnung geprüft,
+- stoppt bei Abweichung vor der Schemaauswertung mit Rückgabecode `2`.
 
-```bash
-datenbanktool index backups compare index.sqlite3 SICHERUNG
-datenbanktool index backups compare index.sqlite3 SICHERUNG --json
-```
+Bei erfolgreichem Pin enthält JSON zusätzlich `protocol_identity` mit erwartetem und tatsächlichem SHA-256-Wert.
 
-Der Vergleich zeigt aktive Datei, Vorlagenzahlen, Hinzufügungen, Entfernungen, Ersetzungen, unveränderte Vorlagen und die SHA-256-Werte beider Dateien, ohne etwas zu verändern.
+## Protokollprüfung ohne Pin
+
+Der feste Prüfvertrag kontrolliert:
+
+- UTF-8-JSON und exaktes Schema `1`,
+- Ereignis `configuration_restore`,
+- zwei UTC-Zeiten und ihre Reihenfolge,
+- drei unterschiedliche absolute Pfade,
+- drei fest benannte SHA-256-Werte,
+- vorhandene Dateien über `O_RDONLY`, `O_NOFOLLOW`, `fstat()` und Streaming-Hashing.
+
+Zustände:
+
+| Zustand | Bedeutung |
+|---|---|
+| Grün | alle drei Dateien stimmen überein |
+| Gelb | Protokoll gültig, mindestens eine Datei fehlt |
+| Rot | Datei weicht ab, ist ein Symlink oder nicht sicher lesbar |
+
+Rückgabecodes: `0` vollständig bestätigt, `1` Dateinachweis unvollständig/abweichend, `2` Eingabe oder Protokoll ungültig.
 
 ## Genau eine Konfigurationssicherung wiederherstellen
 
@@ -97,9 +112,7 @@ datenbanktool index backups restore index.sqlite3 SICHERUNG \
   --yes
 ```
 
-Vor dem Überschreiben entsteht eine neue geprüfte Rückfallsicherung. Aktive Datei und ausgewählte Sicherung werden erneut per SHA-256 geprüft. Die Veröffentlichung erfolgt atomar mit Modus `0600`; eine fehlgeschlagene Nachprüfung löst den automatisch bestätigten Rückfall aus.
-
-## Optionales Wiederherstellungsprotokoll erzeugen
+Optionales neues Protokollziel:
 
 ```bash
 datenbanktool index backups restore index.sqlite3 SICHERUNG \
@@ -108,33 +121,16 @@ datenbanktool index backups restore index.sqlite3 SICHERUNG \
   --restore-log /neuer/pfad/restore-nachweis.json
 ```
 
-Das Protokoll entsteht erst nach einer erfolgreich bestätigten Wiederherstellung und enthält ausschließlich UTC-Zeiten, drei Pfade und drei SHA-256-Werte. Vorlagen, Konfigurationsinhalte, Argumente und Geheimnisse sind ausgeschlossen. Das Ziel wird atomar mit Modus `0600` angelegt und niemals überschrieben, automatisch benannt, rotiert oder gelöscht.
+Vor dem Überschreiben entsteht eine geprüfte Rückfallsicherung. Aktive Datei, Sicherung und Rückfallsicherung werden nachgeprüft. Scheitert die Restore-Nachprüfung, erfolgt automatischer Rückfall. Protokolle werden nicht automatisch benannt, rotiert oder gelöscht.
 
-## Optionale Sicherung vor Vorlagenänderungen
-
-```bash
-datenbanktool index presets save Audio --replace --backup-before-change
-datenbanktool index presets delete Audio --backup-before-change --yes
-datenbanktool index timeline-presets save Musik Archiv \
-  --replace --backup-before-change
-```
-
-Ohne `--backup-before-change` entsteht keine Sicherung. Vorhandene Sicherungen werden niemals automatisch rotiert oder gelöscht.
-
-## Sicherungsübersicht und Einzellöschung
+## Wiederanläufe nur prüfen
 
 ```bash
-datenbanktool index backups list index.sqlite3
-datenbanktool index backups list index.sqlite3 --json
+datenbanktool index recovery
+datenbanktool index recovery --json
 ```
 
-```bash
-datenbanktool index backups delete index.sqlite3 SICHERUNG \
-  --confirm-name EXAKTER_DATEINAME \
-  --yes
-```
-
-Aktive Dateien, unbekannte Pfade, Verzeichnisse und Symlinks sind ausgeschlossen.
+Die Diagnose startet keinen Scan, verwirft keinen Eintrag und verändert weder Wiederanlaufdatei noch Index.
 
 ## Startklar prüfen
 
@@ -147,10 +143,10 @@ datenbanktool check --database index.sqlite3
 
 - Originaldateien bleiben schreibgeschützt.
 - CLI-Fachmodule verwenden keine Shell-Auswertung.
-- Protokollprüfung besitzt eine `CommandPolicy` ohne Schreibwirkung.
-- Protokoll und referenzierte Dateien werden mit `O_NOFOLLOW` ausschließlich lesend geöffnet.
-- Fehlende Dateien werden nicht neu angelegt oder rekonstruiert.
-- Abweichende Dateien werden nur gemeldet und niemals automatisch ersetzt.
+- Schreibziele werden atomar veröffentlicht; bestehende Protokollziele werden nicht überschrieben.
+- Protokollprüfung folgt keinen Symlinks und verändert keine Prüfobjekte.
+- SHA-Pins werden weder automatisch berechnet noch gespeichert.
+- Der zentrale Prozessrahmen aktualisiert weiterhin ausschließlich sein internes Absturzjournal.
 - Hardwaredefekte, volles oder beschädigtes Dateisystem, Kerneldefekte und physischer Verlust bleiben außerhalb des Anwendungsschutzes.
 
 ## Entwicklung und Prüfung
