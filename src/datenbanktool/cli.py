@@ -9,6 +9,7 @@ from typing import Sequence
 
 from datenbanktool import __version__
 from datenbanktool.cli_acceptance import register_acceptance_parser
+from datenbanktool.cli_backups import register_backup_catalog_parser
 from datenbanktool.cli_check import register_check_parser
 from datenbanktool.cli_common import parser
 from datenbanktool.cli_contract import dispatch
@@ -85,6 +86,7 @@ def build_parser() -> argparse.ArgumentParser:
     register_preset_parsers(index_subparsers)
     register_timeline_preset_parsers(index_subparsers)
     register_admin_parsers(index_subparsers)
+    register_backup_catalog_parser(index_subparsers)
 
     register_report_parser(subparsers)
     return root
