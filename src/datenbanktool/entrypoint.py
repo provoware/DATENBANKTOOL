@@ -32,13 +32,12 @@ def _is_interactive(stream: TextIO) -> bool:
     return bool(getattr(stream, "isatty", lambda: False)())
 
 
-def _run_safely(
-    arguments: Sequence[str],
+def _execute_with_journal(
+    journal: RunJournal,
     operation: Callable[[], int],
     *,
     error_stream: TextIO,
 ) -> int:
-    journal = RunJournal.begin(arguments, version=__version__)
     try:
         result = int(operation())
     except SystemExit as error:
@@ -49,8 +48,8 @@ def _run_safely(
         journal.interrupted()
         error_stream.write(
             "\nDer Vorgang wurde abgebrochen. Der letzte bestätigte Zwischenstand bleibt erhalten.\n"
-            "Bei einem Scan kannst du denselben Befehl mit --resume fortsetzen. "
-            "(Technisch: Wiederaufnahme am Checkpoint.)\n"
+            "Die Startseite bietet den geprüften Wiederanlauf beim nächsten Start an. "
+            "(Technisch: Wiederaufnahme am Checkpoint mit --resume.)\n"
         )
         error_stream.flush()
         return 130
@@ -60,7 +59,7 @@ def _run_safely(
             "Das Tool wurde unerwartet beendet. Deine Originaldateien wurden nicht "
             "automatisch verändert.\n"
             "Der letzte bestätigte Zwischenstand bleibt erhalten. Prüfe zuerst mit "
-            "'datenbanktool check' und starte den Schritt danach erneut.\n"
+            "'datenbanktool check' und öffne danach erneut die Startseite.\n"
         )
         if report is not None:
             error_stream.write(f"Absturzbericht: {report}\n")
@@ -73,6 +72,49 @@ def _run_safely(
         return 70
     journal.complete(result)
     return result
+
+
+def _run_safely(
+    arguments: Sequence[str],
+    operation: Callable[[], int],
+    *,
+    error_stream: TextIO,
+) -> int:
+    journal = RunJournal.begin(arguments, version=__version__)
+    journal.record_active_command(arguments)
+
+    def recorded_operation() -> int:
+        result = int(operation())
+        journal.record_command_result(arguments, result)
+        return result
+
+    return _execute_with_journal(journal, recorded_operation, error_stream=error_stream)
+
+
+def _guided_home(
+    arguments: Sequence[str],
+    *,
+    input_stream: TextIO,
+    output_stream: TextIO,
+    error_stream: TextIO,
+    color_mode: str = "auto",
+) -> int:
+    journal = RunJournal.begin(arguments, version=__version__)
+
+    def guided_runner(command: Sequence[str]) -> int:
+        journal.record_active_command(command)
+        result = int(cli.main(command))
+        journal.record_command_result(command, result)
+        return result
+
+    home = TerminalHome(
+        guided_runner,
+        input_stream=input_stream,
+        output_stream=output_stream,
+        error_stream=error_stream,
+        color_mode=color_mode,
+    )
+    return _execute_with_journal(journal, home.run, error_stream=error_stream)
 
 
 def main(
@@ -101,24 +143,22 @@ def main(
 
     if arguments and arguments[0] == "start":
         start_arguments = _start_parser().parse_args(arguments[1:])
-        home = TerminalHome(
-            cli.main,
+        return _guided_home(
+            arguments,
             input_stream=stdin,
             output_stream=stdout,
             error_stream=stderr,
             color_mode=start_arguments.color,
         )
-        return _run_safely(arguments, home.run, error_stream=stderr)
 
     if not arguments:
         if _is_interactive(stdin) and _is_interactive(stdout):
-            home = TerminalHome(
-                cli.main,
+            return _guided_home(
+                ["start"],
                 input_stream=stdin,
                 output_stream=stdout,
                 error_stream=stderr,
             )
-            return _run_safely(["start"], home.run, error_stream=stderr)
         stdout.write(
             "Es fehlt noch die Auswahl, was das Tool tun soll.\n"
             "Einfach starten: datenbanktool start\n"
