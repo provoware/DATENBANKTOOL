@@ -1,63 +1,65 @@
 # Changelog
 
-## 0.19.0-alpha.1 – 2026-08-05
+## 0.20.0-alpha.1 – 2026-08-05
 
-### Vollständig lesende Wiederanlauf-Diagnose
+### Wiederherstellungsprotokoll-Prüfbefehl
 
-- Neuer Befehl `datenbanktool index recovery`.
-- Neue JSON-Ausgabe über `datenbanktool index recovery --json`.
-- Jeder gespeicherte Wiederanlauf wird unabhängig gegen Quellordner, Indexdatei und neueste fortsetzbare SQLite-Sitzung geprüft.
-- Terminal und JSON zeigen Prüfstatus, Ordner, Indexdatei, Sitzung, Zustand, Phase, bestätigte Dateizahl, UTC-Zeit und Startbarkeit.
-- Gesamtzahlen für alle, startbare und nicht startbare Einträge werden ausgegeben.
-- Die Diagnose startet keinen Scan und besitzt keinen Verwerfen- oder Löschhandler.
-- Automatische Tests bestätigen, dass `resume-run.json` und die geprüfte Indexdatei bytegenau unverändert bleiben.
-- Leere Wiederanlauflisten liefern eine erfolgreiche und stabile Terminal- sowie JSON-Ausgabe.
+- Neuer Befehl `datenbanktool index backups verify-log PROTOKOLL`.
+- Maschinenlesbare Ausgabe über `--json`.
+- Protokolldatei wird ausschließlich über den ausdrücklich angegebenen Pfad geprüft.
+- Symlink-Protokolle werden abgelehnt und nicht verfolgt.
+- Festes Schema mit exakt neun obersten Feldern wird validiert.
+- Unterstützt werden ausschließlich Schema `1` und Ereignis `configuration_restore`.
+- `configuration_kind` muss `search` oder `timeline` sein.
+- Beide Zeitfelder müssen gültige UTC-Zeiten sein; die Protokollzeit darf nicht vor dem Restore-Abschluss liegen.
+- Genau drei unterschiedliche absolute Pfade sind erforderlich.
+- Genau drei benannte, kleingeschriebene SHA-256-Werte mit jeweils 64 Hexzeichen sind erforderlich.
+- Fehlende oder zusätzliche Felder werden abgelehnt.
 
-### Optionales Wiederherstellungsprotokoll
+### Rein lesender Dateinachweis
 
-- `index backups restore` unterstützt neu `--restore-log PFAD`.
-- Das Protokoll wird ausschließlich nach einer erfolgreich bestätigten Konfigurations-Wiederherstellung angelegt.
-- Enthalten sind UTC-Zeiten, aktive Datei, ausgewählte Sicherung, Rückfallsicherung und drei eindeutig benannte SHA-256-Werte.
-- Konfigurationsinhalte, Vorlagen, Antwortwerte, Kommandozeilenargumente und Geheimnisse werden nicht protokolliert.
-- Veröffentlichung erfolgt atomar mit Dateimodus `0600`.
-- Ein existierendes Ziel wird nicht überschrieben.
-- Ohne `--restore-log` entsteht keine Protokolldatei.
-- Es gibt keine automatische Benennung, Auswahl, Rotation oder Löschung.
-- Scheitert nur das Protokoll, bleibt die bereits bestätigte Wiederherstellung bestehen; der Befehl meldet Teilfehlercode `1`.
+- Aktive Datei, ausgewählte Sicherung und Rückfallsicherung werden mit `O_NOFOLLOW` nur lesend geöffnet.
+- Jede vorhandene normale Datei wird gestreamt und per SHA-256 mit dem protokollierten Wert verglichen.
+- Übereinstimmung, fehlende Datei, Hashabweichung, Symlink und nicht sicher lesbarer Pfad werden getrennt dargestellt.
+- Grün wird nur ausgegeben, wenn alle drei Dateien vorhanden sind und übereinstimmen.
+- Gelb kennzeichnet ein gültiges Protokoll mit mindestens einer fehlenden Datei.
+- Rot kennzeichnet Hashabweichung, Symlink, falschen Dateityp oder Lesefehler.
+- Rückgabecode `0` bedeutet vollständige Bestätigung, `1` einen unvollständigen oder abweichenden Dateinachweis und `2` ein ungültiges Protokoll.
+- Der Befehl startet keine Wiederherstellung und verändert oder löscht keine geprüfte Datei.
 
 ### Architektur und Prüfung
 
-- Neue Fachmodule `cli_recovery.py` und `core/restore_audit.py`.
-- `cli.py` registriert nur den neuen Parser und bleibt unter der globalen Größenbegrenzung.
-- Restore-Policy kennzeichnet die optionale Protokollschreibwirkung ausdrücklich als Berichtsschreibzugriff.
-- Keine neue Laufzeitabhängigkeit, keine Shell-Auswertung und keine Originaldateioperation.
-- Funktionsreferenz: 145 Tests unter Python 3.10 und 3.12; Quick- und Standardabnahme jeweils 11/11.
+- `core/restore_audit.py` enthält Schema- und Dateiprüfung zusammen mit dem bestehenden Schreibvertrag.
+- Neues CLI-Fachmodul `cli_restore_audit.py` hält Parser und Terminal-/JSON-Darstellung getrennt von der Sicherungsverwaltung.
+- `CommandPolicy("index.backups.verify-log")` besitzt keine Schreibwirkung.
+- Keine neue Laufzeitabhängigkeit und keine Shell-Auswertung.
+- 151 Tests unter Python 3.10 und 3.12; Quick- und Standardabnahme jeweils 11/11.
+
+## 0.19.0-alpha.1 – 2026-08-05
+
+- Vollständig lesende Terminal- und JSON-Diagnose aller gespeicherten Wiederanläufe.
+- Optionales inhaltsfreies Wiederherstellungsprotokoll nach erfolgreichem Restore.
+- Atomare Protokollveröffentlichung mit Modus `0600`, ohne Überschreiben, Rotation oder Löschung.
 
 ## 0.18.0-alpha.1 – 2026-08-05
 
 - Geführte Konfigurations-Wiederherstellung mit rein lesendem Vergleich.
-- Exakte Einzelauswahl, `--yes`, automatische geprüfte Rückfallsicherung und atomare Veröffentlichung.
-- Vollständige Nachprüfung sowie automatischer Rückfall bei fehlgeschlagener Bestätigung.
-- Keine automatische Auswahl, Rotation oder Löschung.
+- Exakte Einzelauswahl, `--yes`, automatische Rückfallsicherung und automatischer Rückfall.
 
 ## 0.17.0-alpha.1 – 2026-08-05
 
 - Begrenzte Wiederanlaufliste für zwölf verschiedene Indexdateien.
-- Deduplizierung, Dateisperre, Einzelvalidierung und bewusstes Einzelverwerfen.
-- Optionale geprüfte JSON-Sicherung vor dem Ersetzen oder Löschen von Vorlagen.
+- Optionale geprüfte JSON-Sicherung vor Vorlagenänderungen.
 
 ## 0.16.0-alpha.1 – 2026-08-05
 
 - Geführter, gegen SQLite geprüfter Wiederanlauf.
-- Sicherungsübersicht und kataloggebundene Einzellöschung.
-- Zentrale Symlink-Sperre.
+- Sicherungsübersicht, kataloggebundene Einzellöschung und zentrale Symlink-Sperre.
 
 ## 0.15.0-alpha.1 – 2026-08-05
 
-- Prozessgrenze, Laufjournal und bereinigte Crashberichte.
-- Zeit- und mengenbegrenztes Autosave sowie `--resume`.
-- SQLite `WAL` mit `synchronous=FULL`.
-- Dauerhafte atomare Dateifreigabe und Startklar-Prüfung.
+- Prozessgrenze, Laufjournal, Crashberichte, Autosave und `--resume`.
+- SQLite `WAL` mit `synchronous=FULL` und dauerhafte atomare Dateifreigabe.
 
 ## Frühere Entwicklungsstufen
 
