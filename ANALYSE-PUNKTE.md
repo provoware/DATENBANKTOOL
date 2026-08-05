@@ -1,26 +1,57 @@
 # Analyse-Punkte
 
-Stand: Version 0.14.0-alpha.1
+Stand: Version `0.15.0-alpha.1`
 
-| Bereich | Befund | Maßnahme / Status |
-| --- | --- | --- |
-| Korrektheit | `registry.json` war wegen fehlendem Komma und doppeltem Schlüssel kein gültiges JSON | Registry minimal neu geschrieben und per JSON-Prüfung validierbar gemacht |
-| Konsistenz | Versionen drifteten zwischen Registry, Projektregistry, Paketmetadaten, Tests und Dokumentation | Einheitlich auf `0.14.0-alpha.1` / `0.14.0a1` synchronisiert |
-| Redundanzen | README, TODO, Upgrade-Pool, Schwachstellenliste, Analysepunkte und Entwicklerdoku enthielten doppelte alte Statusblöcke | Statusbereiche konsolidiert, historische Inhalte knapp getrennt |
-| Wartbarkeit | Widersprüchliche Statusangaben erschwerten Release-Pflege | Ein klarer Versionsvertrag und eine kompakte Prüfliste bleiben maßgeblich |
-| Prüfungsqualität | Der Drift-Test konnte wegen defekter Registry nicht importieren | Erwartungswerte aktualisiert; gezielte Registry-Prüfung vorgesehen |
-| Nutzerfreundlichkeit | README-Start enthielt mehrere konkurrierende Projektstatusblöcke | Ein eindeutiger Kopf nennt erledigte Punkte, offene Punkte, Fortschritt und Upgrades |
-| Stabilität | Produktive Kernlogik zeigte in dieser Voranalyse keinen zwingenden Änderungsbedarf | Keine unnötigen Änderungen an Scan-, Index-, Such- oder Exportlogik |
+## Gesamtergebnis der Codeanalyse
 
-## Bewusst nicht geändert
+| Bereich | Befund | Professionelle Korrektur |
+|---|---|---|
+| Prozessabsturz | Unerwartete Ausnahmen besaßen keine einheitliche äußere Fehlergrenze | Laufjournal, Crashbericht, Code `70`, verständliche Wiederanlaufhilfe |
+| Tastaturabbruch | `KeyboardInterrupt` konnte als allgemeiner Fehler behandelt werden | eigener Unterbrechungsstatus, Code `130`, bestätigter Checkpoint bleibt erhalten |
+| Autosave | nur mengenabhängige Batches; bei langsamen Dateien zu große Zeitspanne möglich | Zeit- **oder** Mengengrenze: fünf Sekunden oder 500 Einträge, was zuerst eintritt |
+| SQLite-Dauerhaftigkeit | `synchronous=NORMAL` war schwächer als der Sicherheitsanspruch | `WAL`, `synchronous=FULL`, bestätigte Transaktionen, passive Checkpoints |
+| WAL-Inkonsistenz | optionaler Checkpoint konnte bei offener Leseschleife den sicheren Scan abbrechen | `busy`/`locked` verschiebt nur Wartung; Commit bleibt erfolgreich |
+| Dateischreiben | mehrere eigene Temp-Datei-Varianten ohne einheitliches `fsync` | gemeinsame Schicht mit Datei-`fsync`, `os.replace`, Ordner-`fsync` und Restbereinigung |
+| Sicherung | geprüfte SQLite-Kopie wurde ohne gemeinsame Veröffentlichungsgrenze umbenannt | Validierung vor dauerhafter Veröffentlichung; kein stilles Überschreiben |
+| Wiederherstellung | Austausch der aktiven Indexdatei war atomar, aber nicht vollständig gepuffert | gleiche dauerhafte Veröffentlichung plus Rückfallsicherung |
+| Konfiguration | Such- und Zeitreihenvorlagen verwendeten getrennte Schreiblogik | gemeinsame private `0600`-Schreibgrenze |
+| Berichte | JSON- und wichtige Ordnerexporte verwendeten unterschiedliche atomare Helfer | an gemeinsame dauerhafte Schreibschicht angebunden |
+| Diagnose | keine einfache Vorprüfung für Schreibbarkeit, Laufstatus und SQLite-Integrität | neuer Befehl `datenbanktool check` mit optionalem Nur-Lese-Indexcheck |
+| Geheimnisse | Befehlsargumente konnten ungefiltert in einem Crashbericht landen | typische Token-, Passwort-, Secret- und API-Key-Werte werden ausgeblendet |
+| Python-Vertrag | Versionstest importierte `tomllib` und brach unter Python 3.10 | kompatible versionsspezifische Prüfung ohne neue Abhängigkeit |
+| Nutzeransprache | Fachsprache und interne Fehlerklasse standen teilweise zuerst | Reihenfolge: Alltagssprache → Auswirkung → nächster Schritt → Fachdetail |
+| Architektur | neuer Diagnosebefehl war zunächst nicht Teil der vollständigen Eigentümerprüfung | Parser-, Policy- und Modulgrenzentest ergänzt |
 
-- Keine globale Codeformatierung.
-- Keine Änderung an produktiver Dateiindex-, Such-, Vergleichs- oder Exportlogik.
-- Keine neuen Abhängigkeiten.
-- Keine Erweiterung des Funktionsumfangs außerhalb der Konsistenz- und Aufräumiteration.
+## Ausfall- und Regressionstests
+
+Automatisch geprüft werden:
+
+1. vorhandene Zieldatei bleibt ohne Überschreibfreigabe unverändert,
+2. simulierter `os.replace`-Fehler erhält die Altdatei und entfernt den Temp-Rest,
+3. private Statusdateien besitzen Modus `0600`,
+4. Crashberichte enthalten Rückgabecode und Traceback, aber keine geprüften Geheimniswerte,
+5. Tastaturabbruch erzeugt Unterbrechungsstatus,
+6. unterbrochener Scan wird mit `--resume` vollständig fortgesetzt,
+7. SQLite meldet `synchronous=FULL`,
+8. Indexdiagnose verändert die Indexdatei nicht,
+9. einfache Erklärung erscheint vor `fsync`- und SQLite-Fachdetails,
+10. sämtliche öffentlichen Befehle besitzen Handler und Seiteneffektvertrag.
+
+## Bewusst begrenzte Garantie
+
+Die Software kann ihren eigenen Schreib- und Wiederanlaufvertrag prüfen. Sie kann keine defekte Hardware, falsche Controllercache-Zusagen, volles Laufwerk, Dateisystem-/Kerneldefekte oder physischen Verlust verhindern. Deshalb bleiben Sicherungen und reale Zielsystemtests notwendig.
+
+## Wartbarkeitsentscheidung
+
+- Keine pauschale Neuformatierung.
+- Keine Freigabe von Originaldateioperationen.
+- Keine neue Laufzeitabhängigkeit.
+- Neue Sicherheitslogik liegt in kleinen Fachmodulen statt in weiteren Kopien.
+- Technische Details bleiben verfügbar, dominieren aber nicht die Nutzerführung.
 
 ## Nächste Analysepunkte
 
-1. Mehrordner-Zeitreihe fachlich spezifizieren, besonders bei überlappenden Eltern- und Kindordnern.
-2. Reale Laienabnahme durchführen und unklare Begriffe oder Abläufe aus Beobachtungen ableiten.
-3. Abnahmehistorie für mehrere JSON-Berichte als rein lesendes Werkzeug prüfen.
+1. Gleichzeitige unabhängige Nur-Lese-Befehle im globalen Laufjournal sauber als getrennte Läufe darstellen.
+2. Geführten Wiederanlauf auf der Startseite testen.
+3. Reale Laienabnahme mit Beobachtung und Rückfragen durchführen.
+4. Datenträger-voll- und Neustarttests mit ausschließlich synthetischen Daten dokumentieren.
