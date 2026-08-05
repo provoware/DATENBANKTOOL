@@ -113,12 +113,12 @@
     "backup_bulk_delete_allowed": false
   },
   "validation": {
-    "status": "pending-final-head",
-    "python_versions": [
-      "3.10",
-      "3.12"
-    ],
-    "expected_test_count": 119,
+    "status": "passed-reference-run",
+    "functional_reference_commit": "a0dfea852766d51822248f8a23c53acf6bfc55f4",
+    "workflow_run_id": 30984270770,
+    "package_built": "datenbanktool-0.16.0a1",
+    "python_3_10_tests": 119,
+    "python_3_12_tests": 119,
     "warnings_as_errors": true,
     "compileall": true,
     "full_scan_recovery_test": true,
@@ -132,6 +132,26 @@
     "backup_symlink_rejection_test": true,
     "durable_write_symlink_rejection_test": true,
     "durable_delete_symlink_rejection_test": true,
+    "quick_acceptance_reference": {
+      "reference_commit": "a0dfea852766d51822248f8a23c53acf6bfc55f4",
+      "file_count": 600,
+      "checks_passed": 11,
+      "checks_total": 11,
+      "duration_seconds": 1.032,
+      "peak_python_memory_bytes": 1320546,
+      "artifact_id": 8921410692,
+      "artifact_sha256": "1b4de0b2e68c8f11ec4bbdb67e5278df935d3edcd7235eba6d0bf84ef15f3262"
+    },
+    "standard_acceptance_reference": {
+      "reference_commit": "a0dfea852766d51822248f8a23c53acf6bfc55f4",
+      "file_count": 10000,
+      "checks_passed": 11,
+      "checks_total": 11,
+      "duration_seconds": 16.451,
+      "peak_python_memory_bytes": 13943711,
+      "artifact_id": 8921417963,
+      "artifact_sha256": "032eda03ac3c9df482f4e8df5c58f0f6f0afa712863380d7bb0ca3c0c3b6d01b"
+    },
     "large_acceptance_reference": {
       "reference_commit": "c6312a29176f420db052f2e48b85e3b613e13946",
       "file_count": 100000,
