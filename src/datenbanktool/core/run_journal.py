@@ -10,10 +10,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Sequence
 
-from datenbanktool.core.durable_files import atomic_write_text
+from datenbanktool.core.durable_files import atomic_write_text, durable_remove
 
 _SCHEMA_VERSION = 1
 _SECRET_MARKERS = ("token", "password", "passwort", "secret", "apikey", "api-key")
+_RESUME_FILE = "resume-run.json"
 
 
 def utc_now() -> str:
@@ -23,6 +24,10 @@ def utc_now() -> str:
 def default_state_directory() -> Path:
     base = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local" / "state"))
     return base / "datenbanktool"
+
+
+def default_resume_path(state_directory: Path | None = None) -> Path:
+    return (state_directory or default_state_directory()) / _RESUME_FILE
 
 
 def _redact(arguments: Sequence[str]) -> list[str]:
@@ -43,6 +48,14 @@ def _redact(arguments: Sequence[str]) -> list[str]:
             continue
         result.append(value)
     return result
+
+
+def _scan_command(arguments: Sequence[str]) -> tuple[str, ...] | None:
+    values = tuple(str(value) for value in arguments)
+    for index in range(max(0, len(values) - 1)):
+        if values[index] == "index" and values[index + 1] in {"build", "rescan"}:
+            return values
+    return None
 
 
 def _read_json(path: Path) -> dict[str, object] | None:
@@ -66,6 +79,23 @@ def _safe_write(path: Path, payload: dict[str, object]) -> bool:
     return True
 
 
+def load_resume_record(state_directory: Path | None = None) -> dict[str, object] | None:
+    payload = _read_json(default_resume_path(state_directory))
+    if not payload or payload.get("schema_version") != _SCHEMA_VERSION:
+        return None
+    arguments = payload.get("arguments")
+    if not isinstance(arguments, list) or not all(isinstance(item, str) for item in arguments):
+        return None
+    return payload
+
+
+def clear_resume_record(state_directory: Path | None = None) -> bool:
+    try:
+        return durable_remove(default_resume_path(state_directory), missing_ok=True)
+    except OSError:
+        return False
+
+
 def previous_unfinished_run(
     state_directory: Path | None = None,
     *,
@@ -85,6 +115,10 @@ class RunJournal:
     path: Path
     payload: dict[str, object]
     previous_unfinished: dict[str, object] | None = None
+
+    @property
+    def state_directory(self) -> Path:
+        return self.path.parent
 
     @classmethod
     def begin(
@@ -109,12 +143,73 @@ class RunJournal:
             "platform": platform.platform(),
             "process_id": os.getpid(),
             "arguments": _redact(arguments),
+            "active_arguments": None,
             "message": "Befehl läuft",
             "technical_error": None,
             "crash_report": None,
         }
         _safe_write(path, payload)
         return cls(path=path, payload=payload, previous_unfinished=previous)
+
+    def record_active_command(self, arguments: Sequence[str]) -> None:
+        values = tuple(str(value) for value in arguments)
+        self.payload.update(
+            {
+                "updated_utc": utc_now(),
+                "active_arguments": _redact(values),
+                "message": "Bestätigter Befehl läuft",
+            }
+        )
+        _safe_write(self.path, self.payload)
+        scan = _scan_command(values)
+        if scan is None:
+            return
+        existing = load_resume_record(self.state_directory)
+        started = (
+            str(existing.get("started_utc"))
+            if existing and existing.get("arguments") == list(values)
+            else utc_now()
+        )
+        _safe_write(
+            default_resume_path(self.state_directory),
+            {
+                "schema_version": _SCHEMA_VERSION,
+                "status": "running",
+                "started_utc": started,
+                "updated_utc": utc_now(),
+                "finished_utc": None,
+                "exit_code": None,
+                "arguments": list(values),
+                "message": "Scan kann nach Unterbrechung mit --resume fortgesetzt werden",
+            },
+        )
+
+    def _update_resume(self, status: str, exit_code: int, message: str) -> None:
+        payload = load_resume_record(self.state_directory)
+        if payload is None:
+            return
+        payload.update(
+            {
+                "status": status,
+                "updated_utc": utc_now(),
+                "finished_utc": utc_now(),
+                "exit_code": exit_code,
+                "message": message,
+            }
+        )
+        _safe_write(default_resume_path(self.state_directory), payload)
+
+    def record_command_result(self, arguments: Sequence[str], exit_code: int) -> None:
+        if _scan_command(arguments) is None:
+            return
+        if exit_code == 0:
+            clear_resume_record(self.state_directory)
+            return
+        self._update_resume(
+            "needs-resume",
+            exit_code,
+            "Der Scan wurde nicht vollständig abgeschlossen; der bestätigte Befehl bleibt erhalten",
+        )
 
     def _finish(
         self,
@@ -144,6 +239,7 @@ class RunJournal:
         self._finish(status, exit_code=exit_code, message=message)
 
     def interrupted(self, message: str = "Vom Nutzer abgebrochen") -> None:
+        self._update_resume("interrupted", 130, message)
         self._finish("interrupted", exit_code=130, message=message)
 
     def unexpected_failure(self, error: BaseException) -> Path | None:
@@ -163,6 +259,7 @@ class RunJournal:
         }
         written = _safe_write(report, payload)
         report_value = str(report) if written else None
+        self._update_resume("failed", 70, "Unerwarteter Programmfehler; Fortsetzung bleibt vorgemerkt")
         self._finish(
             "failed",
             exit_code=70,
