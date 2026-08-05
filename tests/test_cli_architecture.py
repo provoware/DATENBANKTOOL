@@ -75,6 +75,7 @@ class CliArchitectureTests(unittest.TestCase):
     def test_all_public_commands_bind_handler_and_policy(self) -> None:
         parser = build_parser()
         commands = (
+            ["check"],
             ["explain"],
             ["scan", "/tmp"],
             ["acceptance", "--workspace", "/tmp/neue-abnahme"],
@@ -124,6 +125,7 @@ class CliArchitectureTests(unittest.TestCase):
     def test_command_ownership_matches_module_boundaries(self) -> None:
         parser = build_parser()
         expected = {
+            ("check",): "datenbanktool.cli_check",
             ("scan", "/tmp"): "datenbanktool.cli_scan",
             (
                 "acceptance",
