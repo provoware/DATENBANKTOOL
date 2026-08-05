@@ -1,39 +1,40 @@
 # TODO
 
-Stand: Version `0.15.0-alpha.1`
+Stand: Version `0.16.0-alpha.1`
 
 ## In dieser Iteration erledigt
 
-1. [x] Unerwartete Ausnahmen an einer zentralen Prozessgrenze kontrolliert abfangen.
-2. [x] Laufjournal und eindeutige lokale Crashberichte ergänzen.
-3. [x] Typische Zugangsdaten in Crashberichten automatisch ausblenden.
-4. [x] Tastaturabbruch als fortsetzbare Unterbrechung speichern.
-5. [x] Autosave auf spätestens fünf Sekunden oder 500 Einträge begrenzen.
-6. [x] Vollscan und Änderungsprüfung nach Unterbrechung über `--resume` fortsetzen.
-7. [x] SQLite auf `WAL` und `synchronous=FULL` härten.
-8. [x] Blockierte passive WAL-Aufräumphase vom sicheren Commit entkoppeln.
-9. [x] Gemeinsame dauerhafte Dateifreigabe mit Datei- und Ordner-`fsync` entwickeln.
-10. [x] Konfigurationen, Berichte, Sicherung und Wiederherstellung an die gemeinsame Schreibgrenze anbinden.
-11. [x] `datenbanktool check` für Start-, Schreib-, Laufjournal- und Indexprüfung ergänzen.
-12. [x] Nutzertexte auf Alltagssprache zuerst und Fachbegriff danach umstellen.
-13. [x] Ausfall-, Abbruch-, Wiederaufnahme-, Geheimnis- und Nur-Lese-Tests ergänzen.
-14. [x] Python-3.10-Versionstest ohne Python-3.11-Sondermodul reparieren.
-15. [x] Version und Pflichtdokumentation auf `0.15.0-alpha.1` synchronisieren.
+1. [x] Bestätigten Vollscan- oder Re-Scan-Befehl als eigenen Wiederanlaufdatensatz speichern.
+2. [x] Wiederanlauf nur nach Prüfung von Ordner, Indexdatei, Scanart und SQLite-Sitzung anbieten.
+3. [x] Ordner, Index, Scan-Nummer, Phase, Dateizahl und vollständigen `--resume`-Befehl anzeigen.
+4. [x] Fortsetzung erst nach sichtbarer Bestätigung starten.
+5. [x] Ablehnung und Abbruch ohne Verlust des Wiederanlaufhinweises behandeln.
+6. [x] Veraltete Hinweise ohne fortsetzbare SQLite-Sitzung bereinigen.
+7. [x] Index- und Konfigurationssicherungen nach Typ, Alter, Größe und Zustand auflisten.
+8. [x] SQLite-Sicherungen nur lesend mit `quick_check` prüfen.
+9. [x] Konfigurationssicherungen auf JSON-Struktur und Schemaversion prüfen.
+10. [x] Genau eine katalogisierte Sicherung nach Pfad-, Namens- und Ja-Bestätigung löschen.
+11. [x] Aktive Dateien, unbekannte Pfade und Symlinks vom Löschen ausschließen.
+12. [x] Zentrale dauerhafte Schreib- und Löschhelfer gegen Symlink-Ziele härten.
+13. [x] Startseitenpunkt 7 zu „Sicherungen verwalten“ ausbauen.
+14. [x] CLI-, Startseiten-, Architektur-, Negativ- und Wiederanlauftests ergänzen.
+15. [x] Version und Pflichtdokumentation auf `0.16.0-alpha.1` synchronisieren.
 
 ## Offener Hauptpunkt
 
-1. [ ] Reale Laienabnahme auf einem Kubuntu-Zielsystem durch eine unerfahrene Testperson durchführen. Dabei besonders prüfen: Verständnis von Autosave, `--resume`, Crashbericht, Startklar-Prüfung und technischen Zusätzen.
+1. [ ] Reale Laienabnahme auf einem Kubuntu-Zielsystem durch eine unerfahrene Testperson durchführen. Besonders beobachten: Wiederanlaufhinweis, sichtbarer Befehl, Nein/Ja-Entscheidung, Sicherungsstatus und Einzellöschung.
 
 ## Nicht blockierende Zielsystemprüfungen
 
-- [ ] Rechner während eines großen synthetischen Scans kontrolliert neu starten und danach `check`, `status` und `--resume` dokumentiert ausführen.
-- [ ] Verhalten bei fast vollem Datenträger mit ausschließlich synthetischen Testdaten prüfen.
-- [ ] Unterschiedliche reale Dateisysteme und USB-Datenträger prüfen, ohne persönliche Quelldaten zu verändern.
+- [ ] Rechner während eines großen synthetischen Scans kontrolliert neu starten und den Wiederanlauf über `datenbanktool start` dokumentieren.
+- [ ] Sicherungsübersicht mit realem ext4- und USB-Ziel prüfen.
+- [ ] Fast vollen Datenträger ausschließlich mit synthetischen Testdaten simulieren.
+- [ ] Fehlende oder vorübergehend nicht eingehängte Quellordner beim Wiederanlauf prüfen.
 
 ## Direkt folgender technischer Entwicklungsschritt
 
-**Geführter Wiederanlauf:** Nach erkanntem unterbrochenem Lauf auf der Startseite den passenden Prüfpfad, die Indexdatei und einen geprüften `--resume`-Befehl anzeigen. Ausführung erst nach sichtbarer Bestätigung.
+**Mehrere unabhängige Wiederanläufe:** Statt eines einzelnen Hinweises eine begrenzte Liste unterbrochener Scans für verschiedene Indexdateien führen. Jeden Eintrag separat validieren, anzeigen, starten oder bewusst verwerfen.
 
 ## Alternative Verbesserung mit hohem Nutzen und geringem Risiko
 
-**Automatische Sicherungsrotation:** Nur Index- und Konfigurationssicherungen nach Anzahl und Alter auflisten; Löschen weiterhin niemals automatisch, sondern ausschließlich nach Einzelprüfung und Bestätigung.
+**Konfigurations-Sicherungen vor Änderungen:** Vor dem Ersetzen oder Löschen von Such- und Zeitreihen-Vorlagen optional eine geprüfte, zeitgestempelte JSON-Sicherung erstellen. Keine automatische Löschung oder Rotation.
