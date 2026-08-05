@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "datenbanktool"
-version = "0.14.0a1"
-description = "Sicheres Linux-Werkzeug zum Prüfen und Strukturieren großer chaotischer Datensammlungen"
+version = "0.15.0a1"
+description = "Absturzsicheres lokales Linux-Werkzeug zum Prüfen und Verstehen großer Dateisammlungen"
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [{ name = "provoware" }]
