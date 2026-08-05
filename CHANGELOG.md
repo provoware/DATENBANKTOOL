@@ -1,63 +1,63 @@
 # Changelog
 
+## 0.19.0-alpha.1 – 2026-08-05
+
+### Vollständig lesende Wiederanlauf-Diagnose
+
+- Neuer Befehl `datenbanktool index recovery`.
+- Neue JSON-Ausgabe über `datenbanktool index recovery --json`.
+- Jeder gespeicherte Wiederanlauf wird unabhängig gegen Quellordner, Indexdatei und neueste fortsetzbare SQLite-Sitzung geprüft.
+- Terminal und JSON zeigen Prüfstatus, Ordner, Indexdatei, Sitzung, Zustand, Phase, bestätigte Dateizahl, UTC-Zeit und Startbarkeit.
+- Gesamtzahlen für alle, startbare und nicht startbare Einträge werden ausgegeben.
+- Die Diagnose startet keinen Scan und besitzt keinen Verwerfen- oder Löschhandler.
+- Automatische Tests bestätigen, dass `resume-run.json` und die geprüfte Indexdatei bytegenau unverändert bleiben.
+- Leere Wiederanlauflisten liefern eine erfolgreiche und stabile Terminal- sowie JSON-Ausgabe.
+
+### Optionales Wiederherstellungsprotokoll
+
+- `index backups restore` unterstützt neu `--restore-log PFAD`.
+- Das Protokoll wird ausschließlich nach einer erfolgreich bestätigten Konfigurations-Wiederherstellung angelegt.
+- Enthalten sind UTC-Zeiten, aktive Datei, ausgewählte Sicherung, Rückfallsicherung und drei eindeutig benannte SHA-256-Werte.
+- Konfigurationsinhalte, Vorlagen, Antwortwerte, Kommandozeilenargumente und Geheimnisse werden nicht protokolliert.
+- Veröffentlichung erfolgt atomar mit Dateimodus `0600`.
+- Ein existierendes Ziel wird nicht überschrieben.
+- Ohne `--restore-log` entsteht keine Protokolldatei.
+- Es gibt keine automatische Benennung, Auswahl, Rotation oder Löschung.
+- Scheitert nur das Protokoll, bleibt die bereits bestätigte Wiederherstellung bestehen; der Befehl meldet Teilfehlercode `1`.
+
+### Architektur und Prüfung
+
+- Neue Fachmodule `cli_recovery.py` und `core/restore_audit.py`.
+- `cli.py` registriert nur den neuen Parser und bleibt unter der globalen Größenbegrenzung.
+- Restore-Policy kennzeichnet die optionale Protokollschreibwirkung ausdrücklich als Berichtsschreibzugriff.
+- Keine neue Laufzeitabhängigkeit, keine Shell-Auswertung und keine Originaldateioperation.
+- Funktionsreferenz: 145 Tests unter Python 3.10 und 3.12; Quick- und Standardabnahme jeweils 11/11.
+
 ## 0.18.0-alpha.1 – 2026-08-05
 
-### Geführte Konfigurations-Wiederherstellung
-
-- Neuer rein lesender Befehl `index backups compare` für genau eine katalogisierte Konfigurationssicherung.
-- Vergleich ordnet die Sicherung eindeutig der aktiven Such- oder Zeitreihen-Konfiguration zu.
-- Terminal und JSON zeigen Vorlagen, die hinzukämen, entfernt, ersetzt oder unverändert blieben.
-- Sicherung und aktive Datei erhalten getrennte SHA-256-Nachweise.
-- Neuer Befehl `index backups restore` stellt genau eine grün geprüfte Konfigurationssicherung wieder her.
-- Wiederherstellung verlangt den exakten Sicherungsdateinamen und `--yes`.
-- Vor dem Überschreiben wird zwingend eine neue geprüfte Rückfallsicherung der aktiven Datei erstellt.
-- Sicherung und aktive Datei werden unmittelbar vor der Mutation erneut gegen die Vergleichsprüfsummen kontrolliert.
-- Veröffentlichung erfolgt atomar mit Dateimodus `0600`.
-- Nach der Wiederherstellung werden Bytes, SHA-256 und das vollständige Such- oder Zeitreihen-Schema erneut validiert.
-- Bei fehlgeschlagener Nachprüfung wird automatisch die neue Rückfallsicherung zurückgespielt und kontrolliert.
-- Ausgewählte Sicherung und Rückfallsicherung bleiben erhalten.
-- Keine automatische Auswahl, Rotation, Alterslöschung oder Sammellöschung.
-
-### Geführte Startseite
-
-- Menüpunkt 7 enthält nun die Aktion `wiederherstellen`.
-- Angezeigt werden ausschließlich erkannte Konfigurationssicherungen.
-- Vor der Bestätigung erscheint ein Nur-Lese-Vergleich mit aktiver Datei und allen Vorlagenänderungen.
-- Bereits identische Dateien werden nicht überschrieben.
-- Der Sicherungsname muss exakt wiederholt werden.
-- Erst danach wird der vollständige Argumentlistenbefehl sichtbar bestätigt.
-
-### Härtung und Prüfung
-
-- Indexsicherungen, beschädigte JSON-Dateien, unbekannte Pfade und Symlinks werden abgelehnt.
-- Fehlende aktive Konfigurationen führen zu keiner Neuanlage oder Überschreibung.
-- Gleichnamige Vorlagen innerhalb einer Datei werden als uneindeutig abgelehnt.
-- Tests simulieren eine fehlgeschlagene Nachprüfung und bestätigen den automatischen Rückfall.
-- CLI-Parser, Handler, Policies, Modulgrenzen und Shellverbot wurden erweitert.
-- Funktionsreferenz: 139 Tests unter Python 3.10 und 3.12; Quick- und Standardabnahme jeweils 11/11.
+- Geführte Konfigurations-Wiederherstellung mit rein lesendem Vergleich.
+- Exakte Einzelauswahl, `--yes`, automatische geprüfte Rückfallsicherung und atomare Veröffentlichung.
+- Vollständige Nachprüfung sowie automatischer Rückfall bei fehlgeschlagener Bestätigung.
+- Keine automatische Auswahl, Rotation oder Löschung.
 
 ## 0.17.0-alpha.1 – 2026-08-05
 
 - Begrenzte Wiederanlaufliste für zwölf verschiedene Indexdateien.
 - Deduplizierung, Dateisperre, Einzelvalidierung und bewusstes Einzelverwerfen.
 - Optionale geprüfte JSON-Sicherung vor dem Ersetzen oder Löschen von Vorlagen.
-- Keine automatische Rotation oder Löschung.
 
 ## 0.16.0-alpha.1 – 2026-08-05
 
-- Geführter, gegen SQLite geprüfter Wiederanlauf eines unterbrochenen Vollscans oder Re-Scans.
-- Sicherungsübersicht für Index- und Konfigurationssicherungen.
-- Kataloggebundene, einzeln bestätigte Sicherungslöschung.
-- Zentrale Symlink-Sperre für dauerhafte Schreib- und Löschvorgänge.
+- Geführter, gegen SQLite geprüfter Wiederanlauf.
+- Sicherungsübersicht und kataloggebundene Einzellöschung.
+- Zentrale Symlink-Sperre.
 
 ## 0.15.0-alpha.1 – 2026-08-05
 
-- Zentrale Prozessgrenze, Laufjournal und bereinigte Crashberichte.
-- Autosave spätestens nach fünf Sekunden oder 500 Einträgen.
-- Wiederaufnahme über `--resume`.
+- Prozessgrenze, Laufjournal und bereinigte Crashberichte.
+- Zeit- und mengenbegrenztes Autosave sowie `--resume`.
 - SQLite `WAL` mit `synchronous=FULL`.
-- Gemeinsame dauerhafte Dateifreigabe mit Datei- und Ordner-`fsync`.
-- Startklar-Prüfung `datenbanktool check`.
+- Dauerhafte atomare Dateifreigabe und Startklar-Prüfung.
 
 ## Frühere Entwicklungsstufen
 
