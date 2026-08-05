@@ -1,46 +1,45 @@
 # TODO
 
-Stand: Version `0.18.0-alpha.1`
+Stand: Version `0.19.0-alpha.1`
 
 ## In dieser Iteration erledigt
 
-1. [x] Genau eine erkannte Konfigurationssicherung einer aktiven Vorlagendatei zuordnen.
-2. [x] Such- und Zeitreihen-Sicherungen vollständig mit der aktiven Datei vergleichen.
-3. [x] Hinzukommende, zu entfernende, zu ersetzende und unveränderte Vorlagen anzeigen.
-4. [x] Vergleich im Terminal und als stabile JSON-Ausgabe bereitstellen.
-5. [x] Den Vergleich vollständig lesend halten.
-6. [x] Wiederherstellung auf grün geprüfte Katalogeinträge begrenzen.
-7. [x] Indexsicherungen, unbekannte Pfade, beschädigte Dateien und Symlinks ablehnen.
-8. [x] Exakte Wiederholung des Sicherungsdateinamens verlangen.
-9. [x] `--yes` als zusätzliche ausdrückliche Bestätigung verlangen.
-10. [x] Bereits identische Dateien ohne Überschreiben ablehnen.
-11. [x] Vor jedem Überschreiben automatisch eine geprüfte Rückfallsicherung erzeugen.
-12. [x] Aktive Datei und Sicherung unmittelbar vor der Mutation erneut per SHA-256 prüfen.
-13. [x] Wiederherstellung atomar und mit Dateimodus `0600` veröffentlichen.
-14. [x] Wiederhergestellte Datei bytegenau, per SHA-256 und über das vollständige Vorlagenschema nachprüfen.
-15. [x] Bei fehlgeschlagener Nachprüfung automatisch aus der Rückfallsicherung zurücksetzen.
-16. [x] Auch den automatischen Rückfall erneut nachprüfen.
-17. [x] Ausgewählte Sicherung und Rückfallsicherung dauerhaft erhalten.
-18. [x] Keine automatische Auswahl, Rotation, Alterslöschung oder Sammellöschung ergänzen.
-19. [x] Geführte Startseite mit sichtbarem Nur-Lese-Vergleich und sicherer Argumentliste erweitern.
-20. [x] CLI-Policies, Modulzuständigkeit, Größenlimits und Shellverbot prüfen.
-21. [x] 139 Funktions-, Negativ-, Rückfall-, Dialog- und Architekturtests unter Python 3.10 und 3.12 bestehen.
+1. [x] Öffentlichen Befehl `index recovery` ergänzen.
+2. [x] Alle gespeicherten Wiederanlaufeinträge getrennt und nur lesend validieren.
+3. [x] Prüfstatus, Ordner, Indexdatei, Sitzung, Zustand, Phase und Startbarkeit im Terminal anzeigen.
+4. [x] Vollständige JSON-Ausgabe ohne ANSI-Farbcodes bereitstellen.
+5. [x] Gesamtzahl sowie startbare und nicht startbare Einträge ausgeben.
+6. [x] Leere Wiederanlaufliste erfolgreich und eindeutig darstellen.
+7. [x] Nachweisen, dass Diagnose weder `resume-run.json` noch die Indexdatei verändert.
+8. [x] Keinen Start-, Verwerfen- oder Löschhandler im Diagnosebefehl anbieten.
+9. [x] `--restore-log PFAD` als ausdrücklich optionale Restore-Option ergänzen.
+10. [x] Protokoll erst nach erfolgreich bestätigter Wiederherstellung schreiben.
+11. [x] UTC-Zeiten, drei Pfade und drei benannte SHA-256-Werte protokollieren.
+12. [x] Konfigurationsinhalte, Vorlagen, Argumente und Geheimnisse vollständig ausschließen.
+13. [x] Protokoll atomar und mit Dateimodus `0600` veröffentlichen.
+14. [x] Existierende Ziele ohne Überschreiben ablehnen.
+15. [x] Ohne Option keinerlei Protokoll erzeugen.
+16. [x] Keine automatische Benennung, Auswahl, Rotation oder Löschung ergänzen.
+17. [x] Teilfehler sauber behandeln: Restore bleibt erfolgreich, Protokollfehler liefert Code `1`.
+18. [x] CLI-Policy, Parser, Modulzuständigkeit, Größenlimits und Shellverbot erweitern.
+19. [x] 145 Funktions-, Negativ-, Inhaltsschutz- und Architekturtests unter Python 3.10 und 3.12 bestehen.
+20. [x] Quick- und Standardabnahme mit jeweils 11/11 Prüfungen bestehen.
 
 ## Offener Hauptpunkt
 
-1. [ ] Reale Laienabnahme auf einem Kubuntu-Zielsystem durch eine unerfahrene Testperson durchführen. Besonders beobachten: Auswahl der richtigen Sicherung, Verständnis von Hinzufügen/Entfernen/Ersetzen, exakte Namenswiederholung, Rückfallsicherung und Unterschied zwischen Vergleich und tatsächlicher Wiederherstellung.
+1. [ ] Reale Laienabnahme auf einem Kubuntu-Zielsystem durch eine unerfahrene Testperson durchführen. Besonders beobachten: Verständnis der rein lesenden Diagnose, Unterscheidung zwischen startbar und nicht startbar, bewusste Angabe eines neuen Protokollpfads sowie Meldung bei bereits vorhandenem Ziel.
 
 ## Nicht blockierende Zielsystemprüfungen
 
-- [ ] Wiederherstellung einer synthetischen Suchvorlagendatei auf ext4 durchführen.
-- [ ] Wiederherstellung einer synthetischen Zeitreihen-Vorlagendatei auf einem USB-Ziel prüfen.
-- [ ] Datenträger-voll-Fehler während der Veröffentlichung ausschließlich mit synthetischen Daten simulieren.
-- [ ] Prozessabbruch vor und nach der atomaren Veröffentlichung kontrolliert dokumentieren.
+- [ ] Zwei reale unterbrochene synthetische Scans gemeinsam über `index recovery` prüfen.
+- [ ] Einen vorübergehend ausgehängten Quellordner als nicht startbar anzeigen.
+- [ ] Restore-Protokoll auf ext4 und einem USB-Ziel mit Modus `0600` kontrollieren.
+- [ ] Vorhandenes Protokollziel und vollen Datenträger ausschließlich mit synthetischen Daten testen.
 
 ## Direkt folgender technischer Entwicklungsschritt
 
-**Wiederanlauf-Diagnosebefehl:** Eine rein lesende Terminal- und JSON-Übersicht ergänzen, die alle gespeicherten Wiederanlaufeinträge, Prüfstatus, Ordner, Index, Sitzung und Startbarkeit auch außerhalb der interaktiven Startseite zeigt. Der Befehl darf weder starten noch verwerfen.
+**Wiederherstellungsprotokoll-Prüfbefehl:** Eine ausdrücklich ausgewählte Protokolldatei vollständig lesend auf Schema, UTC-Zeiten, drei Pfade und drei SHA-256-Werte prüfen und vorhandene Dateien gegen die protokollierten Werte vergleichen. Keine Wiederherstellung, Änderung oder Löschung.
 
 ## Alternative Verbesserung mit hohem Nutzen und geringem Risiko
 
-**Wiederherstellungsprotokoll:** Nach einer erfolgreichen Konfigurations-Wiederherstellung optional ein kleines lokales JSON-Protokoll mit UTC-Zeit, aktiver Datei, ausgewählter Sicherung, Rückfallsicherung und den drei SHA-256-Werten erzeugen. Keine Inhalte, Geheimnisse, Rotation oder automatische Löschung.
+**Geführte Protokollauswahl:** Die bestehende Startseite nach der exakten Restore-Bestätigung optional nach einem neuen Protokollpfad fragen und ausschließlich dann `--restore-log` an die sichere Argumentliste anhängen. Kein automatisch vorgeschlagener oder überschreibbarer Zielpfad.
