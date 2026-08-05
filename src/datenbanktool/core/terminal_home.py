@@ -5,6 +5,10 @@ from pathlib import Path
 
 from datenbanktool.core import guided_home as guided
 from datenbanktool.core.backup_catalog import BackupItem, list_backups
+from datenbanktool.core.config_restore import (
+    ConfigRestoreComparison,
+    compare_config_backup,
+)
 from datenbanktool.core.guided_home import (
     InputClosed,
     MenuAction,
@@ -36,12 +40,13 @@ class TerminalHome(guided.TerminalHome):
             if action.key == "7":
                 title = "Sicherungen verwalten"
                 quick = (
-                    "Erstellt, prüft und zeigt Index- sowie Konfigurationssicherungen; "
-                    "Löschen erfolgt nur einzeln."
+                    "Erstellt und prüft Sicherungen; Konfigurationssicherungen können "
+                    "einzeln verglichen oder kontrolliert wiederhergestellt werden."
                 )
                 writes = (
-                    "Anzeigen ist rein lesend; Erstellen oder einzelnes Löschen braucht "
-                    "eine sichtbare Bestätigung."
+                    "Anzeigen und Vergleichen sind rein lesend. Erstellen, "
+                    "Wiederherstellen oder einzelnes Löschen braucht eine sichtbare "
+                    "Bestätigung."
                 )
             if action.confirmation_required:
                 light = TrafficLight("yellow", "Bestätigung nötig", writes)
@@ -67,25 +72,40 @@ class TerminalHome(guided.TerminalHome):
         self._write("\n" + "-" * 72)
         self._write("Sicherungen verwalten")
         self._write(
-            "Kurz: Sicherung erstellen, vorhandene Sicherungen prüfen oder genau eine "
-            "ausgewählte Sicherung löschen."
+            "Kurz: Sicherungen erstellen oder prüfen, eine Konfigurationssicherung "
+            "vergleichen, kontrolliert wiederherstellen oder einzeln löschen."
         )
         if level in {"detail", "guided"}:
             self._write(
-                "Wirkung: Die Übersicht liest nur. Eine neue Sicherung schreibt eine "
-                "geprüfte Kopie. Löschen ist auf erkannte Sicherungen begrenzt."
+                "Wirkung: Anzeigen und Vergleichen lesen nur. Wiederherstellen ersetzt "
+                "genau eine aktive Vorlagendatei erst nach automatischer Rückfallsicherung."
             )
             self._write(
-                "Schutz: Aktive Index-, Konfigurations- und Originaldateien sind vom "
-                "Löschen ausgeschlossen. Symlinks werden abgelehnt."
+                "Schutz: Nur geprüfte Such- oder Zeitreihen-Sicherungen sind zulässig. "
+                "Indexsicherungen, beschädigte Dateien, unbekannte Pfade und Symlinks "
+                "werden abgelehnt."
+            )
+            self._write(
+                "Aufbewahrung: Ausgewählte Sicherung und Rückfallsicherung bleiben "
+                "erhalten. Es gibt keine automatische Rotation oder Löschung."
             )
         if level == "guided":
             self._write("Schritte:")
             self._write("  1. Indexdatei angeben.")
-            self._write("  2. Erstellen, Anzeigen oder Löschen wählen.")
-            self._write("  3. Bei Löschen Status, Größe, Alter und Pfad prüfen.")
-            self._write("  4. Den Dateinamen exakt wiederholen.")
-            self._write("  5. Den vollständig angezeigten Befehl ausdrücklich bestätigen.")
+            self._write(
+                "  2. Erstellen, Anzeigen, Wiederherstellen oder Löschen wählen."
+            )
+            self._write(
+                "  3. Bei Wiederherstellung eine geprüfte Konfigurationssicherung wählen."
+            )
+            self._write(
+                "  4. Hinzufügen, Entfernen und Ersetzen im Nur-Lese-Vergleich prüfen."
+            )
+            self._write("  5. Den Sicherungsnamen exakt wiederholen.")
+            self._write(
+                "  6. Den vollständigen Befehl ausdrücklich bestätigen; erst dann wird "
+                "die Rückfallsicherung erstellt."
+            )
         self._write("-" * 72)
 
     def _show_recovery_items(
@@ -235,6 +255,9 @@ class TerminalHome(guided.TerminalHome):
             "sichern": "create",
             "erstellen": "create",
             "create": "create",
+            "w": "restore",
+            "wiederherstellen": "restore",
+            "restore": "restore",
             "l": "delete",
             "löschen": "delete",
             "loeschen": "delete",
@@ -242,23 +265,45 @@ class TerminalHome(guided.TerminalHome):
         }
         while True:
             value = self._read(
-                "Aktion [anzeigen/sichern/löschen, Standard anzeigen, ? Hilfe]: ",
+                "Aktion [anzeigen/sichern/wiederherstellen/löschen, Standard anzeigen, "
+                "? Hilfe]: ",
                 help_text=(
                     "Anzeigen prüft nur. Sichern erstellt eine neue SQLite-Kopie. "
-                    "Löschen entfernt genau eine erkannte Sicherung nach Namensprüfung "
-                    "und anschließender Befehlsbestätigung."
+                    "Wiederherstellen vergleicht eine Konfigurationssicherung und erstellt "
+                    "vor dem Überschreiben automatisch eine Rückfallsicherung. Löschen "
+                    "entfernt genau eine erkannte Sicherung."
                 ),
             ).casefold()
             if value in aliases:
                 return aliases[value]
-            self._write("Bitte anzeigen, sichern, löschen oder ? eingeben.", error=True)
+            self._write(
+                "Bitte anzeigen, sichern, wiederherstellen, löschen oder ? eingeben.",
+                error=True,
+            )
 
-    def _show_backup_items(self, database: str) -> tuple[BackupItem, ...]:
+    def _show_backup_items(
+        self,
+        database: str,
+        *,
+        configuration_only: bool = False,
+    ) -> tuple[BackupItem, ...]:
         items = list_backups(Path(database))
+        if configuration_only:
+            items = tuple(item for item in items if item.kind == "configuration")
         if not items:
-            self._write("Keine erkannten Index- oder Konfigurationssicherungen gefunden.")
+            message = (
+                "Keine erkannten Konfigurationssicherungen gefunden."
+                if configuration_only
+                else "Keine erkannten Index- oder Konfigurationssicherungen gefunden."
+            )
+            self._write(message)
             return ()
-        self._write("Geprüfte Sicherungen – neueste zuerst:")
+        heading = (
+            "Geprüfte Konfigurationssicherungen – neueste zuerst:"
+            if configuration_only
+            else "Geprüfte Sicherungen – neueste zuerst:"
+        )
+        self._write(heading)
         for number, item in enumerate(items, 1):
             self._write(
                 f"  {number}. {item.kind_label} | {item.status_label} | "
@@ -288,6 +333,32 @@ class TerminalHome(guided.TerminalHome):
                     return selected
             self._write("Diese Sicherung wurde in der geprüften Liste nicht gefunden.", error=True)
 
+    def _show_restore_comparison(
+        self,
+        comparison: ConfigRestoreComparison,
+    ) -> None:
+        self._write("\nNur-Lese-Vergleich vor der Wiederherstellung")
+        self._write(f"  Art: {comparison.kind_label}")
+        self._write(f"  Sicherung: {comparison.backup}")
+        self._write(f"  Aktive Datei: {comparison.active}")
+        self._write(f"  Ergebnis: {comparison.validation_detail}")
+        groups = (
+            ("Würde hinzufügen", comparison.add_names),
+            ("Würde entfernen", comparison.remove_names),
+            ("Würde ersetzen", comparison.change_names),
+            ("Unverändert", comparison.unchanged_names),
+        )
+        for label, values in groups:
+            self._write(f"  {label}: {', '.join(values) if values else 'keine'}")
+        self._write(
+            "  Vor dem Überschreiben wird automatisch eine neue geprüfte "
+            "Rückfallsicherung der aktiven Datei erstellt."
+        )
+        self._write(
+            "  Die ausgewählte Sicherung und die Rückfallsicherung werden weder "
+            "automatisch rotiert noch gelöscht."
+        )
+
     def _build_backup(self) -> list[str]:
         action = self._backup_action()
         if action == "create":
@@ -295,10 +366,57 @@ class TerminalHome(guided.TerminalHome):
         database = self._database()
         if action == "list":
             return ["index", "backups", "list", database]
-        items = self._show_backup_items(database)
+
+        items = self._show_backup_items(
+            database,
+            configuration_only=action == "restore",
+        )
         if not items:
             raise UserCancelled
         selected = self._choose_backup(items)
+
+        if action == "restore":
+            try:
+                comparison = compare_config_backup(
+                    Path(database),
+                    Path(selected.path),
+                )
+            except (OSError, ValueError) as error:
+                self._write(str(error), error=True)
+                raise UserCancelled from error
+            self._show_restore_comparison(comparison)
+            if not comparison.can_restore:
+                self._write(
+                    "Sicherung und aktive Konfiguration sind bereits identisch. "
+                    "Es wurde nichts vorgemerkt."
+                )
+                raise UserCancelled
+            checked = self._required(
+                f"Sicherungsnamen exakt wiederholen ({selected.name})",
+                help_text=(
+                    "Der angezeigte Sicherungsname muss vollständig übereinstimmen. "
+                    "Danach wird der Wiederherstellungsbefehl noch einmal sichtbar "
+                    "bestätigt."
+                ),
+            )
+            if checked != selected.name:
+                self._write(
+                    "Sicherungsname stimmt nicht überein. Es wurde nichts "
+                    "wiederhergestellt.",
+                    error=True,
+                )
+                raise UserCancelled
+            return [
+                "index",
+                "backups",
+                "restore",
+                database,
+                selected.path,
+                "--confirm-name",
+                selected.name,
+                "--yes",
+            ]
+
         self._write("Zum Löschen ausgewählt:")
         self._write(f"  Art: {selected.kind_label}")
         self._write(f"  Status: {selected.status_label}")
