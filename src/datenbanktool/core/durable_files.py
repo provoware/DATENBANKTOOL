@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 def _sync_directory(path: Path) -> None:
-    """Persist a completed rename where the platform supports directory fsync."""
+    """Persist a completed directory entry change where the platform supports it."""
     flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
     try:
         descriptor = os.open(path, flags)
@@ -99,3 +99,17 @@ def atomic_write_text(
         overwrite=overwrite,
         mode=mode,
     )
+
+
+def durable_remove(path: Path, *, missing_ok: bool = False) -> bool:
+    """Remove exactly one regular file and persist the directory entry change."""
+    target = path.expanduser().resolve(strict=False)
+    if not target.exists():
+        if missing_ok:
+            return False
+        raise FileNotFoundError(f"Datei nicht gefunden: {target}")
+    if target.is_symlink() or not target.is_file():
+        raise ValueError(f"Nur eine normale Datei darf entfernt werden: {target}")
+    target.unlink()
+    _sync_directory(target.parent)
+    return True
