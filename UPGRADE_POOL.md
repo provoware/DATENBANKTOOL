@@ -1,26 +1,29 @@
 # Upgrade-Pool
 
-Stand: Version 0.14.0-alpha.1
+Stand: Version `0.15.0-alpha.1`
 
-Upgrades werden erst umgesetzt, wenn Eingaben, Ausgaben, Fehlerfälle und der passende Registry-Eintrag spezifiziert sind.
+Upgrades werden erst umgesetzt, wenn Eingaben, Ausgaben, Fehlerfälle, Wiederanlauf und Registry-Eintrag festgelegt sind.
 
-| Priorität | Upgrade | Nutzen | Voraussetzung |
-| --- | --- | --- | --- |
-| Hoch | Mehrordner-Zeitreihe | Mehrere wichtige Ordner in einem Bericht vergleichen | Darstellung überlappender Eltern-/Kindordner eindeutig erklären |
-| Hoch | Reale Laienabnahme | Verständlichkeit mit echter unerfahrener Person prüfen | Zielsystem und ausgefüllte Checkliste |
-| Mittel | Abnahmehistorie | Messwerte mehrerer Läufe verständlich vergleichen | stabiles JSON-Vergleichsformat |
-| Mittel | PostgreSQL-Anbindung | Serverdatenbanken analysieren | Treiber- und Geheimnisverwaltung festlegen |
-| Mittel | Schema-Vergleich | Änderungen zwischen zwei Datenbankständen erkennen | stabiles neutrales Schemamodell |
-| Niedrig | Barrierefreie GUI | Nutzung ohne Kommandozeile | Bedienkonzept und GUI-Technik auswählen |
+| Priorität | Upgrade | Nutzen | Sicherheitsgrenze |
+|---|---|---|---|
+| Hoch | Geführter Wiederanlauf | Unterbrochenen Scan ohne Befehlskenntnis fortsetzen | nur geprüften `--resume`-Befehl anzeigen; Start nach Bestätigung |
+| Hoch | Reale Laienabnahme | Sprache, Autosave und Fehlerhilfe mit echter unerfahrener Person prüfen | persönliche Dateien nicht als Testdaten verwenden |
+| Mittel | Sicherungsübersicht | Index- und Konfigurationssicherungen verständlich finden | niemals automatisch löschen |
+| Mittel | Mehrordner-Zeitreihe | Mehrere wichtige Ordner gemeinsam beobachten | Eltern- und Kindwerte nicht addieren |
+| Mittel | Abnahmehistorie | Leistung und Stabilität mehrerer Läufe vergleichen | Berichte nur lesen |
+| Niedrig | Barrierefreie GUI | Nutzung ohne Kommandozeile | gleiche Validierungs- und Wiederanlaufverträge wie CLI |
 
 ## Bereits umgesetzt
 
-- Rein lesender Scanner und versionierter SQLite-Index.
-- Inkrementeller Re-Scan, Änderungen, Prozesslock, Backup und Restore.
-- Suche, Filter, Pagination und optionale FTS5-Suche.
-- Ordnerübersicht, Ordnervergleich, Zeitreihe und vollständige Exporte.
-- Lokale validierte Zeitreihen-Vorlagen mit atomarem Schreibvertrag und Modus `0600`.
-- Geführte Vorlagenverwaltung mit Anzeigen, Speichern, bewusstem Ersetzen und bestätigtem Löschen.
-- Optionale Größen- und Dateizahl-Warnschwellen mit begründeten Warnungen.
-- Reproduzierbare Abnahmeprofile mit 600, 10.000 und 100.000 Dateien.
-- Registry-Drift-Test und bereinigter Versionsvertrag für `0.14.0-alpha.1`.
+- Originaldateien bleiben technisch schreibgeschützt.
+- SQLite-Index mit Migration, Prozesslock, Backup, Restore und Repair.
+- `WAL` mit `synchronous=FULL`.
+- Autosave spätestens nach fünf Sekunden oder 500 Einträgen.
+- Wiederaufnahme von Vollscan und Änderungsprüfung über `--resume`.
+- Laufjournal, Crashberichte und Geheimnis-Ausblendung.
+- Startklar-Prüfung mit optionalem Nur-Lese-Integritätstest.
+- Dauerhafte atomare Dateifreigabe mit Datei- und Ordner-`fsync`.
+- Gehärtete Vorlagen-, Berichts-, Sicherungs- und Wiederherstellungsschreibwege.
+- Einfache Nutzeransprache vor technischen Einzelheiten.
+- Scanner, Suche, Berichte, Ordnervergleich, Zeitreihe, Vorlagen und Trendgrenzen.
+- Abnahmeprofile mit 600, 10.000 und 100.000 Dateien.
