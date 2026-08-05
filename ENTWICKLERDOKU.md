@@ -1,306 +1,187 @@
 # Entwicklerdokumentation
 
-## Architekturstand 0.14.0-alpha.1
+## Architekturstand `0.15.0-alpha.1` / `0.15.0a1`
 
-Diese Wartungsiteration bereinigt den Release-Vertrag. `registry.json` ist die verbindliche Quelle für Paketname, PEP-440-Paketversion und menschenlesbare Anzeigeversion. `pyproject.toml`, `project_registry.json`, `datenbanktool.__version__`, CLI-Ausgabe und der Drift-Test müssen dieselben Werte führen.
+Diese Iteration ergänzt einen begrenzten, überprüfbaren Wiederanlaufvertrag. Sie verspricht keine Unabhängigkeit von defekter Hardware, verhindert aber innerhalb des Anwendungs- und Dateisystemvertrags halb veröffentlichte Dateien, unklare Prozessenden und verlorene bestätigte Scanbatches.
 
-Startseitenpunkt 12 bündelt weiterhin die Zeitreihen-Vorlagenverwaltung. Die geführte Logik nutzt die bestehende Vorlagendomäne für Lesen und Namensprüfung und übergibt Schreibaktionen an die vorhandenen CLI-Befehle. Löschen verlangt eine exakte Namenswiederholung und eine Ja/Nein-Bestätigung; Vorlagen speichern weiterhin keine Datenbankpfade.
+## Neue Fachmodule
 
-## Aufbau
+| Modul | Verantwortung |
+|---|---|
+| `core/durable_files.py` | dauerhafte atomare Veröffentlichung von Dateien |
+| `core/run_journal.py` | Laufstatus, Crashberichte und Argument-Ausblendung |
+| `core/diagnostics.py` | Start-, Schreib-, Laufjournal- und Nur-Lese-Indexdiagnose |
+| `cli_check.py` | verständlicher öffentlicher Befehl `datenbanktool check` |
+| `tests/test_crash_safety.py` | Ausfall-, Abbruch-, Wiederaufnahme- und Sprachtests |
 
-- `registry.json`: verbindlicher Name, PEP-440-Paketversion `0.14.0a1` und Anzeigeversion `0.14.0-alpha.1`.
-- `project_registry.json`: fachlicher Projektstand, Module, Sicherheitsvertrag und Prüfungsreferenzen.
-- `src/datenbanktool/`: modulare CLI-, Kernlogik-, Hilfe-, Export- und Testdatenlogik.
-- `tests/`: fokussierte Unit-, Integrations-, Architektur- und Abnahmetests.
+## Prozessgrenze
 
-## Schnittstellenvertrag
+Der installierte Konsolenbefehl endet in `entrypoint.main()`. `_run_safely()` umschließt Hilfe, Startseite und normale CLI-Ausführung.
 
-- Erfolgreiche Befehle liefern Exitcode `0`.
-- Validierungs- und Datenbankfehler liefern Exitcode `2`.
-- Schreibende Originaldateioperationen bleiben gesperrt.
-- Konfigurationsschreibzugriffe müssen ausdrücklich deklariert und bestätigt sein.
-- JSON-Ausgaben bleiben maschinenlesbar und enthalten Fehler als klare Felder.
+| Zustand | Rückgabecode | Laufjournal |
+|---|---:|---|
+| Erfolg | `0` | `complete` |
+| kontrollierter Bedien-/Datenfehler | `1` oder `2` | `controlled-error` |
+| unerwartete Ausnahme | `70` | `failed` plus Crashbericht |
+| Tastaturabbruch | `130` | `interrupted` |
 
-## Versionierung und Prüfung
+`SystemExit` aus argparse bleibt argparse-kompatibel, schließt das Journal jedoch kontrolliert. Unerwartete Ausnahmen werden nicht in der inneren CLI als Bedienfehler maskiert.
 
-Semantische Versionierung wird verwendet: inkompatible Änderung = Hauptversion, neue kompatible Funktion = Nebenversion, Fehlerkorrektur = Patchversion. Technisch verbindlich für Paketmetadaten und `datenbanktool.__version__` ist die PEP-440-Schreibweise `0.14.0a1`. Menschenlesbar wird dieselbe Projektversion als `0.14.0-alpha.1` dokumentiert. `registry.json` führt beide Werte; falls `version` fehlt, ist die einzige dokumentierte Umrechnung `-alpha.` zu `a`.
+## Laufjournal und Crashbericht
 
-Vor einem Commit mit Codeänderung:
+Standardordner:
+
+```text
+$XDG_STATE_HOME/datenbanktool/
+```
+
+Fallback:
+
+```text
+~/.local/state/datenbanktool/
+```
+
+`last-run.json` enthält Schema, Status, Zeiten, Exitcode, Version, Python, Plattform, Prozess-ID und bereinigte Argumente. Crashberichte besitzen einen eindeutigen Zeit-/PID-Namen und zusätzlich Traceback und Python-Executable.
+
+Argumente hinter Schaltern mit `token`, `password`, `passwort`, `secret`, `apikey` oder `api-key` werden durch `<ausgeblendet>` ersetzt. Dies ist eine Mindestbarriere, kein allgemeiner Geheimnisscanner.
+
+## Dauerhafte Dateifreigabe
+
+`atomic_write_bytes()` und `atomic_write_text()` verwenden:
+
+1. `mkstemp()` im Zielordner,
+2. vollständiges Schreiben,
+3. `flush()` und Datei-`fsync`,
+4. optionalen Dateimodus,
+5. erneute Überschreibprüfung,
+6. `os.replace()` im selben Dateisystem,
+7. Verzeichnis-`fsync`,
+8. Temp-Bereinigung bei jedem `BaseException`.
+
+`publish_temp_file()` veröffentlicht bereits vorbereitete Dateien, beispielsweise geprüfte SQLite-Sicherungen. Ein fehlgeschlagenes `replace` lässt die alte Zieldatei bestehen.
+
+## SQLite-Vertrag
+
+Schreibende `IndexDatabase`-Verbindungen setzen:
+
+```sql
+PRAGMA foreign_keys = ON;
+PRAGMA busy_timeout = 5000;
+PRAGMA journal_mode = WAL;
+PRAGMA synchronous = FULL;
+PRAGMA wal_autocheckpoint = 1000;
+```
+
+`durable_checkpoint()` bestätigt zuerst die Transaktion. Danach wird ein passiver WAL-Checkpoint versucht. `busy` oder `locked` bedeutet nur, dass die WAL-Aufräumphase später stattfindet; der Commit bleibt gültig. Andere SQLite-Fehler werden weitergegeben.
+
+Abschluss, Unterbrechung und Fehlerstatus werden jeweils committed. `close()` darf einen bereits laufenden fachlichen Fehler nicht durch einen sekundären Close-Fehler verdecken.
+
+## Autosave
+
+`IndexBuildOptions` und `IncrementalScanOptions` besitzen:
+
+```python
+batch_size: int = 500
+autosave_seconds: float = 5.0
+```
+
+Ein Batch wird bestätigt, sobald eine Bedingung erfüllt ist:
+
+```text
+Anzahl gepufferter Datensätze >= batch_size
+ODER
+monotonic() - last_save >= autosave_seconds
+```
+
+Dies gilt für Metadatenscan und Prüfsummenphase. Nach jedem Autosave wird ein Fortschrittsereignis gespeichert.
+
+### Wiederaufnahme
+
+- `last_relative_path` setzt den Dateiscan fort.
+- `last_hash_path` setzt die Prüfsummenphase fort.
+- Fingerprint und Scanart müssen zum unterbrochenen Lauf passen.
+- Der Checkpoint muss weiterhin im Ordner vorkommen; andernfalls wird ein kontrollierter `ResumeCheckpointError` ausgelöst.
+- Ein Hash kann nicht innerhalb einer einzelnen Datei fortgesetzt werden. Nur diese Datei wird nach Absturz erneut gehasht.
+
+## Sicherung und Wiederherstellung
+
+Sicherung:
+
+1. SQLite-Backup-API in eine neue Temp-Datenbank,
+2. Zielverbindung schließen,
+3. `quick_check`,
+4. Datei-`fsync`, atomare Veröffentlichung und Ordner-`fsync`.
+
+Wiederherstellung:
+
+1. Eingangssicherung validieren,
+2. standardmäßig Rückfallsicherung des aktiven Index,
+3. Backup-API in Temp-Ziel,
+4. Temp-Ziel validieren,
+5. aktiven WAL abschließen,
+6. dauerhafte atomare Veröffentlichung,
+7. Ziel erneut validieren,
+8. bei Fehler Rückfallsicherung verwenden.
+
+## Startklar-Prüfung
+
+`datenbanktool check` prüft:
+
+- Python-Mindestversion,
+- SQLite-Verfügbarkeit,
+- dauerhaften Schreibtest im eigenen Konfigurationsordner,
+- dauerhaften Schreibtest im Statusordner,
+- Hinweis auf früheren unvollständigen Lauf,
+- optional Indexexistenz, Nur-Lese-Öffnung, Schema und `quick_check`.
+
+Die Diagnose verändert keine Originaldateien. Die beiden Schreibtests erzeugen nur kurzlebige Dateien in den eigenen Toolordnern.
+
+## Nutzeransprache
+
+Neue zentrale Texte folgen diesem Vertrag:
+
+1. verständliche Aussage,
+2. Auswirkung auf persönliche Dateien,
+3. konkrete nächste Handlung,
+4. technische Einzelheit danach.
+
+Technische Begriffe werden nicht entfernt, sondern nachgeordnet. Maschinenlesbare JSON-Ausgaben bleiben sachlich und frei von ANSI-Sequenzen.
+
+## Automatische Prüfungen
+
+`tests/test_crash_safety.py` simuliert:
+
+- vorhandenes Ziel ohne Überschreibfreigabe,
+- fehlgeschlagenes `os.replace`,
+- Modus `0600`,
+- Crashbericht und Geheimnis-Ausblendung,
+- Tastaturabbruch,
+- kontrollierte Scanunterbrechung und `--resume`,
+- `synchronous=FULL`,
+- unveränderte Indexdatei durch Diagnose,
+- Parser- und Policy-Anbindung,
+- Alltagssprache vor technischem Detail.
+
+`tests/test_cli_architecture.py` bindet `check` an `cli_check.py` und prüft weiterhin Modulgrenzen, Seiteneffektverträge, Shellverbot und Größenlimits.
+
+Der Versionstest leitet die erwarteten Werte aus `registry.json` ab und liest `pyproject.toml` ohne Python-3.11-Abhängigkeit.
+
+## Verbleibende Grenzen
+
+- `last-run.json` beschreibt den zuletzt gestarteten Prozess; parallele unabhängige Nur-Lese-Befehle können diesen Hinweis ersetzen.
+- Journalfehler dürfen den eigentlichen Befehl nicht blockieren; `check` macht fehlende Schreibbarkeit sichtbar.
+- Hardware-, Kernel-, Dateisystem- und Datenträgerverlust bleiben außerhalb des Anwendungsschutzes.
+- Reale Laienabnahme ist noch offen.
+
+## Releaseprüfung
 
 ```bash
 python -m json.tool registry.json >/dev/null
 python -m json.tool project_registry.json >/dev/null
-PYTHONPATH=src python -m unittest tests.test_version_registry -v
-PYTHONPATH=src python -m unittest discover -s tests -v
-PYTHONPATH=src python -m datenbanktool --help
+python -m compileall -q src tests
+PYTHONWARNINGS=error python -m unittest discover -s tests -v
+python -m datenbanktool --version
+python -m datenbanktool check
 ```
 
-## Architekturstand 0.13.0-alpha.2
-
-Diese Iteration ergänzt zwei getrennte Fachverträge:
-
-1. lokale, validierte und überschreibgeschützte Zeitreihen-Vorlagen,
-2. optionale, rein lesende Trendgrenzen für Größen- und Dateizahlwachstum.
-
-Neue Fachmodule:
-
-- `core/timeline_presets.py` – Schema, Normalisierung, atomare Speicherung und Rechte,
-- `cli_timeline_presets.py` – Parser, Ausgabe und `CommandPolicy` für list/show/save/delete.
-
-Gezielt erweiterte Module:
-
-- `core/folder_timeline.py` – Datei- und Größenprozente sowie Schwellenklassifikation,
-- `cli_folder_timeline.py` – `--preset` und Warnschwellenoptionen,
-- `core/guided_home.py` – orchestrierende Startseitenklasse für I/O, Hilfe und Befehlsaufbau,
-- `core/guided_home_catalog.py` – Menüaktionen und Feldhilfen,
-- `core/guided_home_input.py` – Parser für Ganzzahlen, Prozentwerte und Berichtsformate,
-- `core/folder_timeline_exports.py` – Warnfelder in JSON, CSV und HTML,
-- `core/folder_timeline_charts.py` – sichtbare und zugängliche SVG-Warnmarken,
-- `core/folder_timeline_help.py` – gemeinsame Vorlagen- und Schwellenhilfe.
-
-## Vorlagenschema
-
-```json
-{
-  "schema_version": 1,
-  "presets": [
-    {
-      "name": "Musik",
-      "folder": "Musik/Archiv",
-      "description": "Wöchentliche Prüfung",
-      "created_utc": "...",
-      "updated_utc": "..."
-    }
-  ]
-}
-```
-
-Nicht gespeichert werden:
-
-- SQLite-Datenbankpfad,
-- Stammordner des Scans,
-- Sitzungsnummern,
-- Warnschwellen,
-- Berichtspfade,
-- Dateilisten oder Messwerte.
-
-Damit bleibt eine Vorlage unabhängig von einem konkreten Index und enthält nur den
-wiederverwendbaren relativen Ordner.
-
-## Validierung und Schreibvertrag
-
-`save_timeline_preset()`:
-
-1. normalisiert den Namen auf einzelne Leerzeichen,
-2. erlaubt 1 bis 64 Zeichen,
-3. begrenzt die Beschreibung auf 240 Zeichen,
-4. validiert den Ordner über `normalise_folder()`,
-5. liest vorhandene Einträge erneut validierend,
-6. verweigert gleiche Namen ohne `replace=True`,
-7. schreibt formatiertes UTF-8-JSON in eine prozessbezogene temporäre Datei,
-8. setzt Modus `0600`,
-9. gibt die Datei atomar per `replace()` frei,
-10. entfernt die temporäre Datei bei Fehlern.
-
-Namen werden für Vergleich und Auflösung mit `casefold()` behandelt. Die gespeicherte
-Schreibweise bleibt erhalten.
-
-## Öffentliche Vorlagenbefehle
-
-```text
-index timeline-presets list
-index timeline-presets show NAME
-index timeline-presets save NAME ORDNER [--description TEXT] [--replace]
-index timeline-presets delete NAME --yes
-```
-
-`list` und `show` sind rein lesend. `save` und `delete` deklarieren
-`writes_configuration=True`. Originaldatei-, Index-, Backup-, Bericht- und
-Testdatenschreibzugriffe bleiben falsch.
-
-## Zeitreihenauflösung
-
-```text
-index folder-timeline DATENBANK [ORDNER]
-  [--preset NAME]
-  [--preset-file PFAD]
-```
-
-`_timeline_folder()` erzwingt:
-
-- entweder positionaler Ordner,
-- oder gespeicherte Vorlage,
-- niemals beides gleichzeitig,
-- ohne beide Angaben den Standard `.`.
-
-## Geführte Startseite
-
-Punkt 11:
-
-1. lädt und validiert die lokale Vorlagendatei,
-2. zeigt Name, Ordner und Beschreibung nummeriert,
-3. akzeptiert Nummer oder exakten Namen,
-4. erlaubt leere Auswahl für manuelle Eingabe,
-5. zeigt den gewählten Ordner erneut,
-6. übergibt bei unverändertem Ordner `--preset`,
-7. wechselt bei bewusster Änderung auf den direkten Ordnerpfad.
-
-Eine fehlerhafte Vorlagendatei wird gemeldet, blockiert aber nicht die manuelle
-Zeitreihe.
-
-Punkt 12 erzeugt einen `timeline-presets save`-Befehl und besitzt
-`confirmation_required=True`. Die Startseite bietet absichtlich kein stilles Ersetzen.
-
-## Trendgrenzenmodell
-
-`FolderTimelineOptions` enthält:
-
-```python
-warn_size_growth_percent: float | None
-warn_file_growth_percent: float | None
-```
-
-Validiert werden endliche Werte von 0 bis 1.000.000. Ein leerer Wert deaktiviert die
-jeweilige Grenze.
-
-`FolderTimelinePoint` enthält zusätzlich:
-
-```python
-file_delta_percent: float | None
-threshold_triggered: bool
-threshold_reasons: tuple[str, ...]
-```
-
-`FolderTimeline` enthält die konfigurierten Grenzen und `threshold_trigger_count`.
-
-## Prozentberechnung
-
-```text
-(current - previous) / previous × 100
-```
-
-- Ergebnis auf zwei Dezimalstellen gerundet.
-- Vorheriger Wert `<= 0` liefert `None`.
-- Der erste sichtbare Punkt ist immer Ausgangswert.
-- Vergleichsbasis ist der unmittelbar vorherige sichtbare Scan.
-
-## Auslösungslogik
-
-Eine Grenze löst nur aus, wenn:
-
-1. die Grenze konfiguriert ist,
-2. der absolute Unterschied positiv ist,
-3. ein Prozentwert berechenbar ist,
-4. der Prozentwert größer oder gleich der Grenze ist.
-
-Bei Auslösung:
-
-```text
-traffic_level = red
-traffic_label = Trendgrenze erreicht
-```
-
-`status` und `status_label` bleiben unverändert und beschreiben weiterhin den
-fachlichen Verlauf. Dadurch bleibt `grown` von der optionalen Warnwirkung getrennt.
-
-## Ausgaben
-
-### Terminal
-
-Zeigt aktive Grenzen, Trefferzahl, Datei- und Größenprozente sowie die vollständige
-Ampelbegründung. Der Hinweis „keine Schadensbewertung“ ist Bestandteil jedes Treffers.
-
-### JSON
-
-`FolderTimeline.to_dict()` enthält Konfiguration, Trefferzahl und sämtliche neuen
-Punktfelder ohne ANSI-Ausgaben.
-
-### CSV
-
-Enthält getrennte Spalten für Verlaufsstatus, Warnstatus, Begründung, Trefferflag,
-Dateiprozent, Größenprozent und konfigurierte Warnschwellen. UTF-8-BOM und Semikolon
-bleiben erhalten.
-
-### HTML und SVG
-
-HTML zeigt eine Warnzusammenfassung und die vollständige Begründung in der Tabelle.
-SVG-Punkte verwenden bei einem passenden metrischen Treffer:
-
-```html
-<circle class="data-point warning-point" ...>
-<text class="warning-label">Warnung</text>
-```
-
-Titel, ARIA-Beschreibung und sichtbarer Text enthalten dieselbe fachliche Begründung.
-JavaScript und externe Ressourcen bleiben ausgeschlossen.
-
-## Sicherheitsinvarianten
-
-- Vorlagen lesen oder schreiben keine Originaldateien.
-- Zeitreihe und Trendgrenzen öffnen SQLite nur lesend.
-- Warnungen lösen keine Folgeaktion aus.
-- Konfigurations- und Berichtsdateien werden atomar freigegeben.
-- Vorhandene Inhalte werden nicht still überschrieben.
-- Geführte Befehle bleiben Argumentlisten ohne Shell-Auswertung.
-- Automatische Originaldateioperationen bleiben gesperrt.
-
-## Automatische Tests
-
-Geprüft werden unter anderem:
-
-- Vorlagen-Roundtrip, Modus 0600 und Überschreibschutz,
-- bewusstes Ersetzen und bestätigtes Löschen,
-- unsichere Ordnerpfade und beschädigte Strukturen,
-- CLI-Parser, Handler, Policies und Modulzuständigkeit,
-- Startseiten-Auswahl per Nummer und bestätigtes Speichern,
-- Komma- und Punktdezimalwerte,
-- Größen- und Dateizahlgrenze einzeln und gemeinsam,
-- Null-, NaN-, Unendlich- und Bereichsfälle,
-- getrennte Verlauf- und Warnfelder,
-- Terminal-, JSON-, CSV-, HTML- und SVG-Begründungen,
-- Skript- und Netzwerkfreiheit.
-
-## 0.13-Funktionsreferenz
-
-Run `30927676213`, Commit `8ded929533f806c739a7139b47d16379a788cfb0`:
-
-- 87/87 Tests unter Python 3.10,
-- 87/87 Tests unter Python 3.12,
-- `PYTHONWARNINGS=error`,
-- Quick: 600 Dateien, 11/11, 1,129 s, 1.324.226 Byte Python-Peak,
-- Standard: 10.000 Dateien, 11/11, 18,150 s, 13.398.233 Byte Python-Peak,
-- Large: 100.000 Dateien, 11/11, 218,722 s, 107.011.474 Byte Python-Peak,
-- Large-Umgebung: Python 3.12.13, ext4 auf `/dev/vda`, KVM x86_64, 3 vCPU, Intel Xeon Platinum 8370C.
-
-Artefakte:
-
-| Profil | ID | SHA-256 |
-|---|---:|---|
-| Quick | 8899780387 | `c3678cdd50d235b9819475d6f1f6660e0367833c3a80f7faa5dff7ce990b0c1b` |
-| Standard | 8899791444 | `846ebbd02d213bc336800d330a8a2612e2a069e17e13362f0a27f5aa4ed7571d` |
-
-## Bekannte Grenzen
-
-- Geführtes Ersetzen und Löschen von Vorlagen fehlt noch.
-- Vorlagen enthalten bewusst keine Warnschwellen oder Exportziele.
-- Trendgrenzen sind Übergangsregeln, keine statistische Anomalieerkennung.
-- Je Bericht wird ein relativer Ordner dargestellt.
-- Reale Laienabnahme bleibt offen. Der Zielhardwaretest ist bestanden, sollte aber bei Hardwarewechsel erneut gemessen werden.
-
-## Direkt folgender Entwicklungsblock
-
-Geführtes Vorlagen-Untermenü für Anzeigen, bewusstes Ersetzen und bestätigtes Löschen.
-
-## Sichere Alternative
-
-Mehrere relative Ordner in einem rein lesenden Bericht mit getrennten Linien und
-klarer Nicht-Addierbarkeitswarnung darstellen.
-
-## Unverändert
-
-`AGENTS.md` wird nicht verändert. Externe Laufzeitabhängigkeiten bleiben bei null.
-Automatische Schreibzugriffe auf gescannte Originaldateien bleiben gesperrt.
-
-## Wartungsnotiz 0.13.0-alpha.2
-
-Der CLI-Dateikopf darf nur einen Modul-Docstring und danach `from __future__ import annotations` enthalten. Historische CLI-Stubs dürfen nicht vor diesem Import stehen. Parser für die geführte Startseite sollen rein bleiben und ohne Streams testbar sein; Eingabe- und Ausgabeschleifen verbleiben in `TerminalHome`.
+`AGENTS.md` und die Sperre automatischer Originaldateioperationen bleiben unverändert.
