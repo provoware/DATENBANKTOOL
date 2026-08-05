@@ -6,6 +6,7 @@ from pathlib import Path
 
 from datenbanktool.cli_common import colour_mode, human_size, print_hint
 from datenbanktool.cli_contract import CommandPolicy, bind_handler
+from datenbanktool.cli_restore_audit import register_restore_audit_parser
 from datenbanktool.core.backup_catalog import delete_backup, list_backups
 from datenbanktool.core.config_restore import (
     ConfigRestoreComparison,
@@ -87,6 +88,8 @@ def register_backup_catalog_parser(
             writes_reports=True,
         ),
     )
+
+    register_restore_audit_parser(actions)
 
     deletion = actions.add_parser(
         "delete",
