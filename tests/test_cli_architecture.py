@@ -75,11 +75,13 @@ class CliArchitectureTests(unittest.TestCase):
     def test_all_public_commands_bind_handler_and_policy(self) -> None:
         parser = build_parser()
         commands = (
+            ["check"],
             ["explain"],
             ["scan", "/tmp"],
             ["acceptance", "--workspace", "/tmp/neue-abnahme"],
             ["index", "build", "/tmp", "--database", "/tmp/index.sqlite3"],
             ["index", "rescan", "/tmp", "--database", "/tmp/index.sqlite3"],
+            ["index", "recovery"],
             ["index", "status", "/tmp/index.sqlite3"],
             ["index", "sessions", "/tmp/index.sqlite3"],
             ["index", "search", "/tmp/index.sqlite3"],
@@ -96,6 +98,35 @@ class CliArchitectureTests(unittest.TestCase):
             ["index", "timeline-presets", "save", "beispiel", "Musik"],
             ["index", "timeline-presets", "delete", "beispiel"],
             ["index", "backup", "/tmp/index.sqlite3"],
+            ["index", "backups", "list", "/tmp/index.sqlite3"],
+            [
+                "index",
+                "backups",
+                "compare",
+                "/tmp/index.sqlite3",
+                "/tmp/search-presets.json.backup-test.json",
+            ],
+            [
+                "index",
+                "backups",
+                "restore",
+                "/tmp/index.sqlite3",
+                "/tmp/search-presets.json.backup-test.json",
+                "--confirm-name",
+                "search-presets.json.backup-test.json",
+                "--yes",
+            ],
+            ["index", "backups", "verify-log", "/tmp/restore.json"],
+            [
+                "index",
+                "backups",
+                "delete",
+                "/tmp/index.sqlite3",
+                "/tmp/index.sqlite3.backup-20260805.sqlite3",
+                "--confirm-name",
+                "index.sqlite3.backup-20260805.sqlite3",
+                "--yes",
+            ],
             [
                 "index",
                 "restore",
@@ -124,12 +155,14 @@ class CliArchitectureTests(unittest.TestCase):
     def test_command_ownership_matches_module_boundaries(self) -> None:
         parser = build_parser()
         expected = {
+            ("check",): "datenbanktool.cli_check",
             ("scan", "/tmp"): "datenbanktool.cli_scan",
             (
                 "acceptance",
                 "--workspace",
                 "/tmp/neue-abnahme",
             ): "datenbanktool.cli_acceptance",
+            ("index", "recovery"): "datenbanktool.cli_recovery",
             ("index", "search", "/tmp/index.sqlite3"): "datenbanktool.cli_search",
             ("index", "folders", "/tmp/index.sqlite3"): "datenbanktool.cli_reports",
             (
@@ -148,6 +181,35 @@ class CliArchitectureTests(unittest.TestCase):
                 "timeline-presets",
                 "list",
             ): "datenbanktool.cli_timeline_presets",
+            (
+                "index",
+                "backups",
+                "list",
+                "/tmp/index.sqlite3",
+            ): "datenbanktool.cli_backups",
+            (
+                "index",
+                "backups",
+                "compare",
+                "/tmp/index.sqlite3",
+                "/tmp/search-presets.json.backup-test.json",
+            ): "datenbanktool.cli_backups",
+            (
+                "index",
+                "backups",
+                "restore",
+                "/tmp/index.sqlite3",
+                "/tmp/search-presets.json.backup-test.json",
+                "--confirm-name",
+                "search-presets.json.backup-test.json",
+                "--yes",
+            ): "datenbanktool.cli_backups",
+            (
+                "index",
+                "backups",
+                "verify-log",
+                "/tmp/restore.json",
+            ): "datenbanktool.cli_restore_audit",
             (
                 "index",
                 "build",

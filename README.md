@@ -1,83 +1,159 @@
 # DATENBANKTOOL
 
-**Erledigt:** 100.000-Dateien-Large-Abnahme bestanden, geführte Zeitreihen-Vorlagenverwaltung umgesetzt, Registry-Versionierung bereinigt, schreibgeschützte SQLite-Analyse, Tabellenübersicht, validierte Text-/JSON-Ausgabe und automatische Tests.
+**Erledigt:** geführte optionale Auswahl eines neuen Wiederherstellungsprotokollpfads, geführte rein lesende Protokollprüfung und optionaler SHA-256-Pin vor jeder Schemaauswertung. Weiterhin vorhanden: geprüfter Konfigurations-Restore mit automatischer Rückfallsicherung, Wiederanlauf-Diagnose, Sicherungskatalog, Autosave, Crashberichte und SQLite-Härtung.
 
-**Offen:** reale Laienabnahme, Mehrordner-Zeitreihe, Abnahmehistorie, weitere Datenbanktreiber und eine grafische Oberfläche.
+**Offen:** reale Laienabnahme auf einem Kubuntu-Zielsystem.
 
-**Entwicklungsfortschritt:** **99 %** (Alpha-Funktionsstand stabil; reale Laienabnahme offen).
+**Entwicklungsfortschritt:** **99 %** · **69 Hauptpunkte erledigt** · **1 Hauptpunkt offen**.
 
-**Mögliche Upgrades aus `UPGRADE_POOL.md`:** Mehrordner-Zeitreihe, reale Laienabnahme, Abnahmehistorie und später barrierefreie GUI.
+**Mögliche Upgrades aus `UPGRADE_POOL.md`:** geführte synthetische Kubuntu-Abnahmesitzung, optionaler Prüfberichtsexport und später eine barrierefreie grafische Oberfläche.
 
-> Sicheres Linux-Werkzeug zum Finden, Prüfen und übersichtlichen Strukturieren großer Dateisammlungen.
+> Lokales Linux-Indexwerkzeug für große Dateisammlungen. Persönliche Originaldateien werden nicht automatisch verändert.
 
 ## Projektstatus
 
 | Bereich | Stand |
 |---|---|
-| Projektversion | `0.14.0-alpha.1` |
-| Paketversion | `0.14.0a1` |
+| Projektversion | `0.21.0-alpha.1` |
+| Paketversion | `0.21.0a1` |
+| Python | `>=3.10` |
 | SQLite-Schema | `3` |
-| Entwicklungsfortschritt | **99 %** |
-| Erledigte Hauptpunkte | **54** |
-| Offene Hauptpunkte | **1** – reale Laienabnahme auf einem Zielsystem durchführen |
-| Automatische Originaldateiänderungen | **Gesperrt** |
+| Wiederanlauflimit | **12 verschiedene Indexdateien** |
+| Originaldateiänderungen | **technisch gesperrt** |
 | Externe Laufzeitabhängigkeiten | **0** |
-| Automatisierte Tests | **87/87** unter Python 3.10 und 3.12 |
-| Quick-Abnahme | **600 Dateien · 11/11 bestanden** |
-| Standard-Abnahme | **10.000 Dateien · 11/11 bestanden** |
-| Large-Abnahme | **100.000 Dateien · 11/11 bestanden · 218,722 s · 107.011.474 Byte Python-Peak** |
+| Automatische Tests | **158 unter Python 3.10 und 3.12** |
+| Reale Laienabnahme | **offen** |
 
-Das DATENBANKTOOL arbeitet standardmäßig rein lesend. Es erstellt einen lokalen, versionierten SQLite-Index und zeigt Dateibestände, Änderungen, Suchen, Ordnerberichte, Zeitreihen und sichere Exportberichte, ohne Originaldateien zu verändern. Es benötigt Python 3.10 oder neuer und keine zusätzlichen Laufzeitpakete.
-
-## Installation
-
-```bash
-python -m pip install -e .
-```
-
-## Verwendung
-
-Aktuelle Einstiegspunkte:
+## Einfach starten
 
 ```bash
 datenbanktool start
-datenbanktool help
-datenbanktool index build ~/Daten --database index.sqlite3
-datenbanktool index status index.sqlite3
 ```
 
-`start` öffnet die geführte Terminal-Bedienung. `help` erklärt Themen in einfacher Sprache. `index build` erstellt einen lokalen Index für einen Ordner. `index status` zeigt den Zustand eines vorhandenen Index. Weitere aktuelle Indexbefehle sind unter anderem `search`, `folders`, `changes`, `folder-compare`, `folder-timeline`, `presets` und `timeline-presets`. Eingabefehler enden mit Statuscode `2`.
+Unter **7 – Sicherungen verwalten** stehen nun zusätzlich zwei geführte Verträge bereit.
 
-## Lokale Zeitreihen-Vorlagen
+### Optionales Protokoll nach geführtem Restore
 
-Häufig geprüfte relative Ordnerpfade können unter einem verständlichen Namen gespeichert werden. Eine Vorlage enthält bewusst **keinen Datenbankpfad**, keine Scan-Ergebnisse und keine Originaldateien.
+Nach dem Nur-Lese-Vergleich und der exakten Wiederholung des Sicherungsnamens fragt die Startseite optional nach einem neuen Protokollpfad.
+
+- Leere Eingabe: kein `--restore-log`.
+- Ausdrücklicher neuer absoluter Pfad: `--restore-log PFAD` wird an die sichere Argumentliste angehängt.
+- Existierende Datei oder Symlink: wird abgelehnt und nicht überschrieben.
+- Es wird kein Pfad vorgeschlagen, gesucht oder automatisch gespeichert.
+- Der vollständige Befehl bleibt vor dem Start sichtbar und bestätigungspflichtig.
+
+### Geführte Protokollprüfung
+
+Aktion **Protokoll prüfen**:
+
+1. genau einen vollständigen Protokollpfad eingeben,
+2. vollständigen normalisierten Pfad prüfen,
+3. optional einen ausdrücklich bekannten SHA-256-Pin eingeben,
+4. vollständigen Nur-Lese-Befehl bestätigen,
+5. dieselbe Grün-/Gelb-/Rot-Auswertung wie im Terminal erhalten.
+
+Es gibt keine automatische Suche, Auswahl, Wiederherstellung, Änderung oder Löschung.
+
+## Wiederherstellungsprotokoll im Terminal prüfen
 
 ```bash
-datenbanktool index timeline-presets save Musik Musik/Archiv \
-  --description "Wöchentliche Größenprüfung"
+datenbanktool index backups verify-log /pfad/restore-nachweis.json
 ```
 
-Verwalten:
+Maschinenlesbar:
 
 ```bash
-datenbanktool index timeline-presets list
-datenbanktool index timeline-presets show Musik
-datenbanktool index timeline-presets delete Musik --yes
+datenbanktool index backups verify-log /pfad/restore-nachweis.json --json
 ```
 
-Sicherheitsvertrag:
-
-- Ordnerpfade sind relativ; absolute Pfade und `..` werden abgelehnt.
-- Namen besitzen 1 bis 64 Zeichen, Beschreibungen höchstens 240 Zeichen.
-- Gleichnamige Vorlagen werden ohne `--replace` nicht überschrieben.
-- Löschen benötigt `--yes`.
-- Die JSON-Konfiguration wird atomar mit Dateiberechtigung `0600` geschrieben.
-- Standardpfad: `$XDG_CONFIG_HOME/datenbanktool/timeline-presets.json` beziehungsweise `~/.config/datenbanktool/timeline-presets.json`.
-
-## Entwicklung
+Optional kann vor jeder JSON-Schemaauswertung exakt die erwartete Protokolldatei bestätigt werden:
 
 ```bash
-PYTHONPATH=src python -m unittest discover -s tests -v
+datenbanktool index backups verify-log /pfad/restore-nachweis.json \
+  --expected-protocol-sha256 64_KLEINGESCHRIEBENE_HEXZEICHEN
 ```
 
-Die technische Paketversion wird als PEP 440 in `registry.json` gepflegt (`0.14.0a1`). Die menschenlesbare Projektversion lautet `0.14.0-alpha.1`. Architektur und Qualitätsregeln beschreibt die [Entwicklerdokumentation](ENTWICKLERDOKU.md).
+Der Pin:
+
+- wird nur bei ausdrücklicher Eingabe verwendet,
+- wird nicht automatisch ermittelt oder gespeichert,
+- muss exakt 64 kleingeschriebene Hexzeichen besitzen,
+- wird über eine sichere, nicht symlink-folgende Leseöffnung geprüft,
+- stoppt bei Abweichung vor der Schemaauswertung mit Rückgabecode `2`.
+
+Bei erfolgreichem Pin enthält JSON zusätzlich `protocol_identity` mit erwartetem und tatsächlichem SHA-256-Wert.
+
+## Protokollprüfung ohne Pin
+
+Der feste Prüfvertrag kontrolliert:
+
+- UTF-8-JSON und exaktes Schema `1`,
+- Ereignis `configuration_restore`,
+- zwei UTC-Zeiten und ihre Reihenfolge,
+- drei unterschiedliche absolute Pfade,
+- drei fest benannte SHA-256-Werte,
+- vorhandene Dateien über `O_RDONLY`, `O_NOFOLLOW`, `fstat()` und Streaming-Hashing.
+
+Zustände:
+
+| Zustand | Bedeutung |
+|---|---|
+| Grün | alle drei Dateien stimmen überein |
+| Gelb | Protokoll gültig, mindestens eine Datei fehlt |
+| Rot | Datei weicht ab, ist ein Symlink oder nicht sicher lesbar |
+
+Rückgabecodes: `0` vollständig bestätigt, `1` Dateinachweis unvollständig/abweichend, `2` Eingabe oder Protokoll ungültig.
+
+## Genau eine Konfigurationssicherung wiederherstellen
+
+```bash
+datenbanktool index backups restore index.sqlite3 SICHERUNG \
+  --confirm-name EXAKTER_DATEINAME \
+  --yes
+```
+
+Optionales neues Protokollziel:
+
+```bash
+datenbanktool index backups restore index.sqlite3 SICHERUNG \
+  --confirm-name EXAKTER_DATEINAME \
+  --yes \
+  --restore-log /neuer/pfad/restore-nachweis.json
+```
+
+Vor dem Überschreiben entsteht eine geprüfte Rückfallsicherung. Aktive Datei, Sicherung und Rückfallsicherung werden nachgeprüft. Scheitert die Restore-Nachprüfung, erfolgt automatischer Rückfall. Protokolle werden nicht automatisch benannt, rotiert oder gelöscht.
+
+## Wiederanläufe nur prüfen
+
+```bash
+datenbanktool index recovery
+datenbanktool index recovery --json
+```
+
+Die Diagnose startet keinen Scan, verwirft keinen Eintrag und verändert weder Wiederanlaufdatei noch Index.
+
+## Startklar prüfen
+
+```bash
+datenbanktool check
+datenbanktool check --database index.sqlite3
+```
+
+## Sicherheitsgrenzen
+
+- Originaldateien bleiben schreibgeschützt.
+- CLI-Fachmodule verwenden keine Shell-Auswertung.
+- Schreibziele werden atomar veröffentlicht; bestehende Protokollziele werden nicht überschrieben.
+- Protokollprüfung folgt keinen Symlinks und verändert keine Prüfobjekte.
+- SHA-Pins werden weder automatisch berechnet noch gespeichert.
+- Der zentrale Prozessrahmen aktualisiert weiterhin ausschließlich sein internes Absturzjournal.
+- Hardwaredefekte, volles oder beschädigtes Dateisystem, Kerneldefekte und physischer Verlust bleiben außerhalb des Anwendungsschutzes.
+
+## Entwicklung und Prüfung
+
+```bash
+python -m compileall -q src tests
+PYTHONWARNINGS=error python -m unittest discover -s tests -v
+```
+
+Die maßgebliche Version steht in `registry.json`. Architektur, Grenzen und Nachweise beschreibt die [Entwicklerdokumentation](ENTWICKLERDOKU.md).

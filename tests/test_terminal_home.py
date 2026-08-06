@@ -232,7 +232,7 @@ class TerminalHomeTests(unittest.TestCase):
             preset_path = Path(directory) / "presets.json"
             save_timeline_preset("Musik", "Musik/Archiv", path=preset_path)
             home, output, error, calls = self.home(
-                "12\nersetzen\nMusik\nBilder/2026\nNeu\nj\n0\n",
+                "12\nersetzen\nMusik\nBilder/2026\nNeu\nj\nj\n0\n",
                 timeline_preset_path=preset_path,
             )
             self.assertEqual(home.run(), 0)
@@ -249,9 +249,23 @@ class TerminalHomeTests(unittest.TestCase):
                     "Neu",
                     "--preset-file",
                     str(preset_path),
+                    "--backup-before-change",
                 ],
             )
             self.assertIn("Ersetzt wird: Musik", output.getvalue())
+            self.assertIn("Konfigurationssicherung", output.getvalue())
+            self.assertEqual(error.getvalue(), "")
+
+    def test_timeline_preset_replace_can_skip_backup(self) -> None:
+        with TemporaryDirectory() as directory:
+            preset_path = Path(directory) / "presets.json"
+            save_timeline_preset("Musik", "Musik/Archiv", path=preset_path)
+            home, _, error, calls = self.home(
+                "12\nersetzen\nMusik\nBilder/2026\n\nn\nj\n0\n",
+                timeline_preset_path=preset_path,
+            )
+            self.assertEqual(home.run(), 0)
+            self.assertNotIn("--backup-before-change", calls[0])
             self.assertEqual(error.getvalue(), "")
 
     def test_timeline_preset_delete_requires_name_check_and_confirmation(self) -> None:
@@ -268,7 +282,7 @@ class TerminalHomeTests(unittest.TestCase):
             self.assertIn("Name stimmt nicht überein", error.getvalue())
 
             home, output, error, calls = self.home(
-                "12\nlöschen\nMusik\nMusik\nj\nj\n0\n",
+                "12\nlöschen\nMusik\nMusik\nj\nj\nj\n0\n",
                 timeline_preset_path=preset_path,
             )
             self.assertEqual(home.run(), 0)
@@ -282,6 +296,7 @@ class TerminalHomeTests(unittest.TestCase):
                     "--yes",
                     "--preset-file",
                     str(preset_path),
+                    "--backup-before-change",
                 ],
             )
             self.assertEqual(error.getvalue(), "")

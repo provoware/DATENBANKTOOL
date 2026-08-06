@@ -8,6 +8,7 @@ from pathlib import Path
 
 SCHEMA_VERSION = 3
 DEFAULT_BATCH_SIZE = 500
+DEFAULT_AUTOSAVE_SECONDS = 5.0
 VALID_PHASES = frozenset({"scanning", "hashing", "finalizing", "complete"})
 
 
@@ -31,6 +32,7 @@ class IndexBuildOptions:
     large_file_bytes: int = 1024 * 1024 * 1024
     follow_symlinks: bool = False
     batch_size: int = DEFAULT_BATCH_SIZE
+    autosave_seconds: float = DEFAULT_AUTOSAVE_SECONDS
     resume: bool = False
     max_files: int | None = None
     lock_timeout_seconds: float = 0.0

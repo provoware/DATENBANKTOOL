@@ -16,6 +16,11 @@ from datenbanktool.cli_common import (
     print_hint,
 )
 from datenbanktool.cli_contract import CommandPolicy, bind_handler
+from datenbanktool.cli_preset_change import (
+    add_prechange_backup_option,
+    optional_prechange_backup,
+    print_config_backup,
+)
 from datenbanktool.core.presentation import (
     TrafficLight,
     paint,
@@ -23,6 +28,7 @@ from datenbanktool.core.presentation import (
     traffic_text,
 )
 from datenbanktool.core.presets import (
+    default_preset_path,
     delete_preset,
     get_preset,
     list_presets,
@@ -159,11 +165,16 @@ def register_preset_parsers(
     preset_save.add_argument("--description", default="")
     preset_save.add_argument("--preset-file", type=Path)
     preset_save.add_argument("--replace", action="store_true")
+    add_prechange_backup_option(preset_save)
     add_preset_filter_options(preset_save)
     bind_handler(
         preset_save,
         run_presets,
-        CommandPolicy("index.presets.save", writes_configuration=True),
+        CommandPolicy(
+            "index.presets.save",
+            writes_configuration=True,
+            writes_backups=True,
+        ),
     )
 
     preset_delete = preset_subparsers.add_parser(
@@ -177,10 +188,15 @@ def register_preset_parsers(
         action="store_true",
         help="Löschen ausdrücklich bestätigen",
     )
+    add_prechange_backup_option(preset_delete)
     bind_handler(
         preset_delete,
         run_presets,
-        CommandPolicy("index.presets.delete", writes_configuration=True),
+        CommandPolicy(
+            "index.presets.delete",
+            writes_configuration=True,
+            writes_backups=True,
+        ),
     )
 
 
@@ -412,6 +428,16 @@ def run_presets(arguments: argparse.Namespace) -> int:
         )
         return 0
     if arguments.preset_command == "save":
+        backup = (
+            optional_prechange_backup(
+                arguments,
+                lookup=get_preset,
+                default_path=default_preset_path,
+                existing_required=False,
+            )
+            if arguments.replace
+            else None
+        )
         preset = save_preset(
             arguments.name,
             _preset_filter(arguments),
@@ -419,6 +445,7 @@ def run_presets(arguments: argparse.Namespace) -> int:
             path=arguments.preset_file,
             replace=arguments.replace,
         )
+        print_config_backup(backup, arguments)
         print(
             traffic_text(
                 TrafficLight("green", "Vorlage gespeichert", preset.name),
@@ -434,7 +461,14 @@ def run_presets(arguments: argparse.Namespace) -> int:
     if arguments.preset_command == "delete":
         if not arguments.yes:
             raise ValueError("Löschen benötigt die ausdrückliche Bestätigung --yes")
+        backup = optional_prechange_backup(
+            arguments,
+            lookup=get_preset,
+            default_path=default_preset_path,
+            existing_required=True,
+        )
         deleted = delete_preset(arguments.name, path=arguments.preset_file)
+        print_config_backup(backup, arguments)
         print(
             traffic_text(
                 TrafficLight("yellow", "Vorlage gelöscht", deleted.name),

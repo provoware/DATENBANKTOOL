@@ -1,306 +1,183 @@
 # Entwicklerdokumentation
 
-## Architekturstand 0.14.0-alpha.1
+## Architekturstand `0.21.0-alpha.1` / `0.21.0a1`
 
-Diese Wartungsiteration bereinigt den Release-Vertrag. `registry.json` ist die verbindliche Quelle für Paketname, PEP-440-Paketversion und menschenlesbare Anzeigeversion. `pyproject.toml`, `project_registry.json`, `datenbanktool.__version__`, CLI-Ausgabe und der Drift-Test müssen dieselben Werte führen.
+Diese Iteration ergänzt drei zusammenhängende, aber technisch getrennte Verträge:
 
-Startseitenpunkt 12 bündelt weiterhin die Zeitreihen-Vorlagenverwaltung. Die geführte Logik nutzt die bestehende Vorlagendomäne für Lesen und Namensprüfung und übergibt Schreibaktionen an die vorhandenen CLI-Befehle. Löschen verlangt eine exakte Namenswiederholung und eine Ja/Nein-Bestätigung; Vorlagen speichern weiterhin keine Datenbankpfade.
+1. optionale Erfassung eines neuen Restore-Protokollpfads in der geführten Startseite,
+2. geführte rein lesende Prüfung genau eines Restore-Protokolls,
+3. optionaler SHA-256-Pin der Protokolldatei vor jeder JSON-Schemaauswertung.
 
-## Aufbau
+Originaldatei-Schreibzugriffe bleiben gesperrt. Es gibt keine Shell-Auswertung, automatische Protokollsuche, Zielwahl, Pin-Ermittlung, Historie, Rotation oder Löschung.
 
-- `registry.json`: verbindlicher Name, PEP-440-Paketversion `0.14.0a1` und Anzeigeversion `0.14.0-alpha.1`.
-- `project_registry.json`: fachlicher Projektstand, Module, Sicherheitsvertrag und Prüfungsreferenzen.
-- `src/datenbanktool/`: modulare CLI-, Kernlogik-, Hilfe-, Export- und Testdatenlogik.
-- `tests/`: fokussierte Unit-, Integrations-, Architektur- und Abnahmetests.
+## Fachmodule
 
-## Schnittstellenvertrag
+| Modul | Verantwortung |
+|---|---|
+| `core/terminal_home.py` | bestehende Recovery-, Sicherungs- und Restore-Basis |
+| `core/terminal_home_restore_audit.py` | kleine Erweiterung für optionalen Restore-Protokollpfad und geführte Protokollprüfung |
+| `entrypoint.py` | aktiviert die erweiterte Startseitenklasse |
+| `core/restore_audit.py` | bestehende Protokollerzeugung, Schema- und Drei-Dateien-Prüfung |
+| `core/restore_audit_identity.py` | Pinformat und sichere Protokollidentitätsprüfung vor Schemaauswertung |
+| `cli_restore_audit.py` | Parser, Prüfungsreihenfolge sowie Terminal-/JSON-Darstellung |
+| `tests/test_guided_restore_audit.py` | geführte Pfad-, Nichtüberschreibungs- und Argumentlistenverträge |
+| `tests/test_restore_audit_identity.py` | Pin-, Reihenfolge- und Unverändertheitstests |
 
-- Erfolgreiche Befehle liefern Exitcode `0`.
-- Validierungs- und Datenbankfehler liefern Exitcode `2`.
-- Schreibende Originaldateioperationen bleiben gesperrt.
-- Konfigurationsschreibzugriffe müssen ausdrücklich deklariert und bestätigt sein.
-- JSON-Ausgaben bleiben maschinenlesbar und enthalten Fehler als klare Felder.
+## Geführter Restore-Protokollpfad
 
-## Versionierung und Prüfung
+Die Basisklasse erstellt nach Vergleich, exakter Namenswiederholung und `--yes` weiterhin dieselbe sichere Restore-Argumentliste. Die Erweiterungsklasse prüft anschließend ausschließlich, ob die Liste mit
 
-Semantische Versionierung wird verwendet: inkompatible Änderung = Hauptversion, neue kompatible Funktion = Nebenversion, Fehlerkorrektur = Patchversion. Technisch verbindlich für Paketmetadaten und `datenbanktool.__version__` ist die PEP-440-Schreibweise `0.14.0a1`. Menschenlesbar wird dieselbe Projektversion als `0.14.0-alpha.1` dokumentiert. `registry.json` führt beide Werte; falls `version` fehlt, ist die einzige dokumentierte Umrechnung `-alpha.` zu `a`.
+```text
+index backups restore
+```
 
-Vor einem Commit mit Codeänderung:
+beginnt. Nur dann wird optional gefragt:
+
+```text
+Optionaler neuer Protokollpfad; leer bedeutet kein Protokoll
+```
+
+### Vertrag
+
+1. Leere Eingabe liefert die bestehende Argumentliste unverändert zurück.
+2. Nicht leere Eingabe muss absolut oder über `~` angegeben werden.
+3. Der Pfad wird lexikalisch normalisiert und vollständig angezeigt.
+4. Ein vorhandenes Ziel wird abgelehnt.
+5. Ein Symlink-Ziel wird abgelehnt.
+6. Nur ein akzeptierter Pfad ergänzt `--restore-log PFAD`.
+7. Danach bleibt die vollständige Befehlsbestätigung der Startseite erforderlich.
+8. Es gibt keinen Standardpfad und keine automatische Verzeichnis- oder Dateinamenswahl.
+
+Die eigentliche Restore- und Protokollschreiblogik bleibt unverändert in `cli_backups.py`, `core/config_restore.py` und `core/restore_audit.py`.
+
+## Geführte Protokollprüfung
+
+Die neue Aktion ist unter „Sicherungen verwalten“ über `Protokoll prüfen`, `prüfen`, `p` oder `verify-log` erreichbar.
+
+### Ablauf
+
+1. Genau einen vollständigen Protokollpfad eingeben.
+2. Absolute Form oder `~` verlangen.
+3. Normalisierten vollständigen Pfad anzeigen.
+4. Optional einen erwarteten SHA-256-Pin eingeben.
+5. Leere Pin-Eingabe überspringt den Pin vollständig.
+6. Nicht leerer Pin wird vorab auf exakt 64 kleingeschriebene Hexzeichen geprüft.
+7. Sichere Argumentliste erzeugen:
+
+```text
+index backups verify-log PROTOKOLL
+```
+
+oder
+
+```text
+index backups verify-log PROTOKOLL
+  --expected-protocol-sha256 SHA256
+```
+
+8. Der vorhandene Startseitenvertrag zeigt den vollständigen Befehl und verlangt die finale Bestätigung.
+9. Die CLI liefert danach dieselbe Grün-/Gelb-/Rot-Auswertung wie bei direktem Terminalaufruf.
+
+Die geführte Prüfung fragt bewusst nicht nach einer Indexdatei und durchsucht keine Ordner.
+
+## Optionaler Protokoll-SHA-Pin
+
+Öffentlicher Befehl:
+
+```text
+index backups verify-log PROTOKOLL
+  [--expected-protocol-sha256 SHA256]
+  [--json]
+```
+
+### Reihenfolge
+
+`run_restore_audit_verification()` führt strikt aus:
+
+1. Nur wenn die Option gesetzt ist: `verify_restore_audit_identity()`.
+2. Erst nach erfolgreicher Identitätsbestätigung: `verify_restore_audit_log()`.
+3. Danach Terminal- oder JSON-Ausgabe.
+
+Tests patchen den Schema-Prüfer und bestätigen, dass er bei falschem oder ungültigem Pin nicht aufgerufen wird.
+
+### Sichere Identitätsprüfung
+
+`verify_restore_audit_identity()` verlangt:
+
+- exakt 64 kleingeschriebene Hexzeichen,
+- ausdrücklich ausgewählten Pfad,
+- kein Symlink-Protokoll,
+- normale Datei über `fstat()`,
+- Öffnung mit `O_RDONLY`, `O_CLOEXEC` und – sofern verfügbar – `O_NOFOLLOW`,
+- Streaming-SHA-256 in 1-MiB-Blöcken.
+
+Bei Abweichung wird `ValueError` ausgelöst. Die allgemeine CLI-Grenze übersetzt dies in Rückgabecode `2`. JSON-Schema und referenzierte Dateien werden nicht geprüft.
+
+### Ausgabe
+
+Bei erfolgreichem Pin zeigt das Terminal erwarteten und tatsächlichen Protokoll-SHA-256-Wert. JSON ergänzt:
+
+```json
+{
+  "protocol_identity": {
+    "protocol": "/absoluter/pfad/restore.json",
+    "expected_sha256": "...",
+    "actual_sha256": "...",
+    "matches": true
+  }
+}
+```
+
+Ohne Option bleibt die bisherige Ausgabe kompatibel und enthält kein `protocol_identity`-Feld.
+
+## Architekturgrenzen
+
+- Die bestehende umfangreiche Startseitenklasse wird nicht weiter vergrößert.
+- Erweiterung erfolgt per kleiner Unterklasse und überschreibt nur `_backup_action()` und `_build_backup()` sowie neue Hilfsmethoden.
+- `entrypoint.py` tauscht ausschließlich den importierten Startseitentyp aus.
+- `cli_restore_audit.py` bleibt deutlich unter 500 Zeilen.
+- Keine zyklischen CLI-Importe.
+- Kein `subprocess`, `shell=True`, `os.system`, `eval` oder `exec`.
+- Keine neue Laufzeitabhängigkeit.
+- Keine Änderung der Originaldatei-Sperre.
+
+## Automatische Prüfungen
+
+Die Version enthält 158 Tests, darunter:
+
+- expliziter neuer Restore-Protokollpfad wird korrekt angehängt,
+- leere Eingabe lässt die Argumentliste unverändert,
+- vorhandenes Ziel wird nicht überschrieben oder angehängt,
+- geführte Prüfung benötigt keine Datenbank,
+- vollständiger Pfad wird sichtbar ausgegeben,
+- Pin kann gesetzt oder übersprungen werden,
+- richtiger Pin erscheint in JSON und bestätigt die Datei,
+- falscher Pin stoppt vor Schemaauswertung,
+- ungültiges Pinformat stoppt vor Schemaauswertung,
+- Protokoll und Referenzdateien bleiben unverändert,
+- bestehende Restore-, Rückfall-, Protokoll-, Recovery- und Architekturtests bleiben grün,
+- Versionsdrift wird geprüft.
+
+Die Matrix läuft unter Python 3.10 und 3.12 mit `PYTHONWARNINGS=error`. Quick- und Standardabnahme verwenden ausschließlich synthetische Daten und bestehen jeweils 11/11 Kriterien.
+
+## Verbleibende Grenzen
+
+- Reale Laienabnahme auf Kubuntu ist offen.
+- Nutzer müssen Protokollpfad und optionalen Pin selbst kennen.
+- Ein eigener Prüfberichtsexport ist noch nicht implementiert.
+- Das zentrale Laufjournal des Prozessrahmens bleibt bei Fachbefehlen aktiv, verändert aber keine Prüfobjekte.
+- Hardware-, Kernel-, Dateisystem- und physischer Verlust bleiben außerhalb des Anwendungsschutzes.
+
+## Releaseprüfung
 
 ```bash
 python -m json.tool registry.json >/dev/null
 python -m json.tool project_registry.json >/dev/null
-PYTHONPATH=src python -m unittest tests.test_version_registry -v
-PYTHONPATH=src python -m unittest discover -s tests -v
-PYTHONPATH=src python -m datenbanktool --help
+python -m compileall -q src tests
+PYTHONWARNINGS=error python -m unittest discover -s tests -v
+python -m datenbanktool --version
+python -m datenbanktool index backups verify-log --help
+python -m datenbanktool check
 ```
 
-## Architekturstand 0.13.0-alpha.2
-
-Diese Iteration ergänzt zwei getrennte Fachverträge:
-
-1. lokale, validierte und überschreibgeschützte Zeitreihen-Vorlagen,
-2. optionale, rein lesende Trendgrenzen für Größen- und Dateizahlwachstum.
-
-Neue Fachmodule:
-
-- `core/timeline_presets.py` – Schema, Normalisierung, atomare Speicherung und Rechte,
-- `cli_timeline_presets.py` – Parser, Ausgabe und `CommandPolicy` für list/show/save/delete.
-
-Gezielt erweiterte Module:
-
-- `core/folder_timeline.py` – Datei- und Größenprozente sowie Schwellenklassifikation,
-- `cli_folder_timeline.py` – `--preset` und Warnschwellenoptionen,
-- `core/guided_home.py` – orchestrierende Startseitenklasse für I/O, Hilfe und Befehlsaufbau,
-- `core/guided_home_catalog.py` – Menüaktionen und Feldhilfen,
-- `core/guided_home_input.py` – Parser für Ganzzahlen, Prozentwerte und Berichtsformate,
-- `core/folder_timeline_exports.py` – Warnfelder in JSON, CSV und HTML,
-- `core/folder_timeline_charts.py` – sichtbare und zugängliche SVG-Warnmarken,
-- `core/folder_timeline_help.py` – gemeinsame Vorlagen- und Schwellenhilfe.
-
-## Vorlagenschema
-
-```json
-{
-  "schema_version": 1,
-  "presets": [
-    {
-      "name": "Musik",
-      "folder": "Musik/Archiv",
-      "description": "Wöchentliche Prüfung",
-      "created_utc": "...",
-      "updated_utc": "..."
-    }
-  ]
-}
-```
-
-Nicht gespeichert werden:
-
-- SQLite-Datenbankpfad,
-- Stammordner des Scans,
-- Sitzungsnummern,
-- Warnschwellen,
-- Berichtspfade,
-- Dateilisten oder Messwerte.
-
-Damit bleibt eine Vorlage unabhängig von einem konkreten Index und enthält nur den
-wiederverwendbaren relativen Ordner.
-
-## Validierung und Schreibvertrag
-
-`save_timeline_preset()`:
-
-1. normalisiert den Namen auf einzelne Leerzeichen,
-2. erlaubt 1 bis 64 Zeichen,
-3. begrenzt die Beschreibung auf 240 Zeichen,
-4. validiert den Ordner über `normalise_folder()`,
-5. liest vorhandene Einträge erneut validierend,
-6. verweigert gleiche Namen ohne `replace=True`,
-7. schreibt formatiertes UTF-8-JSON in eine prozessbezogene temporäre Datei,
-8. setzt Modus `0600`,
-9. gibt die Datei atomar per `replace()` frei,
-10. entfernt die temporäre Datei bei Fehlern.
-
-Namen werden für Vergleich und Auflösung mit `casefold()` behandelt. Die gespeicherte
-Schreibweise bleibt erhalten.
-
-## Öffentliche Vorlagenbefehle
-
-```text
-index timeline-presets list
-index timeline-presets show NAME
-index timeline-presets save NAME ORDNER [--description TEXT] [--replace]
-index timeline-presets delete NAME --yes
-```
-
-`list` und `show` sind rein lesend. `save` und `delete` deklarieren
-`writes_configuration=True`. Originaldatei-, Index-, Backup-, Bericht- und
-Testdatenschreibzugriffe bleiben falsch.
-
-## Zeitreihenauflösung
-
-```text
-index folder-timeline DATENBANK [ORDNER]
-  [--preset NAME]
-  [--preset-file PFAD]
-```
-
-`_timeline_folder()` erzwingt:
-
-- entweder positionaler Ordner,
-- oder gespeicherte Vorlage,
-- niemals beides gleichzeitig,
-- ohne beide Angaben den Standard `.`.
-
-## Geführte Startseite
-
-Punkt 11:
-
-1. lädt und validiert die lokale Vorlagendatei,
-2. zeigt Name, Ordner und Beschreibung nummeriert,
-3. akzeptiert Nummer oder exakten Namen,
-4. erlaubt leere Auswahl für manuelle Eingabe,
-5. zeigt den gewählten Ordner erneut,
-6. übergibt bei unverändertem Ordner `--preset`,
-7. wechselt bei bewusster Änderung auf den direkten Ordnerpfad.
-
-Eine fehlerhafte Vorlagendatei wird gemeldet, blockiert aber nicht die manuelle
-Zeitreihe.
-
-Punkt 12 erzeugt einen `timeline-presets save`-Befehl und besitzt
-`confirmation_required=True`. Die Startseite bietet absichtlich kein stilles Ersetzen.
-
-## Trendgrenzenmodell
-
-`FolderTimelineOptions` enthält:
-
-```python
-warn_size_growth_percent: float | None
-warn_file_growth_percent: float | None
-```
-
-Validiert werden endliche Werte von 0 bis 1.000.000. Ein leerer Wert deaktiviert die
-jeweilige Grenze.
-
-`FolderTimelinePoint` enthält zusätzlich:
-
-```python
-file_delta_percent: float | None
-threshold_triggered: bool
-threshold_reasons: tuple[str, ...]
-```
-
-`FolderTimeline` enthält die konfigurierten Grenzen und `threshold_trigger_count`.
-
-## Prozentberechnung
-
-```text
-(current - previous) / previous × 100
-```
-
-- Ergebnis auf zwei Dezimalstellen gerundet.
-- Vorheriger Wert `<= 0` liefert `None`.
-- Der erste sichtbare Punkt ist immer Ausgangswert.
-- Vergleichsbasis ist der unmittelbar vorherige sichtbare Scan.
-
-## Auslösungslogik
-
-Eine Grenze löst nur aus, wenn:
-
-1. die Grenze konfiguriert ist,
-2. der absolute Unterschied positiv ist,
-3. ein Prozentwert berechenbar ist,
-4. der Prozentwert größer oder gleich der Grenze ist.
-
-Bei Auslösung:
-
-```text
-traffic_level = red
-traffic_label = Trendgrenze erreicht
-```
-
-`status` und `status_label` bleiben unverändert und beschreiben weiterhin den
-fachlichen Verlauf. Dadurch bleibt `grown` von der optionalen Warnwirkung getrennt.
-
-## Ausgaben
-
-### Terminal
-
-Zeigt aktive Grenzen, Trefferzahl, Datei- und Größenprozente sowie die vollständige
-Ampelbegründung. Der Hinweis „keine Schadensbewertung“ ist Bestandteil jedes Treffers.
-
-### JSON
-
-`FolderTimeline.to_dict()` enthält Konfiguration, Trefferzahl und sämtliche neuen
-Punktfelder ohne ANSI-Ausgaben.
-
-### CSV
-
-Enthält getrennte Spalten für Verlaufsstatus, Warnstatus, Begründung, Trefferflag,
-Dateiprozent, Größenprozent und konfigurierte Warnschwellen. UTF-8-BOM und Semikolon
-bleiben erhalten.
-
-### HTML und SVG
-
-HTML zeigt eine Warnzusammenfassung und die vollständige Begründung in der Tabelle.
-SVG-Punkte verwenden bei einem passenden metrischen Treffer:
-
-```html
-<circle class="data-point warning-point" ...>
-<text class="warning-label">Warnung</text>
-```
-
-Titel, ARIA-Beschreibung und sichtbarer Text enthalten dieselbe fachliche Begründung.
-JavaScript und externe Ressourcen bleiben ausgeschlossen.
-
-## Sicherheitsinvarianten
-
-- Vorlagen lesen oder schreiben keine Originaldateien.
-- Zeitreihe und Trendgrenzen öffnen SQLite nur lesend.
-- Warnungen lösen keine Folgeaktion aus.
-- Konfigurations- und Berichtsdateien werden atomar freigegeben.
-- Vorhandene Inhalte werden nicht still überschrieben.
-- Geführte Befehle bleiben Argumentlisten ohne Shell-Auswertung.
-- Automatische Originaldateioperationen bleiben gesperrt.
-
-## Automatische Tests
-
-Geprüft werden unter anderem:
-
-- Vorlagen-Roundtrip, Modus 0600 und Überschreibschutz,
-- bewusstes Ersetzen und bestätigtes Löschen,
-- unsichere Ordnerpfade und beschädigte Strukturen,
-- CLI-Parser, Handler, Policies und Modulzuständigkeit,
-- Startseiten-Auswahl per Nummer und bestätigtes Speichern,
-- Komma- und Punktdezimalwerte,
-- Größen- und Dateizahlgrenze einzeln und gemeinsam,
-- Null-, NaN-, Unendlich- und Bereichsfälle,
-- getrennte Verlauf- und Warnfelder,
-- Terminal-, JSON-, CSV-, HTML- und SVG-Begründungen,
-- Skript- und Netzwerkfreiheit.
-
-## 0.13-Funktionsreferenz
-
-Run `30927676213`, Commit `8ded929533f806c739a7139b47d16379a788cfb0`:
-
-- 87/87 Tests unter Python 3.10,
-- 87/87 Tests unter Python 3.12,
-- `PYTHONWARNINGS=error`,
-- Quick: 600 Dateien, 11/11, 1,129 s, 1.324.226 Byte Python-Peak,
-- Standard: 10.000 Dateien, 11/11, 18,150 s, 13.398.233 Byte Python-Peak,
-- Large: 100.000 Dateien, 11/11, 218,722 s, 107.011.474 Byte Python-Peak,
-- Large-Umgebung: Python 3.12.13, ext4 auf `/dev/vda`, KVM x86_64, 3 vCPU, Intel Xeon Platinum 8370C.
-
-Artefakte:
-
-| Profil | ID | SHA-256 |
-|---|---:|---|
-| Quick | 8899780387 | `c3678cdd50d235b9819475d6f1f6660e0367833c3a80f7faa5dff7ce990b0c1b` |
-| Standard | 8899791444 | `846ebbd02d213bc336800d330a8a2612e2a069e17e13362f0a27f5aa4ed7571d` |
-
-## Bekannte Grenzen
-
-- Geführtes Ersetzen und Löschen von Vorlagen fehlt noch.
-- Vorlagen enthalten bewusst keine Warnschwellen oder Exportziele.
-- Trendgrenzen sind Übergangsregeln, keine statistische Anomalieerkennung.
-- Je Bericht wird ein relativer Ordner dargestellt.
-- Reale Laienabnahme bleibt offen. Der Zielhardwaretest ist bestanden, sollte aber bei Hardwarewechsel erneut gemessen werden.
-
-## Direkt folgender Entwicklungsblock
-
-Geführtes Vorlagen-Untermenü für Anzeigen, bewusstes Ersetzen und bestätigtes Löschen.
-
-## Sichere Alternative
-
-Mehrere relative Ordner in einem rein lesenden Bericht mit getrennten Linien und
-klarer Nicht-Addierbarkeitswarnung darstellen.
-
-## Unverändert
-
-`AGENTS.md` wird nicht verändert. Externe Laufzeitabhängigkeiten bleiben bei null.
-Automatische Schreibzugriffe auf gescannte Originaldateien bleiben gesperrt.
-
-## Wartungsnotiz 0.13.0-alpha.2
-
-Der CLI-Dateikopf darf nur einen Modul-Docstring und danach `from __future__ import annotations` enthalten. Historische CLI-Stubs dürfen nicht vor diesem Import stehen. Parser für die geführte Startseite sollen rein bleiben und ohne Streams testbar sein; Eingabe- und Ausgabeschleifen verbleiben in `TerminalHome`.
+`AGENTS.md` und die Sperre automatischer Originaldateioperationen bleiben unverändert.

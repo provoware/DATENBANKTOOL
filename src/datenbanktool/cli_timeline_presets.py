@@ -6,8 +6,14 @@ from pathlib import Path
 
 from datenbanktool.cli_common import colour_mode, print_hint
 from datenbanktool.cli_contract import CommandPolicy, bind_handler
+from datenbanktool.cli_preset_change import (
+    add_prechange_backup_option,
+    optional_prechange_backup,
+    print_config_backup,
+)
 from datenbanktool.core.presentation import TrafficLight, paint, traffic_text
 from datenbanktool.core.timeline_presets import (
+    default_timeline_preset_path,
     delete_timeline_preset,
     get_timeline_preset,
     list_timeline_presets,
@@ -65,10 +71,15 @@ def register_timeline_preset_parsers(
         action="store_true",
         help="Vorhandene gleichnamige Vorlage bewusst ersetzen",
     )
+    add_prechange_backup_option(preset_save)
     bind_handler(
         preset_save,
         run_timeline_presets,
-        CommandPolicy("index.timeline-presets.save", writes_configuration=True),
+        CommandPolicy(
+            "index.timeline-presets.save",
+            writes_configuration=True,
+            writes_backups=True,
+        ),
     )
 
     preset_delete = subparsers.add_parser("delete", help="Zeitreihen-Vorlage löschen")
@@ -79,10 +90,15 @@ def register_timeline_preset_parsers(
         action="store_true",
         help="Löschen ausdrücklich bestätigen",
     )
+    add_prechange_backup_option(preset_delete)
     bind_handler(
         preset_delete,
         run_timeline_presets,
-        CommandPolicy("index.timeline-presets.delete", writes_configuration=True),
+        CommandPolicy(
+            "index.timeline-presets.delete",
+            writes_configuration=True,
+            writes_backups=True,
+        ),
     )
 
 
@@ -141,6 +157,16 @@ def run_timeline_presets(arguments: argparse.Namespace) -> int:
         return 0
 
     if command == "save":
+        backup = (
+            optional_prechange_backup(
+                arguments,
+                lookup=get_timeline_preset,
+                default_path=default_timeline_preset_path,
+                existing_required=False,
+            )
+            if arguments.replace
+            else None
+        )
         preset = save_timeline_preset(
             arguments.name,
             arguments.folder,
@@ -148,6 +174,7 @@ def run_timeline_presets(arguments: argparse.Namespace) -> int:
             path=arguments.preset_file,
             replace=arguments.replace,
         )
+        print_config_backup(backup, arguments)
         print(
             traffic_text(
                 TrafficLight(
@@ -167,10 +194,17 @@ def run_timeline_presets(arguments: argparse.Namespace) -> int:
     if command == "delete":
         if not arguments.yes:
             raise ValueError("Löschen benötigt die ausdrückliche Bestätigung --yes")
+        backup = optional_prechange_backup(
+            arguments,
+            lookup=get_timeline_preset,
+            default_path=default_timeline_preset_path,
+            existing_required=True,
+        )
         deleted = delete_timeline_preset(
             arguments.name,
             path=arguments.preset_file,
         )
+        print_config_backup(backup, arguments)
         print(
             traffic_text(
                 TrafficLight("yellow", "Zeitreihen-Vorlage gelöscht", deleted.name),

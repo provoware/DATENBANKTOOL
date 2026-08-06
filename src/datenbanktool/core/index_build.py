@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import sqlite3
 from pathlib import Path
+from time import monotonic
 from typing import Iterator
 
 from datenbanktool.core.index_lock import IndexProcessLock
@@ -59,7 +60,8 @@ def iter_paths(
             yield path
     if not found_checkpoint:
         raise ResumeCheckpointError(
-            f"Scan-Wiederaufnahmepunkt fehlt: {checkpoint}. Reparatur oder neuer Scan erforderlich."
+            "Der letzte sichere Haltepunkt wurde im Ordner nicht mehr gefunden. "
+            f"Starte einen neuen Scan oder prüfe den Index. (Technisch: {checkpoint}.)"
         )
 
 
@@ -103,19 +105,25 @@ def _build_result(database: IndexDatabase, session_id: int, resumed: bool) -> In
     )
 
 
+def _autosave_due(last_save: float, autosave_seconds: float) -> bool:
+    return monotonic() - last_save >= autosave_seconds
+
+
 def build_index(
     options: IndexBuildOptions,
     progress_callback: ProgressCallback | None = None,
 ) -> IndexBuildResult:
     if options.large_file_bytes < 0:
-        raise ValueError("large_file_bytes darf nicht negativ sein")
+        raise ValueError("Die Grenze für große Dateien darf nicht negativ sein.")
     if options.batch_size < 1:
-        raise ValueError("batch_size muss mindestens 1 sein")
+        raise ValueError("Die Autosave-Menge muss mindestens 1 Datei betragen.")
+    if options.autosave_seconds <= 0:
+        raise ValueError("Der Autosave-Abstand muss größer als 0 Sekunden sein.")
     if options.max_files is not None and options.max_files < 1:
-        raise ValueError("max_files muss mindestens 1 sein")
+        raise ValueError("Die Dateigrenze muss mindestens 1 sein.")
     root = options.root.expanduser().resolve(strict=True)
     if not root.is_dir():
-        raise NotADirectoryError(f"Kein Verzeichnis: {root}")
+        raise NotADirectoryError(f"Der gewählte Ordner ist nicht vorhanden: {root}")
     payload = {
         "scan_mode": "full",
         "hash_duplicates": options.hash_duplicates,
@@ -132,7 +140,11 @@ def build_index(
             if row is None:
                 session_id = database.create_session(
                     root,
-                    {**payload, "batch_size": options.batch_size},
+                    {
+                        **payload,
+                        "batch_size": options.batch_size,
+                        "autosave_seconds": options.autosave_seconds,
+                    },
                     fingerprint,
                     scan_mode="full",
                 )
@@ -146,10 +158,11 @@ def build_index(
                 phase="scanning",
                 kind="start" if not resumed else "resume",
                 message=(
-                    "Vollständige Indexierung gestartet"
+                    "Ordnerprüfung gestartet"
                     if not resumed
-                    else "Indexierung wird fortgesetzt"
+                    else "Ordnerprüfung wird am letzten sicheren Stand fortgesetzt"
                 ),
+                details={"autosave_seconds": options.autosave_seconds},
             )
             try:
                 session = database.session(session_id)
@@ -158,6 +171,7 @@ def build_index(
                     errors: list[ScanError] = []
                     processed_this_run = 0
                     checkpoint = session["last_relative_path"]
+                    last_save = monotonic()
                     for path in iter_paths(root, options.follow_symlinks, checkpoint, errors):
                         if (
                             options.max_files is not None
@@ -196,21 +210,27 @@ def build_index(
                             )
                         checkpoint = relative_path
                         processed_this_run += 1
-                        if len(records) + len(errors) >= options.batch_size:
+                        if (
+                            len(records) + len(errors) >= options.batch_size
+                            or _autosave_due(last_save, options.autosave_seconds)
+                        ):
                             database.import_batch(session_id, records, errors, checkpoint)
+                            database.durable_checkpoint()
                             records.clear()
                             errors.clear()
+                            last_save = monotonic()
                             emit_progress(
                                 database,
                                 progress_callback,
                                 session_id=session_id,
                                 phase="scanning",
-                                kind="batch",
-                                message="Scan-Batch bestätigt",
+                                kind="autosave",
+                                message="Zwischenstand sicher gespeichert",
                                 current=database.latest_status().imported_count,
                             )
                     if records or errors:
                         database.import_batch(session_id, records, errors, checkpoint)
+                        database.durable_checkpoint()
                     database.set_phase(
                         session_id,
                         "hashing" if options.hash_duplicates else "finalizing",
@@ -222,6 +242,7 @@ def build_index(
                     errors = []
                     checkpoint = session["last_hash_path"]
                     hashed = 0
+                    last_save = monotonic()
                     for candidate in database.hash_candidates(session_id, checkpoint):
                         relative_path = str(candidate["relative_path"])
                         try:
@@ -238,23 +259,29 @@ def build_index(
                             )
                         checkpoint = relative_path
                         hashed += 1
-                        if len(hashes) + len(errors) >= options.batch_size:
+                        if (
+                            len(hashes) + len(errors) >= options.batch_size
+                            or _autosave_due(last_save, options.autosave_seconds)
+                        ):
                             database.update_hash_batch(
                                 session_id, hashes, errors, checkpoint
                             )
+                            database.durable_checkpoint()
                             hashes.clear()
                             errors.clear()
+                            last_save = monotonic()
                             emit_progress(
                                 database,
                                 progress_callback,
                                 session_id=session_id,
                                 phase="hashing",
-                                kind="batch",
-                                message="Hash-Batch bestätigt",
+                                kind="autosave",
+                                message="Prüfsummen-Zwischenstand sicher gespeichert",
                                 current=hashed,
                             )
                     if hashes or errors:
                         database.update_hash_batch(session_id, hashes, errors, checkpoint)
+                        database.durable_checkpoint()
                     database.set_phase(session_id, "finalizing")
 
                 if str(database.session(session_id)["phase"]) == "finalizing":
@@ -266,10 +293,21 @@ def build_index(
                         session_id=session_id,
                         phase="complete",
                         kind="complete",
-                        message="Indexierung erfolgreich abgeschlossen",
+                        message="Ordnerprüfung erfolgreich abgeschlossen",
                         current=database.latest_status().imported_count,
                         details={"duplicate_groups": groups},
                     )
+            except KeyboardInterrupt:
+                database.mark_interrupted(session_id)
+                emit_progress(
+                    database,
+                    progress_callback,
+                    session_id=session_id,
+                    phase=str(database.session(session_id)["phase"]),
+                    kind="interrupted",
+                    message="Abgebrochen; letzter sicherer Zwischenstand bleibt erhalten",
+                )
+                raise
             except Exception as error:
                 database.mark_failed(session_id, str(error))
                 emit_progress(
@@ -278,7 +316,7 @@ def build_index(
                     session_id=session_id,
                     phase=str(database.session(session_id)["phase"]),
                     kind="failed",
-                    message="Indexierung fehlgeschlagen",
+                    message="Ordnerprüfung konnte nicht abgeschlossen werden",
                     details={"error": str(error)},
                 )
                 raise
@@ -287,7 +325,7 @@ def build_index(
 
 def inspect_index(path: Path) -> IndexStatus:
     if not path.expanduser().exists():
-        raise FileNotFoundError(f"Indexdatenbank nicht gefunden: {path.expanduser()}")
+        raise FileNotFoundError(f"Die Indexdatei wurde nicht gefunden: {path.expanduser()}")
     with IndexDatabase(path) as database:
         database.migrate()
         return database.latest_status()
@@ -308,7 +346,7 @@ def repair_index(
 
     target = normalise_database_path(path)
     if not target.exists():
-        raise FileNotFoundError(f"Indexdatenbank nicht gefunden: {target}")
+        raise FileNotFoundError(f"Die Indexdatei wurde nicht gefunden: {target}")
     with IndexProcessLock(target, "index repair", lock_timeout_seconds):
         backup = (
             backup_index_unlocked(target, None, overwrite=False).backup
@@ -327,7 +365,7 @@ def repair_index(
                 interrupted = int(cursor.rowcount)
             if interrupted:
                 actions.append(
-                    f"{interrupted} laufende Sitzung(en) als unterbrochen markiert"
+                    f"{interrupted} offene Prüfung(en) als unterbrochen markiert"
                 )
             session_ids = [
                 int(row[0])
@@ -340,15 +378,16 @@ def repair_index(
             rebuilt = len(session_ids)
             if rebuilt:
                 actions.append(
-                    f"Duplikatgruppen für {rebuilt} Sitzung(en) neu aufgebaut"
+                    f"Doppelte Dateien für {rebuilt} Prüfung(en) neu zugeordnet"
                 )
             with database.connection:
                 database.connection.execute("REINDEX")
                 database.connection.execute("ANALYZE")
-            actions.extend(("Indizes neu aufgebaut", "Abfragestatistik aktualisiert"))
+            actions.extend(("Suchstruktur neu aufgebaut", "Abfragewerte aktualisiert"))
             if vacuum:
                 database.connection.execute("VACUUM")
-                actions.append("Datenbank komprimiert")
+                actions.append("Indexdatei verkleinert")
+            database.durable_checkpoint()
             foreign_key_errors = len(
                 database.connection.execute("PRAGMA foreign_key_check").fetchall()
             )

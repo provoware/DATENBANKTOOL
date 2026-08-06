@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 from typing import TextIO
 
+from datenbanktool.core.durable_files import atomic_write_text
 from datenbanktool.core.presentation import hint_text, paint
 from datenbanktool.core.progress import ProgressEvent
 
@@ -32,21 +33,21 @@ CHANGE_LABELS = {
 def positive_int(value: str) -> int:
     parsed = int(value)
     if parsed < 1:
-        raise argparse.ArgumentTypeError("Wert muss mindestens 1 sein")
+        raise argparse.ArgumentTypeError("Bitte eine ganze Zahl ab 1 eingeben.")
     return parsed
 
 
 def non_negative_int(value: str) -> int:
     parsed = int(value)
     if parsed < 0:
-        raise argparse.ArgumentTypeError("Wert darf nicht negativ sein")
+        raise argparse.ArgumentTypeError("Bitte 0 oder eine größere ganze Zahl eingeben.")
     return parsed
 
 
 def non_negative_float(value: str) -> float:
     parsed = float(value)
     if parsed < 0:
-        raise argparse.ArgumentTypeError("Wert darf nicht negativ sein")
+        raise argparse.ArgumentTypeError("Bitte 0 oder eine größere Zahl eingeben.")
     return parsed
 
 
@@ -60,21 +61,27 @@ def add_scan_options(target: argparse.ArgumentParser) -> None:
     target.add_argument(
         "--hash-duplicates",
         action="store_true",
-        help="Dateiinhalte vergleichen. Sicher, aber bei großen Beständen langsamer.",
+        help=(
+            "Auch den Dateiinhalt vergleichen, damit wirklich gleiche Dateien erkannt "
+            "werden. (Technisch: SHA-256; sicher, aber langsamer.)"
+        ),
     )
     target.add_argument(
         "--large-file-mib",
         type=non_negative_int,
         default=1024,
-        help="Ab dieser Größe wird eine Datei als groß markiert. Standard: 1024 MiB.",
+        help=(
+            "Ab dieser Größe eine Datei als groß markieren. Standard: 1024 MiB. "
+            "(Technisch: Schwelle in Mebibyte.)"
+        ),
     )
     target.add_argument("--max-files", type=positive_int, default=None)
     target.add_argument(
         "--follow-symlinks",
         action="store_true",
         help=(
-            "Symbolischen Verzeichnissen folgen. Standardmäßig aus "
-            "Sicherheitsgründen aus."
+            "Auch Ordner hinter Verknüpfungen prüfen. Normalerweise aus, damit keine "
+            "unerwarteten Bereiche einbezogen werden. (Technisch: Symlinks.)"
         ),
     )
 
@@ -84,15 +91,18 @@ def add_progress_options(target: argparse.ArgumentParser) -> None:
         "--progress",
         choices=("human", "jsonl", "quiet"),
         default="human",
-        help="Fortschritt verständlich, als JSONL oder gar nicht ausgeben.",
+        help=(
+            "Fortschritt normal anzeigen, als maschinenlesbare Zeilen oder gar nicht. "
+            "(Technisch: human, JSONL oder quiet.)"
+        ),
     )
     target.add_argument(
         "--lock-timeout",
         type=non_negative_float,
         default=0.0,
         help=(
-            "Wie lange auf einen anderen Indexprozess gewartet wird. "
-            "Standard: sofort abbrechen."
+            "So viele Sekunden auf eine andere laufende Indexprüfung warten. "
+            "Standard 0 bedeutet: sofort verständlich abbrechen."
         ),
     )
 
@@ -107,7 +117,7 @@ def add_category_filter(
         action="append",
         default=default,
         choices=CATEGORIES,
-        help="Nur diesen Dateityp zeigen. Mehrfach nutzbar.",
+        help="Nur diesen Dateityp zeigen. Für mehrere Typen mehrfach angeben.",
     )
 
 
@@ -184,19 +194,14 @@ def write_json_atomic(
     target = path.expanduser().resolve(strict=False)
     if target.exists() and not overwrite:
         raise FileExistsError(
-            f"Bericht existiert bereits: {target}. Nutze --overwrite-report."
+            f"Der Bericht existiert schon: {target}. Wähle einen neuen Namen oder "
+            "nutze bewusst --overwrite-report."
         )
-    target.parent.mkdir(parents=True, exist_ok=True)
-    temporary = target.with_name(f".{target.name}.tmp")
-    try:
-        temporary.write_text(
-            json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
-            encoding="utf-8",
-        )
-        temporary.replace(target)
-    except Exception:
-        temporary.unlink(missing_ok=True)
-        raise
+    atomic_write_text(
+        target,
+        json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+        overwrite=overwrite,
+    )
 
 
 def human_size(size_bytes: int) -> str:

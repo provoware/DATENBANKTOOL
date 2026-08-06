@@ -7,6 +7,7 @@ from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
+from datenbanktool.core.durable_files import atomic_write_text
 from datenbanktool.core.search import SearchFilter
 
 _PRESET_SCHEMA_VERSION = 1
@@ -40,8 +41,9 @@ def _normalise_name(name: str) -> str:
     value = " ".join(name.strip().split())
     if not _NAME_PATTERN.fullmatch(value):
         raise ValueError(
-            "Vorlagenname muss 1–64 Zeichen lang sein und darf Buchstaben, Zahlen, "
-            "Leerzeichen, Punkt, Unterstrich und Bindestrich enthalten"
+            "Bitte gib einen kurzen Vorlagennamen mit 1 bis 64 Zeichen ein. "
+            "Erlaubt sind Buchstaben, Zahlen, Leerzeichen, Punkt, Unterstrich und "
+            "Bindestrich. (Technisch: ungültiger Vorlagenname.)"
         )
     return value
 
@@ -55,23 +57,32 @@ def _load_document(path: Path) -> dict[str, object]:
         return {"schema_version": _PRESET_SCHEMA_VERSION, "presets": []}
     payload = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(payload, dict) or payload.get("schema_version") != _PRESET_SCHEMA_VERSION:
-        raise ValueError("Suchvorlagen-Datei besitzt eine unbekannte Version")
+        raise ValueError(
+            "Die gespeicherten Suchvorlagen stammen aus einer unbekannten Version. "
+            "Die Datei wurde nicht verändert. (Technisch: unbekannte Schemaversion.)"
+        )
     presets = payload.get("presets")
     if not isinstance(presets, list):
-        raise ValueError("Suchvorlagen-Datei ist beschädigt: 'presets' muss eine Liste sein")
+        raise ValueError(
+            "Die Suchvorlagendatei ist unvollständig oder beschädigt. Die bisherige "
+            "Datei wurde nicht überschrieben. (Technisch: 'presets' ist keine Liste.)"
+        )
     return payload
 
 
 def _preset_from_dict(payload: object) -> SearchPreset:
     if not isinstance(payload, dict):
-        raise ValueError("Ungültiger Suchvorlagen-Eintrag")
+        raise ValueError("Ein gespeicherter Suchvorlagen-Eintrag ist ungültig.")
     filters_raw = payload.get("filters")
     if not isinstance(filters_raw, dict):
-        raise ValueError("Suchvorlage enthält keine gültigen Filter")
+        raise ValueError("Eine Suchvorlage enthält keine verwendbaren Suchregeln.")
     allowed = set(SearchFilter.__dataclass_fields__)
     unknown = sorted(set(filters_raw) - allowed)
     if unknown:
-        raise ValueError(f"Suchvorlage enthält unbekannte Filter: {', '.join(unknown)}")
+        raise ValueError(
+            "Eine Suchvorlage enthält unbekannte Regeln. Die Datei bleibt unverändert. "
+            f"(Technisch: {', '.join(unknown)}.)"
+        )
     filters = SearchFilter(**filters_raw)
     filters.validate()
     return SearchPreset(
@@ -94,11 +105,10 @@ def get_preset(name: str, path: Path | None = None) -> SearchPreset:
     for preset in list_presets(path):
         if preset.name.casefold() == wanted:
             return preset
-    raise KeyError(f"Suchvorlage nicht gefunden: {name}")
+    raise KeyError(f"Diese Suchvorlage wurde nicht gefunden: {name}")
 
 
 def _write_document(path: Path, presets: list[SearchPreset]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         "schema_version": _PRESET_SCHEMA_VERSION,
         "presets": [
@@ -106,17 +116,12 @@ def _write_document(path: Path, presets: list[SearchPreset]) -> None:
             for item in sorted(presets, key=lambda value: value.name.casefold())
         ],
     }
-    temporary = path.with_name(f".{path.name}.tmp-{os.getpid()}")
-    try:
-        temporary.write_text(
-            json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
-            encoding="utf-8",
-        )
-        os.chmod(temporary, 0o600)
-        temporary.replace(path)
-    except Exception:
-        temporary.unlink(missing_ok=True)
-        raise
+    atomic_write_text(
+        path,
+        json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+        overwrite=True,
+        mode=0o600,
+    )
 
 
 def save_preset(
@@ -137,7 +142,8 @@ def save_preset(
     )
     if existing is not None and not replace:
         raise FileExistsError(
-            f"Suchvorlage existiert bereits: {existing.name}. Nutze --replace zum Ersetzen."
+            f"Die Suchvorlage '{existing.name}' gibt es schon. Sie wurde nicht "
+            "verändert. Nutze --replace nur zum bewussten Ersetzen."
         )
     now = datetime.now(timezone.utc).isoformat()
     preset = SearchPreset(
@@ -159,6 +165,6 @@ def delete_preset(name: str, *, path: Path | None = None) -> SearchPreset:
     current = list(list_presets(target))
     deleted = next((item for item in current if item.name.casefold() == wanted), None)
     if deleted is None:
-        raise KeyError(f"Suchvorlage nicht gefunden: {name}")
+        raise KeyError(f"Diese Suchvorlage wurde nicht gefunden: {name}")
     _write_document(target, [item for item in current if item.name.casefold() != wanted])
     return deleted

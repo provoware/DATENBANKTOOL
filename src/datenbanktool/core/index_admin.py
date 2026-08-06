@@ -6,6 +6,7 @@ from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
+from datenbanktool.core.durable_files import publish_temp_file
 from datenbanktool.core.index_database import (
     SCHEMA_VERSION,
     IndexDatabase,
@@ -67,10 +68,10 @@ def list_sessions(
     root: Path | None = None,
 ) -> list[SessionSummary]:
     if limit < 1:
-        raise ValueError("limit muss mindestens 1 sein")
+        raise ValueError("Bitte zeige mindestens einen gespeicherten Scan an.")
     target = normalise_database_path(path)
     if not target.exists():
-        raise FileNotFoundError(f"Indexdatenbank nicht gefunden: {target}")
+        raise FileNotFoundError(f"Die Indexdatei wurde nicht gefunden: {target}")
     with IndexDatabase(target) as database:
         database.migrate()
         clauses: list[str] = []
@@ -138,10 +139,14 @@ def _validate_database(path: Path) -> tuple[int, tuple[str, ...]]:
         connection.close()
     if schema_version > SCHEMA_VERSION:
         raise UnsupportedSchemaError(
-            f"Sicherung verwendet Schema {schema_version}; unterstützt wird höchstens {SCHEMA_VERSION}."
+            f"Die Sicherung stammt aus einer neueren Tool-Version. "
+            f"(Technisch: Schema {schema_version}, unterstützt bis {SCHEMA_VERSION}.)"
         )
     if integrity != ("ok",):
-        raise sqlite3.DatabaseError(f"SQLite-Prüfung fehlgeschlagen: {', '.join(integrity)}")
+        raise sqlite3.DatabaseError(
+            "Die Sicherung ist nicht vollständig in Ordnung. "
+            f"(Technisch: SQLite quick_check: {', '.join(integrity)}.)"
+        )
     return schema_version, integrity
 
 
@@ -154,16 +159,16 @@ def backup_index_unlocked(
 ) -> BackupResult:
     source_path = normalise_database_path(path)
     if not source_path.exists():
-        raise FileNotFoundError(f"Indexdatenbank nicht gefunden: {source_path}")
+        raise FileNotFoundError(f"Die Indexdatei wurde nicht gefunden: {source_path}")
     target = (
         output.expanduser().resolve(strict=False)
         if output is not None
         else _default_backup_path(source_path, label)
     )
     if target == source_path:
-        raise ValueError("Sicherungsziel darf nicht die aktive Datenbank sein")
+        raise ValueError("Die Sicherung darf nicht dieselbe Datei wie der aktive Index sein.")
     if target.exists() and not overwrite:
-        raise FileExistsError(f"Sicherung existiert bereits: {target}")
+        raise FileExistsError(f"Diese Sicherung gibt es bereits: {target}")
     target.parent.mkdir(parents=True, exist_ok=True)
     temporary = target.with_name(f".{target.name}.tmp-{os.getpid()}")
     temporary.unlink(missing_ok=True)
@@ -173,7 +178,7 @@ def backup_index_unlocked(
         source.execute("PRAGMA wal_checkpoint(PASSIVE)")
         source.backup(destination)
         destination.commit()
-    except Exception:
+    except BaseException:
         destination.close()
         source.close()
         temporary.unlink(missing_ok=True)
@@ -181,10 +186,12 @@ def backup_index_unlocked(
     else:
         destination.close()
         source.close()
-    schema_version, integrity = _validate_database(temporary)
-    if target.exists() and overwrite:
-        target.unlink()
-    temporary.replace(target)
+    try:
+        schema_version, integrity = _validate_database(temporary)
+        publish_temp_file(temporary, target, overwrite=overwrite)
+    except BaseException:
+        temporary.unlink(missing_ok=True)
+        raise
     return BackupResult(
         database=str(source_path),
         backup=str(target),
@@ -216,10 +223,10 @@ def restore_index(
     target = normalise_database_path(path)
     source_backup = backup.expanduser().resolve(strict=True)
     if not source_backup.is_file():
-        raise FileNotFoundError(f"Sicherung nicht gefunden: {source_backup}")
+        raise FileNotFoundError(f"Die Sicherung wurde nicht gefunden: {source_backup}")
     schema_version, _ = _validate_database(source_backup)
     if source_backup == target:
-        raise ValueError("Aktive Datenbank und Sicherung dürfen nicht identisch sein")
+        raise ValueError("Aktive Indexdatei und Sicherung dürfen nicht identisch sein.")
 
     with IndexProcessLock(target, "index restore", lock_timeout_seconds):
         safety: BackupResult | None = None
@@ -233,22 +240,27 @@ def restore_index(
         try:
             source.backup(destination)
             destination.commit()
-        finally:
+        except BaseException:
             destination.close()
             source.close()
-        _validate_database(temporary)
-        if target.exists():
-            connection = sqlite3.connect(target)
-            try:
-                connection.execute("PRAGMA wal_checkpoint(TRUNCATE)")
-            finally:
-                connection.close()
+            temporary.unlink(missing_ok=True)
+            raise
+        else:
+            destination.close()
+            source.close()
         try:
-            temporary.replace(target)
+            _validate_database(temporary)
+            if target.exists():
+                connection = sqlite3.connect(target)
+                try:
+                    connection.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+                finally:
+                    connection.close()
+            publish_temp_file(temporary, target, overwrite=True)
             target.with_name(f"{target.name}-wal").unlink(missing_ok=True)
             target.with_name(f"{target.name}-shm").unlink(missing_ok=True)
             restored_schema, integrity = _validate_database(target)
-        except Exception:
+        except BaseException:
             temporary.unlink(missing_ok=True)
             if safety is not None:
                 fallback = Path(safety.backup)
