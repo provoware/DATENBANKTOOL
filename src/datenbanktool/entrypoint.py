@@ -117,6 +117,13 @@ def _guided_home(
     return _execute_with_journal(journal, home.run, error_stream=error_stream)
 
 
+def _run_gui(arguments: Sequence[str]) -> int:
+    # Lazy import: headless CLI operation never imports a GUI toolkit.
+    from datenbanktool.gui_app import run_gui
+
+    return int(run_gui(arguments))
+
+
 def main(
     argv: Sequence[str] | None = None,
     *,
@@ -124,7 +131,7 @@ def main(
     output_stream: TextIO | None = None,
     error_stream: TextIO | None = None,
 ) -> int:
-    """Route help/start requests and provide one crash-safe process boundary."""
+    """Route help/start/gui requests and provide one crash-safe process boundary."""
     arguments = list(sys.argv[1:] if argv is None else argv)
     stdin = input_stream or sys.stdin
     stdout = output_stream or sys.stdout
@@ -138,6 +145,13 @@ def main(
                 output_stream=stdout,
                 error_stream=stderr,
             ),
+            error_stream=stderr,
+        )
+
+    if arguments and arguments[0] == "gui":
+        return _run_safely(
+            arguments,
+            lambda: _run_gui(arguments[1:]),
             error_stream=stderr,
         )
 
@@ -161,6 +175,7 @@ def main(
             )
         stdout.write(
             "Es fehlt noch die Auswahl, was das Tool tun soll.\n"
+            "Grafische Oberfläche: datenbanktool gui\n"
             "Einfach starten: datenbanktool start\n"
             "Hilfe in einfachen Schritten: datenbanktool help\n"
             "Prüfen, ob alles startklar ist: datenbanktool check\n"
