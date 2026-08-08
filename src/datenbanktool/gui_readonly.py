@@ -46,11 +46,11 @@ class CategoryStat:
 
 
 class ReadOnlyIndexAdapter:
-    """Small query-only adapter for GUI views.
+    """Query-only adapter for GUI views.
 
-    The connection uses SQLite ``mode=ro`` and never imports the writable
-    ``IndexDatabase`` class. This makes the GUI boundary independently
-    auditable: rendering cannot migrate, checkpoint or mutate an index.
+    The connection uses SQLite ``mode=ro`` plus ``query_only`` and never imports
+    the writable ``IndexDatabase`` class. Rendering therefore cannot migrate,
+    checkpoint or mutate an index.
     """
 
     def __init__(self, database: Path) -> None:
@@ -67,6 +67,12 @@ class ReadOnlyIndexAdapter:
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA query_only = ON")
         connection.execute("PRAGMA busy_timeout = 2000")
+        connection.create_function(
+            "parent_path",
+            1,
+            lambda value: str(Path(str(value)).parent.as_posix()),
+            deterministic=True,
+        )
         return connection
 
     @staticmethod
@@ -99,24 +105,23 @@ class ReadOnlyIndexAdapter:
             ).fetchone()
             folder_count = int(
                 connection.execute(
-                    """
-                    SELECT COUNT(DISTINCT CASE
-                        WHEN instr(relative_path, '/') > 0
-                        THEN substr(relative_path, 1, length(relative_path) - length(replace(relative_path, '/', '')))
-                        ELSE '' END)
-                    FROM files WHERE session_id=?
-                    """,
+                    "SELECT COUNT(DISTINCT parent_path(relative_path)) FROM files WHERE session_id=?",
                     (session_id,),
                 ).fetchone()[0]
             )
             duplicate = connection.execute(
                 """
-                SELECT COUNT(DISTINCT dg.id) AS groups,
-                       COUNT(dm.file_id) AS members,
-                       COALESCE(SUM(dg.size_bytes), 0) AS group_bytes
-                FROM duplicate_groups dg
-                LEFT JOIN duplicate_members dm ON dm.group_id=dg.id
-                WHERE dg.session_id=?
+                SELECT COUNT(*) AS groups,
+                       COALESCE(SUM(member_count), 0) AS members,
+                       COALESCE(SUM(size_bytes * CASE WHEN member_count > 1 THEN member_count - 1 ELSE 0 END), 0)
+                           AS reclaimable_bytes
+                FROM (
+                    SELECT dg.id, dg.size_bytes, COUNT(dm.file_id) AS member_count
+                    FROM duplicate_groups dg
+                    LEFT JOIN duplicate_members dm ON dm.group_id=dg.id
+                    WHERE dg.session_id=?
+                    GROUP BY dg.id, dg.size_bytes
+                )
                 """,
                 (session_id,),
             ).fetchone()
@@ -140,7 +145,7 @@ class ReadOnlyIndexAdapter:
                 total_bytes=int(totals["total_bytes"]),
                 duplicate_groups=int(duplicate["groups"]),
                 duplicate_files=int(duplicate["members"]),
-                duplicate_bytes=int(duplicate["group_bytes"]),
+                duplicate_bytes=int(duplicate["reclaimable_bytes"]),
                 warning_count=warning_count,
                 error_count=int(session["error_count"]),
                 unknown_count=int(totals["unknown_count"] or 0),
