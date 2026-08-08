@@ -5,11 +5,17 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from datenbanktool.gui_accessibility import (
+    AccessibilityProfile,
+    accessibility_gate_passed,
+    default_contrast_checks,
+)
 from datenbanktool.gui_assistant import AssistantTimeline
 from datenbanktool.gui_presets import DEFAULT_PRESETS, preset_by_id, validate_presets
 from datenbanktool.gui_quality import quality_gate_passed, run_gui_quality_gate
 from datenbanktool.gui_readonly import ReadOnlyIndexAdapter
 from datenbanktool.gui_testlab import DEFAULT_TEST_FOLDER, run_validation
+from datenbanktool.gui_transparency import ProgressSnapshot, build_transparency_report, human_duration
 
 
 class ReadOnlyAdapterTests(unittest.TestCase):
@@ -114,6 +120,39 @@ class AssistantTests(unittest.TestCase):
         self.assertEqual(entry.sequence, 1)
         self.assertTrue(entry.reversible)
         self.assertEqual(len(timeline.entries()), 1)
+
+
+class TransparencyTests(unittest.TestCase):
+    def test_progress_and_remaining_time_are_explicit(self) -> None:
+        progress = ProgressSnapshot(
+            phase="duplicate-analysis",
+            current=250,
+            total=1000,
+            elapsed_seconds=10.0,
+            rate_per_second=25.0,
+            message="Duplikatgruppen werden ausgewertet",
+        )
+        self.assertEqual(progress.percent, 25.0)
+        self.assertEqual(progress.remaining_seconds, 30.0)
+        self.assertEqual(human_duration(progress.remaining_seconds), "00:00:30")
+
+    def test_report_keeps_safety_notes_visible(self) -> None:
+        report = build_transparency_report(
+            source="/archive", planned_actions=12, protected_items=3, warnings=2, errors=0
+        )
+        self.assertTrue(report.reversible)
+        self.assertEqual(report.mode, "Vorschau / Testlauf")
+        self.assertGreaterEqual(len(report.notes), 4)
+
+
+class AccessibilityTests(unittest.TestCase):
+    def test_default_theme_and_scale_contract_pass(self) -> None:
+        profile = AccessibilityProfile().scaled(150)
+        self.assertEqual(profile.scale_percent, 150)
+        self.assertTrue(accessibility_gate_passed())
+        self.assertTrue(all(value >= 4.5 for value in default_contrast_checks().values()))
+        with self.assertRaises(ValueError):
+            profile.scaled(250)
 
 
 class QualityGateTests(unittest.TestCase):
