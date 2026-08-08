@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from datenbanktool.gui_accessibility import accessibility_gate_passed, default_contrast_checks
 from datenbanktool.gui_model import NEON_ARCHIVE_THEME, gui_contract
 from datenbanktool.gui_presets import validate_presets
 
@@ -53,6 +54,14 @@ def run_gui_quality_gate() -> tuple[QualityFinding, ...]:
         "theme-distinct-action-colors",
         len({theme.success, theme.warning, theme.danger}) == 3,
         "Erfolg, Warnung und Fehler brauchen unterscheidbare Signalfarben.",
+    ))
+
+    contrast = default_contrast_checks()
+    findings.append(QualityFinding(
+        "accessibility-contrast",
+        accessibility_gate_passed(),
+        "Kontrast, Tastaturvertrag und skalierbare Bedienziele müssen das Accessibility-Gate erfüllen. "
+        + ", ".join(f"{name}={value:.2f}:1" for name, value in contrast.items()),
     ))
 
     safety = tuple(str(item).casefold() for item in contract["safety_states"])
