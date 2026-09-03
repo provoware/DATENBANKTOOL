@@ -2,9 +2,9 @@
 
 ## Aktueller Stand
 
-**Version:** `0.3.0-alpha.1`  
-**Status:** 🟡 `TRANSAKTIONSKERN / AUFBAU`  
-**Fortschritt:** `[■■■■■□□□□□] 50 %`
+**Version:** `0.4.0-alpha.1`  
+**Status:** 🟡 `BACKUPKERN / AUFBAU`  
+**Fortschritt:** `[■■■■■■□□□□] 60 %`
 
 | Bereich | Status | Kurzdetail |
 |---|---|---|
@@ -16,30 +16,31 @@
 | Persistenz | 🟢 | SQLite-Schema v1 + Migrationen + Integritätsprüfung |
 | Transaktionsvertrag | 🟢 | PRE/POST, Commit/Rollback, Operation-ID und Evidence aktiv |
 | Recovery-Journal | 🟢 | JSONL-Zustandsjournal + Start-Gate aktiv |
-| Backup / Restore | 🟡 | nächster P0-Schritt |
+| Backup Engine | 🟢 | WAL-Snapshot + Manifest v1 + unabhängige Verifikation |
+| Restore | 🟡 | P0-011B Staging-Restore noch gesperrt |
 | Fachmodule | 🟡 | bauen später auf gemeinsamem Datenkern auf |
 | reale UI-Abnahme | 🔴 | noch nicht durchgeführt |
 
 ## Neu in diesem Stand
 
-- Jede angebundene produktive Mutation erhält eine eindeutige Operation-ID.
-- Single-Writer-Gate weist parallele kritische Änderungen sichtbar ab.
-- Idempotenzschlüssel verhindern erneute Ausführung desselben Benutzerimpulses.
-- POSTCHECK läuft vor dem Commit in derselben SQLite-Transaktion.
-- Fehler vor dem Commit führen zu Rollback und finaler Evidence.
-- Jeder Zustandsübergang wird außerhalb der Business-Transaktion als JSONL protokolliert.
-- Finale Evidence wird atomar geschrieben und trägt den Status im Dateinamen.
-- Unvollständige Operationen blockieren beim nächsten Start den normalen Betrieb.
-- `/api/recovery/status` zeigt Recovery-Zustand und offene Operationen.
+- SQLite-Sicherung nutzt die SQLite-Backup-API statt einfacher Dateikopie.
+- WAL-Quellen werden konsistent in einen eigenständigen Snapshot überführt.
+- Jedes Backup erhält eine eindeutige `bkp-...`-ID.
+- Manifest v1 speichert SHA-256, Dateigröße, Schema-Version, UTC-Zeit und Integritätsstatus.
+- `quick_check` und `foreign_key_check` werden auf dem Snapshot ausgeführt.
+- Ein zweites Verifikations-Gate misst Hash, Größe, Schema und Integrität erneut.
+- Noch nicht veröffentlichte Sicherungen heißen `.incomplete_*` und gelten niemals als gültig.
+- Erst ein verifiziertes Staging-Backup wird atomar als `backup_status_verified_*` veröffentlicht.
+- Manipulierte Snapshot- oder Manifestdateien werden von der gültigen Backup-Liste ausgeschlossen.
 
 ## Nächster sinnvoller Schritt
 
-**P0-011 – Backup-/Restore-Funktion mit Integritätsprüfung.**
+**P0-011B – Staging-Restore mit Integritätsprüfung und atomarem Austausch.**
 
-Ziel: konsistente Sicherung der SQLite-Datenbank einschließlich sicherer
-Vorprüfung, Hash/Manifest, Restore in Staging, Integritätsprüfung und erst danach
-atomarer Austausch der produktiven Datenbank.
+Ziel: Ein verifiziertes Backup wird zunächst ausschließlich in eine Staging-Datenbank
+überführt. Erst nach erneutem Hash-, Schema-, `quick_check`- und Fremdschlüssel-Gate
+darf ein atomarer Austausch der produktiven Datenbank vorbereitet werden.
 
 ## Release-Regel
 
-`STABLE` erst nach grünem Persistenz-, Recovery-, Backup-, UI-, A11y- und Regression-Gate.
+`STABLE` erst nach grünem Persistenz-, Recovery-, Backup/Restore-, UI-, A11y- und Regression-Gate.
