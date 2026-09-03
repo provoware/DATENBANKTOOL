@@ -26,6 +26,14 @@ Wiederkehrende Prüfungen, die bei relevanten Änderungen erneut laufen müssen.
 - [x] **REG-DATA-013** COMMITTED/ROLLED_BACK/REJECTED erzeugen maschinenlesbare Evidence.
 - [x] **REG-DATA-014** sensible Evidence-Details werden geschwärzt.
 - [x] **REG-DATA-015** unvollständige Journaloperationen werden beim Start als kritisch erkannt.
+- [x] **REG-DATA-016** SQLite-Backup enthält committed Daten aus einer WAL-Quelldatenbank.
+- [x] **REG-DATA-017** Backup-Manifest v1 stimmt mit Hash, Größe und Schema des Snapshots überein.
+- [x] **REG-DATA-018** manipulierte Snapshot-Datei scheitert am Verifikations-Gate.
+- [x] **REG-DATA-019** manipuliertes Backup-Manifest scheitert am Verifikations-Gate.
+- [x] **REG-DATA-020** `.incomplete_*`-Backup wird niemals als gültige Sicherung akzeptiert.
+- [x] **REG-DATA-021** Fehler vor atomarer Veröffentlichung hinterlässt kein gültiges Backup.
+- [ ] **REG-DATA-022** Staging-Restore verändert bei fehlgeschlagener Prüfung niemals die Produktivdatenbank.
+- [ ] **REG-DATA-023** erfolgreicher Restore tauscht erst nach vollständigem Staging-Gate atomar aus.
 
 ## Logging
 

@@ -2,6 +2,29 @@
 
 Alle wichtigen Projektänderungen werden hier in deutscher Sprache dokumentiert.
 
+## [0.4.0-alpha.1] – 2026-09-03
+
+### Hinzugefügt
+
+- 🟢 `BackupManager` für konsistente SQLite-Snapshots über die SQLite-Backup-API.
+- 🟢 Backup-Manifest v1 mit Backup-ID, SHA-256, Dateigröße, Schema-Version und UTC-Zeit.
+- 🟢 `quick_check` und `foreign_key_check` für jeden Snapshot.
+- 🟢 unabhängiges Verifikations-Gate vor Veröffentlichung eines Backups.
+- 🟢 `.incomplete_*`-Staging für noch nicht gültige Sicherungen.
+- 🟢 atomare Veröffentlichung als `backup_status_verified_*` erst nach erfolgreicher Prüfung.
+- 🟢 Regressionstests für WAL-Quelle, manipulierte Datenbank, manipuliertes Manifest und Abbruch.
+- 🟢 Entwicklerdokument `docs/BACKUP_VERTRAG.md`.
+
+### Geändert
+
+- 🟣 Projektstatus auf `BACKUPKERN / AUFBAU` und Fortschritt auf 60 % gesetzt.
+- 🟣 `P0-011A` abgeschlossen; `P0-011B` Staging-Restore ist der nächste P0-Schritt.
+
+### Sicherheitsgrenze
+
+- 🟡 Restore bleibt deaktiviert. Kein verifiziertes Backup darf die produktive Datenbank ersetzen,
+  bevor P0-011B Staging-Restore, Integritätsprüfung, atomaren Austausch und Evidence vollständig prüft.
+
 ## [0.3.0-alpha.1] – 2026-09-03
 
 ### Hinzugefügt

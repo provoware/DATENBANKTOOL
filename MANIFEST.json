@@ -2,13 +2,13 @@
   "schema_version": 1,
   "project": {
     "name": "PROVOWARE DATENBANKTOOL",
-    "version": "0.3.0-alpha.1",
-    "status": "transaktionskern",
+    "version": "0.4.0-alpha.1",
+    "status": "backupkern",
     "language": "de",
     "offline_first": true
   },
   "architecture": {
-    "layers": ["ui", "api", "application", "persistence", "recovery", "logging"],
+    "layers": ["ui", "api", "application", "persistence", "recovery", "backup", "logging"],
     "separation": {
       "base_tool": "src/",
       "default_config": "src/config/",
@@ -55,13 +55,73 @@
     "evidence_schema_version": 1,
     "sensitive_details_redacted": true
   },
+  "backup": {
+    "contract_version": 1,
+    "manifest_version": 1,
+    "engine": "sqlite_backup_api",
+    "supports_wal_source": true,
+    "backup_id_prefix": "bkp-",
+    "staging_prefix": ".incomplete_",
+    "verified_prefix": "backup_status_verified_",
+    "database_filename": "database.sqlite3",
+    "manifest_filename": "backup_manifest.json",
+    "hash": "sha256",
+    "required_manifest_fields": [
+      "manifest_version",
+      "backup_id",
+      "status",
+      "created_at_utc",
+      "database_file",
+      "sha256",
+      "size_bytes",
+      "schema_version",
+      "integrity_ok",
+      "quick_check",
+      "foreign_key_violations"
+    ],
+    "verification_checks": ["sha256", "size_bytes", "schema_version", "quick_check", "foreign_key_check"],
+    "atomic_publish_after_verification": true,
+    "incomplete_backup_is_valid": false,
+    "restore_enabled": false,
+    "restore_next_gate": "P0-011B"
+  },
   "file_limits": {
-    "python": { "preferred_lines": 300, "max_lines": 450, "preferred_line_length": 100, "max_line_length": 120 },
-    "javascript": { "preferred_lines": 320, "max_lines": 450, "preferred_line_length": 110, "max_line_length": 140 },
-    "css": { "preferred_lines": 400, "max_lines": 650, "preferred_line_length": 100, "max_line_length": 140 },
-    "html": { "preferred_lines": 450, "max_lines": 650, "preferred_line_length": 120, "max_line_length": 160 },
-    "markdown": { "preferred_lines": 350, "max_lines": 600, "preferred_line_length": 100, "max_line_length": 140 },
-    "json": { "preferred_lines": 400, "max_lines": 800, "preferred_line_length": 120, "max_line_length": 180 }
+    "python": {
+      "preferred_lines": 300,
+      "max_lines": 450,
+      "preferred_line_length": 100,
+      "max_line_length": 120
+    },
+    "javascript": {
+      "preferred_lines": 320,
+      "max_lines": 450,
+      "preferred_line_length": 110,
+      "max_line_length": 140
+    },
+    "css": {
+      "preferred_lines": 400,
+      "max_lines": 650,
+      "preferred_line_length": 100,
+      "max_line_length": 140
+    },
+    "html": {
+      "preferred_lines": 450,
+      "max_lines": 650,
+      "preferred_line_length": 120,
+      "max_line_length": 160
+    },
+    "markdown": {
+      "preferred_lines": 350,
+      "max_lines": 600,
+      "preferred_line_length": 100,
+      "max_line_length": 140
+    },
+    "json": {
+      "preferred_lines": 400,
+      "max_lines": 800,
+      "preferred_line_length": 120,
+      "max_line_length": 180
+    }
   },
   "logging": {
     "schema_version": 1,

@@ -1,16 +1,16 @@
 # PROVOWARE DATENBANKTOOL
 
-![Status](https://img.shields.io/badge/Status-TRANSAKTIONSKERN%20%2F%20AUFBAU-ffd43b?style=flat-square)
+![Status](https://img.shields.io/badge/Status-BACKUPKERN%20%2F%20AUFBAU-ffd43b?style=flat-square)
 ![CI](https://img.shields.io/badge/CI-Pflicht-29d3c2?style=flat-square)
 ![Sprache](https://img.shields.io/badge/Toolsprache-Deutsch-8b5cf6?style=flat-square)
 
 ## 🟡 Projektstatus
 
-`[■■■■■□□□□□] 50 % · TRANSAKTIONSKERN / AUFBAU`
+`[■■■■■■□□□□] 60 % · BACKUPKERN / AUFBAU`
 
-Die Clean Foundation und der SQLite-Datenkern stehen. Mit `0.3.0-alpha.1` ist
-zusätzlich der zentrale Mutations-/Recovery-Vertrag aktiv: Operation-ID,
-PRE-/POST-Prüfung, Commit/Rollback, Single-Writer-Gate, Idempotenz und Evidence.
+Die Clean Foundation, der SQLite-Datenkern und der zentrale Mutations-/Recovery-Vertrag stehen.
+Mit `0.4.0-alpha.1` ist zusätzlich P0-011A aktiv: konsistente SQLite-Snapshots,
+Backup-Manifest v1, SHA-256 und ein unabhängiges Verifikations-Gate.
 
 Der Stand vor dem Clean Rebuild bleibt auf
 `backup/pre-clean-rebuild-20260903` gesichert.
@@ -84,11 +84,37 @@ Zusätzlich aktiv:
 
 Details: `docs/TRANSAKTIONSVERTRAG.md`.
 
+## Backup-Vertrag · P0-011A
+
+Ein Backup ist erst gültig, wenn es vollständig verifiziert und atomar veröffentlicht wurde.
+
+Ablauf:
+
+`SOURCE CHECK → SQLITE SNAPSHOT → INTEGRITY → HASH/METADATA → MANIFEST → VERIFY → ATOMIC PUBLISH`
+
+Enthalten sind:
+
+- SQLite-Backup-API statt einfacher Dateikopie
+- konsistenter Snapshot auch bei WAL-Quelldatenbank
+- eindeutige `bkp-...`-Backup-ID
+- Backup-Manifest v1
+- SHA-256 und Dateigröße
+- Schema-Version und UTC-Zeit
+- `quick_check` und `foreign_key_check`
+- zweites unabhängiges Verifikations-Gate
+- `.incomplete_*`-Staging wird niemals als gültiges Backup geführt
+- finale Veröffentlichung als `backup_status_verified_*`
+
+Details: `docs/BACKUP_VERTRAG.md`.
+
 ## Sicherheitsgrenze
 
-Direktlöschen, Massenänderungen, überschreibender Import und Restore werden nicht
-vorschnell freigegeben. Der nächste P0-Schritt ist **P0-011 Backup/Restore mit
-Integritätsprüfung und sicherem Austauschvertrag**.
+Restore bleibt deaktiviert. Der nächste P0-Schritt ist **P0-011B Staging-Restore**.
+Ein Backup darf die produktive Datenbank erst ersetzen, wenn Staging, Hash-, Schema-,
+Integritäts- und Recovery-Gates vollständig grün sind.
+
+Direktlöschen, Massenänderungen und überschreibender Import bleiben ebenfalls gesperrt,
+bis ihre jeweiligen Schutzverträge vollständig implementiert und regressiv geprüft sind.
 
 ## Ampeln
 
@@ -111,6 +137,7 @@ Integritätsprüfung und sicherem Austauschvertrag**.
 | `DEBUGGING_LOGGING.md` | Logging-/Fehlerstandard |
 | `docs/PERSISTENCE.md` | Datenbank-, Schema- und Migrationsvertrag |
 | `docs/TRANSAKTIONSVERTRAG.md` | Mutations-, Rollback- und Recovery-Vertrag |
+| `docs/BACKUP_VERTRAG.md` | Snapshot-, Manifest- und Backup-Verifikationsvertrag |
 | `MANIFEST.json` | maschinenlesbare Projektstandards |
 
 ## Datenschutz

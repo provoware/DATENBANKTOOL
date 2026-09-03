@@ -8,6 +8,7 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
 
+from src.backup import BackupCreationError, BackupManager, BackupVerificationError
 from src.logging_core import EventLogger
 from src.persistence import Database, MigrationError
 from src.recovery import EvidenceJournal
@@ -16,7 +17,8 @@ ROOT = Path(__file__).resolve().parents[1]
 WEB = ROOT / "src" / "web"
 LOGGER: EventLogger | None = None
 DATABASE: Database | None = None
-APP_VERSION = "0.3.0-alpha.1"
+BACKUP_MANAGER: BackupManager | None = None
+APP_VERSION = "0.4.0-alpha.1"
 
 
 def get_logger() -> EventLogger:
@@ -39,6 +41,13 @@ def get_recovery_journal() -> EvidenceJournal:
     return EvidenceJournal(ROOT / "runtime")
 
 
+def get_backup_manager() -> BackupManager:
+    global BACKUP_MANAGER
+    if BACKUP_MANAGER is None:
+        BACKUP_MANAGER = BackupManager(get_database(), ROOT / "backups")
+    return BACKUP_MANAGER
+
+
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(WEB), **kwargs)
@@ -58,19 +67,22 @@ class Handler(SimpleHTTPRequestHandler):
             logger = get_logger()
             storage = get_database().schema_status()
             incomplete = get_recovery_journal().incomplete_operations()
+            verified_backups = get_backup_manager().list_verified_backups()
             healthy = storage.ready and not incomplete
+            ready_message = "Daten-, Transaktions- und Backupkern sind bereit."
+            message = (
+                f"{ready_message} Restore ist noch gesperrt."
+                if healthy
+                else "Datenkern oder Recovery-Zustand benötigt Prüfung."
+            )
             self._json(
                 200 if healthy else 503,
                 {
                     "ok": healthy,
-                    "status": "transaktionskern",
+                    "status": "backupkern",
                     "version": APP_VERSION,
                     "ampel": "gelb" if healthy else "rot",
-                    "message": (
-                        "Daten- und Transaktionskern sind bereit. Backup/Restore ist noch offen."
-                        if healthy
-                        else "Datenkern oder Recovery-Zustand benötigt Prüfung."
-                    ),
+                    "message": message,
                     "session_id": logger.session_id,
                     "storage": {
                         "ready": storage.ready,
@@ -80,6 +92,12 @@ class Handler(SimpleHTTPRequestHandler):
                     "recovery": {
                         "contract_ready": True,
                         "incomplete_operations": len(incomplete),
+                    },
+                    "backup": {
+                        "contract_ready": True,
+                        "manifest_version": 1,
+                        "verified_backups": len(verified_backups),
+                        "restore_enabled": False,
                     },
                 },
             )
@@ -123,10 +141,31 @@ class Handler(SimpleHTTPRequestHandler):
             )
             return
 
+        if path == "/api/backup/status":
+            backups = get_backup_manager().list_verified_backups()
+            backup_message = "Backup-Verifikation ist aktiv."
+            self._json(
+                200,
+                {
+                    "ok": True,
+                    "contract_ready": True,
+                    "manifest_version": 1,
+                    "verified_backups": len(backups),
+                    "backups": [backup.name for backup in backups[:20]],
+                    "restore_enabled": False,
+                    "message": f"{backup_message} Restore bleibt bis P0-011B gesperrt.",
+                },
+            )
+            return
+
         super().do_GET()
 
     def do_POST(self) -> None:
-        if urlparse(self.path).path != "/api/log-event":
+        path = urlparse(self.path).path
+        if path == "/api/backup/create":
+            self._create_backup()
+            return
+        if path != "/api/log-event":
             self._json(404, {"ok": False, "error": "Unbekannter Endpunkt."})
             return
         try:
@@ -161,6 +200,45 @@ class Handler(SimpleHTTPRequestHandler):
                 details={"error": type(exc).__name__},
             )
             self._json(400, {"ok": False, "error": "Ereignis konnte nicht gespeichert werden."})
+
+    def _create_backup(self) -> None:
+        logger = get_logger()
+        try:
+            report = get_backup_manager().create_backup()
+        except (BackupCreationError, BackupVerificationError, sqlite3.Error, OSError) as exc:
+            logger.log(
+                "PRV-BKP-001",
+                "Backup konnte nicht sicher erstellt oder verifiziert werden.",
+                level="ERROR",
+                component="backup",
+                action="Quelldatenbank und unvollständige Backup-Ordner prüfen.",
+                details={"error": type(exc).__name__},
+            )
+            self._json(503, {"ok": False, "error": "Backup-Verifikation ist fehlgeschlagen."})
+            return
+        logger.log(
+            "PRV-BKP-100",
+            "Backup wurde erstellt und unabhängig verifiziert.",
+            component="backup",
+            details={
+                "backup_id": report.backup_id,
+                "size_bytes": report.measured_size_bytes,
+                "schema_version": report.measured_schema_version,
+            },
+        )
+        self._json(
+            201,
+            {
+                "ok": True,
+                "backup_id": report.backup_id,
+                "status": "verified",
+                "directory": report.backup_path.name,
+                "sha256": report.measured_sha256,
+                "size_bytes": report.measured_size_bytes,
+                "schema_version": report.measured_schema_version,
+                "restore_enabled": False,
+            },
+        )
 
     def log_message(self, fmt: str, *args) -> None:
         print("[PROVOWARE] " + (fmt % args))

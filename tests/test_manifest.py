@@ -17,4 +17,12 @@ def test_manifest_has_required_standards() -> None:
     assert manifest["recovery"]["single_writer_gate"] is True
     assert manifest["recovery"]["startup_incomplete_operation_gate"] is True
     assert manifest["recovery"]["evidence_schema_version"] == 1
+    assert manifest["backup"]["contract_version"] == 1
+    assert manifest["backup"]["manifest_version"] == 1
+    assert manifest["backup"]["engine"] == "sqlite_backup_api"
+    assert manifest["backup"]["supports_wal_source"] is True
+    assert manifest["backup"]["atomic_publish_after_verification"] is True
+    assert manifest["backup"]["incomplete_backup_is_valid"] is False
+    assert manifest["backup"]["restore_enabled"] is False
+    assert "sha256" in manifest["backup"]["verification_checks"]
     assert "tests" in manifest["quality"]["release_blocking"]
