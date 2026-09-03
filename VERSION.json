@@ -2,11 +2,11 @@
   "schema_version": 1,
   "product": {
     "name": "PROVOWARE DATENBANKTOOL",
-    "version": "0.5.1-alpha.1",
+    "version": "0.5.2-alpha.1",
     "release_channel": "alpha",
-    "status_id": "restorekern",
-    "status_message_key": "status.restorekern",
-    "progress_percent": 70
+    "status_id": "browserabnahme_vorbereitet",
+    "status_message_key": "status.browserabnahme_vorbereitet",
+    "progress_percent": 75
   },
   "schemas": {
     "database": 1,
@@ -21,7 +21,8 @@
   "contracts": {
     "recovery": 1,
     "backup": 1,
-    "restore": 1
+    "restore": 1,
+    "browser_acceptance": 1
   },
   "compatibility": {
     "minimum_python": "3.12",
