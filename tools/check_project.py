@@ -60,7 +60,11 @@ def check_file(path: Path, kind: str) -> list[str]:
     if len(lines) > rules["max_lines"]:
         errors.append(f"{relative}: {len(lines)} Zeilen > Maximum {rules['max_lines']}")
 
-    long_lines = [index for index, line in enumerate(lines, 1) if len(line) > rules["max_line_length"]]
+    long_lines = [
+        index
+        for index, line in enumerate(lines, 1)
+        if len(line) > rules["max_line_length"]
+    ]
     if long_lines:
         preview = ", ".join(map(str, long_lines[:5]))
         errors.append(f"{relative}: Zeilen über {rules['max_line_length']} Zeichen: {preview}")
