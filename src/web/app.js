@@ -6,6 +6,11 @@ const progressBar = document.querySelector("#progressBar");
 const progressBlocks = document.querySelector("#progressBlocks");
 const footer = document.querySelector("#footerText");
 
+const statusClasses = {
+  rot: "status-error",
+  "grün": "status-success",
+};
+
 let messages = {};
 let projectMeta = {};
 
@@ -53,12 +58,7 @@ function renderProjectMeta() {
 
 function applyHealthStatus(data) {
   const traffic = String(data.ampel || "gelb").toLowerCase();
-  const className =
-    traffic === "rot"
-      ? "status-error"
-      : traffic === "grün"
-      ? "status-success"
-      : "status-warning";
+  const className = statusClasses[traffic] ?? "status-warning";
   const statusKey =
     data.status_message_key || projectMeta.product?.status_message_key;
   const label = text(statusKey, data.status || "status");
