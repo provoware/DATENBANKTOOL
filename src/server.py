@@ -11,7 +11,14 @@ from src.logging_core import EventLogger
 
 ROOT = Path(__file__).resolve().parents[1]
 WEB = ROOT / "src" / "web"
-LOGGER = EventLogger(ROOT)
+LOGGER: EventLogger | None = None
+
+
+def get_logger() -> EventLogger:
+    global LOGGER
+    if LOGGER is None:
+        LOGGER = EventLogger(ROOT)
+    return LOGGER
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -29,6 +36,7 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_GET(self) -> None:
         if urlparse(self.path).path == "/api/health":
+            logger = get_logger()
             self._json(
                 200,
                 {
@@ -37,7 +45,7 @@ class Handler(SimpleHTTPRequestHandler):
                     "version": "0.1.0-foundation",
                     "ampel": "gelb",
                     "message": "Clean Foundation läuft. Fachmodule sind noch im Aufbau.",
-                    "session_id": LOGGER.session_id,
+                    "session_id": logger.session_id,
                 },
             )
             return
@@ -54,19 +62,23 @@ class Handler(SimpleHTTPRequestHandler):
         if length <= 0 or length > 65536:
             self._json(400, {"ok": False, "error": "Ungültige Ereignisgröße."})
             return
+        logger = get_logger()
         try:
             payload = json.loads(self.rfile.read(length).decode("utf-8"))
-            record = LOGGER.log(
+            details = payload.get("details")
+            if not isinstance(details, dict):
+                details = {}
+            record = logger.log(
                 str(payload.get("code") or "PRV-UI-900"),
                 str(payload.get("summary") or "UI-Ereignis"),
                 level=str(payload.get("level") or "INFO"),
                 component="browser",
                 action=str(payload.get("action") or "Keine Aktion nötig."),
-                details=payload.get("details") if isinstance(payload.get("details"), dict) else {},
+                details=details,
             )
             self._json(200, {"ok": True, "event_id": record["event_id"]})
         except Exception as exc:
-            LOGGER.log(
+            logger.log(
                 "PRV-ERR-001",
                 "Browser-Ereignis konnte nicht verarbeitet werden.",
                 level="ERROR",
@@ -85,8 +97,10 @@ def main() -> int:
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=int(os.environ.get("PORT", "8765")))
     args = parser.parse_args()
+
     os.chdir(ROOT)
-    LOGGER.log("PRV-START-001", "Lokaler Server startet.")
+    logger = get_logger()
+    logger.log("PRV-START-001", "Lokaler Server startet.")
     server = ThreadingHTTPServer((args.host, args.port), Handler)
     print(f"PROVOWARE DATENBANKTOOL: http://{args.host}:{args.port}")
     try:
@@ -95,8 +109,8 @@ def main() -> int:
         print("\nServer beendet.")
     finally:
         server.server_close()
-        LOGGER.log("PRV-STOP-001", "Lokaler Server wurde beendet.")
-        report = LOGGER.write_short_report("beendet")
+        logger.log("PRV-STOP-001", "Lokaler Server wurde beendet.")
+        report = logger.write_short_report("beendet")
         print(f"Kurzbericht: {report}")
     return 0
 
