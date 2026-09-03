@@ -57,9 +57,7 @@ class EventLogger:
     def __post_init__(self) -> None:
         self.log_dir = self.root / "logs"
         self.log_dir.mkdir(parents=True, exist_ok=True)
-        self.machine_path = self.log_dir / (
-            f"maschinenlog_status_laufend_{self.session_id}.jsonl"
-        )
+        self.machine_path = self.log_dir / (f"maschinenlog_status_laufend_{self.session_id}.jsonl")
 
     def log(
         self,
