@@ -16,6 +16,7 @@ from src.backup import (
     RestoreError,
     RestoreManager,
 )
+from src.core import product
 from src.logging_core import EventLogger
 from src.persistence import Database, MigrationError
 from src.recovery import EvidenceJournal
@@ -26,7 +27,6 @@ LOGGER: EventLogger | None = None
 DATABASE: Database | None = None
 BACKUP_MANAGER: BackupManager | None = None
 RESTORE_MANAGER: RestoreManager | None = None
-APP_VERSION = "0.5.0-alpha.1"
 RESTORE_CONFIRMATION = "DATENBANK WIEDERHERSTELLEN"
 
 
@@ -96,6 +96,9 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_GET(self) -> None:
         path = urlparse(self.path).path
+        if path == "/api/project/meta":
+            self._project_meta()
+            return
         if path == "/api/health":
             self._health()
             return
@@ -126,8 +129,12 @@ class Handler(SimpleHTTPRequestHandler):
             return
         self._json(404, {"ok": False, "error": "Unbekannter Endpunkt."})
 
+    def _project_meta(self) -> None:
+        self._json(200, {"ok": True, "product": product()})
+
     def _health(self) -> None:
         logger = get_logger()
+        meta = product()
         storage = get_database().schema_status()
         incomplete = get_recovery_journal().incomplete_operations()
         verified_backups = get_backup_manager().list_verified_backups()
@@ -137,8 +144,10 @@ class Handler(SimpleHTTPRequestHandler):
             200 if healthy else 503,
             {
                 "ok": healthy,
-                "status": "restorekern",
-                "version": APP_VERSION,
+                "status": meta["status_id"],
+                "version": meta["version"],
+                "progress_percent": meta["progress_percent"],
+                "status_message_key": meta["status_message_key"],
                 "ampel": "gelb" if healthy else "rot",
                 "message": (
                     ready_message
