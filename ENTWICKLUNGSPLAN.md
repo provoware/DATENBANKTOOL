@@ -16,10 +16,10 @@ Ziel: robuste Datenhaltung ohne Datenverlust.
 
 1. ✅ Schema v1 definieren
 2. ✅ versionierte Migrationen und Drift-Erkennung
-3. 🔄 Transaktionen und Validierungsverträge
-4. ⬜ Backup / Restore
-5. ⬜ Recovery-Journal
-6. ⬜ Import / Export
+3. ✅ zentraler Transaktions- und Validierungsvertrag
+4. ✅ Recovery-Journal + Operation-ID + Start-Gate
+5. 🔄 Backup / Restore mit Integritätsprüfung
+6. ⬜ Import / Export mit Schema-Vertrag
 
 ## Phase C · Hauptdatenbank – ⚪
 
