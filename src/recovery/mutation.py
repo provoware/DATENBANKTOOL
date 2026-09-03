@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from enum import StrEnum
 from pathlib import Path
-from typing import Any, TypeVar
+from typing import Any, Generic, TypeVar
 
 from src.persistence.database import Database
 from src.recovery.evidence import EvidenceJournal, RecoveryEvidence
@@ -17,7 +17,6 @@ from src.recovery.evidence import EvidenceJournal, RecoveryEvidence
 T = TypeVar("T")
 Precheck = Callable[[sqlite3.Connection], None]
 Mutation = Callable[[sqlite3.Connection], T]
-Postcheck = Callable[[sqlite3.Connection, T], None]
 
 
 class MutationState(StrEnum):
@@ -55,7 +54,7 @@ class MutationDuplicateError(MutationContractError):
 
 
 @dataclass(frozen=True)
-class MutationResult[T]:
+class MutationResult(Generic[T]):
     operation_id: str
     state: MutationState
     value: T
@@ -104,7 +103,7 @@ class MutationCoordinator:
         target: str,
         mutation: Mutation[T],
         precheck: Precheck | None = None,
-        postcheck: Postcheck[T] | None = None,
+        postcheck: Callable[[sqlite3.Connection, T], None] | None = None,
         operation_key: str | None = None,
         details: dict[str, Any] | None = None,
     ) -> MutationResult[T]:
@@ -172,6 +171,7 @@ class MutationCoordinator:
             )
 
         connection: sqlite3.Connection | None = None
+        committed = False
         try:
             connection = self.database.connect_raw()
             connection.execute("BEGIN IMMEDIATE")
@@ -188,6 +188,7 @@ class MutationCoordinator:
 
             transition(MutationState.COMMITTING)
             connection.commit()
+            committed = True
             transition(MutationState.COMMITTED)
             evidence_path = self._finish(
                 operation_id=operation_id,
@@ -206,6 +207,12 @@ class MutationCoordinator:
                 evidence_path=evidence_path,
             )
         except Exception as exc:
+            if committed:
+                raise MutationContractError(
+                    "Die Datenänderung wurde gespeichert, aber die Recovery-Evidence ist unvollständig. "
+                    "Vorgang nicht erneut ausführen; Recovery-Prüfung verwenden.",
+                    operation_id=operation_id,
+                ) from exc
             if connection is not None:
                 transition(MutationState.ROLLING_BACK, {"error": type(exc).__name__})
                 try:
