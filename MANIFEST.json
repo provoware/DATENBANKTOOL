@@ -2,8 +2,8 @@
   "schema_version": 1,
   "project": {
     "name": "PROVOWARE DATENBANKTOOL",
-    "version": "0.2.0-alpha.1",
-    "status": "datenkern",
+    "version": "0.3.0-alpha.1",
+    "status": "transaktionskern",
     "language": "de",
     "offline_first": true
   },
@@ -31,6 +31,29 @@
     "migration_policy": "forward-only",
     "migration_checksum": "sha256",
     "integrity_checks": ["quick_check", "foreign_key_check"]
+  },
+  "recovery": {
+    "contract_version": 1,
+    "flow": ["PRECHECK", "MUTATION", "POSTCHECK", "COMMIT_OR_ROLLBACK", "EVIDENCE"],
+    "states": [
+      "RECEIVED",
+      "PRECHECK",
+      "MUTATION",
+      "POSTCHECK",
+      "COMMITTING",
+      "COMMITTED",
+      "ROLLING_BACK",
+      "ROLLED_BACK",
+      "REJECTED",
+      "FAILED"
+    ],
+    "single_writer_gate": true,
+    "idempotency_key_hash": "sha256",
+    "startup_incomplete_operation_gate": true,
+    "machine_journal": "runtime/recovery/recovery_journal_status_laufend.jsonl",
+    "final_evidence_directory": "runtime/recovery/evidence/",
+    "evidence_schema_version": 1,
+    "sensitive_details_redacted": true
   },
   "file_limits": {
     "python": { "preferred_lines": 300, "max_lines": 450, "preferred_line_length": 100, "max_line_length": 120 },

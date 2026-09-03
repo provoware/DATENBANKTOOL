@@ -1,18 +1,18 @@
 # PROVOWARE DATENBANKTOOL
 
-![Status](https://img.shields.io/badge/Status-DATENKERN%20%2F%20AUFBAU-ffd43b?style=flat-square)
+![Status](https://img.shields.io/badge/Status-TRANSAKTIONSKERN%20%2F%20AUFBAU-ffd43b?style=flat-square)
 ![CI](https://img.shields.io/badge/CI-Pflicht-29d3c2?style=flat-square)
 ![Sprache](https://img.shields.io/badge/Toolsprache-Deutsch-8b5cf6?style=flat-square)
 
 ## 🟡 Projektstatus
 
-`[■■■■□□□□□□] 40 % · DATENKERN / AUFBAU`
+`[■■■■■□□□□□] 50 % · TRANSAKTIONSKERN / AUFBAU`
 
-Die Clean Foundation steht. Mit `0.2.0-alpha.1` ist zusätzlich der erste echte
-Persistenzkern vorhanden: SQLite-Schema, versionierte Migrationen,
-Integritätsprüfung und ein generischer hierarchischer Eintragsspeicher.
+Die Clean Foundation und der SQLite-Datenkern stehen. Mit `0.3.0-alpha.1` ist
+zusätzlich der zentrale Mutations-/Recovery-Vertrag aktiv: Operation-ID,
+PRE-/POST-Prüfung, Commit/Rollback, Single-Writer-Gate, Idempotenz und Evidence.
 
-Der unmittelbare Stand vor dem Clean Rebuild bleibt zusätzlich auf
+Der Stand vor dem Clean Rebuild bleibt auf
 `backup/pre-clean-rebuild-20260903` gesichert.
 
 ## Ziel
@@ -25,7 +25,8 @@ Die Architektur trennt konsequent:
 - **Basistool** – Programmcode und feste UI-Grundlage
 - **Konfiguration** – versionierbare Standardwerte, keine privaten Einstellungen
 - **Nutzerdaten** – lokal, nicht im Repository
-- **Laufzeitdaten** – Logs, Caches, Backups und Sessions; nicht im Repository
+- **Laufzeitdaten** – Logs, Recovery-Evidence, Caches und Sessions; nicht im Repository
+- **Backups** – lokal und getrennt vom Basistool
 - **Dokumentation** – Laien- und Entwicklerwissen getrennt
 - **Tests & Werkzeuge** – reproduzierbare Qualitätskontrolle
 
@@ -50,21 +51,44 @@ PROVOWARE_DB_PATH=/anderer/pfad/provoware.sqlite3 python3 -m src.server
 
 ## Datenkern
 
-Der aktuelle Persistenzkern verwendet die Python-Standardbibliothek `sqlite3`.
+Der Persistenzkern verwendet die Python-Standardbibliothek `sqlite3`.
 
 Enthalten sind:
 
 - Schema-Version `1`
 - Migrationen mit SHA-256-Prüfsumme
-- SQLite-Fremdschlüssel
-- WAL-Journalmodus
+- SQLite-Fremdschlüssel und WAL
 - `PRAGMA quick_check` und Fremdschlüsselprüfung
 - hierarchische Einträge über `parent_id`
-- Tags und Eintrag-Tag-Zuordnung
-- App-Einstellungen
-- generischer `EntryStore` für zukünftige Archiv- und Dashboardmodule
+- Tags und App-Einstellungen
+- generischer `EntryStore`
 
-Der vollständige Vertrag steht in `docs/PERSISTENCE.md`.
+Details: `docs/PERSISTENCE.md`.
+
+## Transaktions- und Recovery-Vertrag
+
+Produktive Mutationen folgen zentral:
+
+`PRECHECK → MUTATION → POSTCHECK → COMMIT oder ROLLBACK → EVIDENCE`
+
+Zusätzlich aktiv:
+
+- eindeutige `operation_id`
+- Single-Writer-Gate gegen parallele kritische Änderungen
+- optionaler Idempotenzschlüssel gegen Doppel-Submit/Doppelklick
+- JSONL-Recovery-Journal unter `runtime/recovery/`
+- atomare finale JSON-Evidence mit Status im Dateinamen
+- sensible Evidence-Details werden geschwärzt
+- unvollständige frühere Operation blockiert den normalen Start
+- Status-Endpunkt: `GET /api/recovery/status`
+
+Details: `docs/TRANSAKTIONSVERTRAG.md`.
+
+## Sicherheitsgrenze
+
+Direktlöschen, Massenänderungen, überschreibender Import und Restore werden nicht
+vorschnell freigegeben. Der nächste P0-Schritt ist **P0-011 Backup/Restore mit
+Integritätsprüfung und sicherem Austauschvertrag**.
 
 ## Ampeln
 
@@ -86,6 +110,7 @@ Der vollständige Vertrag steht in `docs/PERSISTENCE.md`.
 | `LAIENHILFE.md` | einfache Hilfe & Tipps |
 | `DEBUGGING_LOGGING.md` | Logging-/Fehlerstandard |
 | `docs/PERSISTENCE.md` | Datenbank-, Schema- und Migrationsvertrag |
+| `docs/TRANSAKTIONSVERTRAG.md` | Mutations-, Rollback- und Recovery-Vertrag |
 | `MANIFEST.json` | maschinenlesbare Projektstandards |
 
 ## Datenschutz
@@ -98,6 +123,5 @@ Beispielwerte müssen eindeutig als Beispiel gekennzeichnet sein.
 
 `Besprechen → Implementieren → Formatieren → Prüfen → Regression → Status aktualisieren → Merge`
 
-Nächster P0-Schritt ist der formale Recovery-/Transaktionsvertrag für alle
-Datenänderungen. Vor einer STABLE-Kennzeichnung müssen alle Release-Gates in
+Vor einer STABLE-Kennzeichnung müssen alle Release-Gates in
 `MANIFEST.json` und `REGRESSIONSPOOL.md` grün sein.

@@ -20,6 +20,12 @@ Wiederkehrende Prüfungen, die bei relevanten Änderungen erneut laufen müssen.
 - [x] **REG-DATA-007** geänderte Migrations-Prüfsumme blockiert den Start.
 - [x] **REG-DATA-008** ungültige Elternreferenzen werden durch Fremdschlüssel verhindert.
 - [x] **REG-DATA-009** `quick_check` und Fremdschlüsselprüfung sind auf frischer DB grün.
+- [x] **REG-DATA-010** fehlgeschlagener POSTCHECK rollt Business-Daten vollständig zurück.
+- [x] **REG-DATA-011** parallele kritische Mutation wird am Single-Writer-Gate abgewiesen.
+- [x] **REG-DATA-012** derselbe Idempotenzschlüssel kann nicht zweimal committen.
+- [x] **REG-DATA-013** COMMITTED/ROLLED_BACK/REJECTED erzeugen maschinenlesbare Evidence.
+- [x] **REG-DATA-014** sensible Evidence-Details werden geschwärzt.
+- [x] **REG-DATA-015** unvollständige Journaloperationen werden beim Start als kritisch erkannt.
 
 ## Logging
 

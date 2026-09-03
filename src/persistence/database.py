@@ -41,8 +41,8 @@ class Database:
         self.path = Path(path)
         self.busy_timeout_ms = busy_timeout_ms
 
-    @contextmanager
-    def connect(self) -> Iterator[sqlite3.Connection]:
+    def connect_raw(self) -> sqlite3.Connection:
+        """Open a configured connection whose transaction lifecycle is caller-owned."""
         self.path.parent.mkdir(parents=True, exist_ok=True)
         connection = sqlite3.connect(
             self.path,
@@ -50,11 +50,16 @@ class Database:
             isolation_level=None,
         )
         connection.row_factory = sqlite3.Row
+        connection.execute("PRAGMA foreign_keys = ON")
+        connection.execute(f"PRAGMA busy_timeout = {self.busy_timeout_ms}")
+        connection.execute("PRAGMA synchronous = NORMAL")
+        connection.execute("PRAGMA journal_mode = WAL")
+        return connection
+
+    @contextmanager
+    def connect(self) -> Iterator[sqlite3.Connection]:
+        connection = self.connect_raw()
         try:
-            connection.execute("PRAGMA foreign_keys = ON")
-            connection.execute(f"PRAGMA busy_timeout = {self.busy_timeout_ms}")
-            connection.execute("PRAGMA synchronous = NORMAL")
-            connection.execute("PRAGMA journal_mode = WAL")
             yield connection
         finally:
             connection.close()

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import sqlite3
-
 import pytest
 
 from src.persistence import (
@@ -78,13 +76,15 @@ def test_entry_validation_rejects_empty_title(tmp_path):
         store.create(kind="memo", title="   ")
 
 
-def test_foreign_key_blocks_unknown_parent(tmp_path):
+def test_precheck_blocks_unknown_parent(tmp_path):
     database = Database(tmp_path / "provoware.sqlite3")
     database.initialize()
     store = EntryStore(database)
 
-    with pytest.raises(sqlite3.IntegrityError):
+    with pytest.raises(EntryValidationError, match="übergeordnete Eintrag existiert nicht"):
         store.create(kind="memo", title="Kind", parent_id="missing")
+
+    assert store.list(kind="memo") == []
 
 
 def test_integrity_check_reports_healthy_database(tmp_path):

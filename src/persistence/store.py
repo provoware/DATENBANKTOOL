@@ -5,9 +5,11 @@ import sqlite3
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 from src.persistence.database import Database
+from src.recovery.mutation import MutationCoordinator
 
 
 class EntryValidationError(ValueError):
@@ -60,8 +62,16 @@ def _entry_from_row(row: sqlite3.Row) -> Entry:
 
 
 class EntryStore:
-    def __init__(self, database: Database) -> None:
+    def __init__(
+        self,
+        database: Database,
+        *,
+        coordinator: MutationCoordinator | None = None,
+        runtime_dir: Path | None = None,
+    ) -> None:
         self.database = database
+        recovery_runtime = runtime_dir or (database.path.parent / ".runtime")
+        self.coordinator = coordinator or MutationCoordinator(database, recovery_runtime)
 
     def create(
         self,
@@ -73,6 +83,7 @@ class EntryStore:
         favorite: bool = False,
         status: str = "active",
         metadata: dict[str, Any] | None = None,
+        operation_key: str | None = None,
     ) -> Entry:
         clean_kind = _validate_text("Art", kind, maximum=64)
         clean_title = _validate_text("Titel", title, maximum=500)
@@ -96,34 +107,66 @@ class EntryStore:
         entry_id = uuid.uuid4().hex
         now = _utc_now()
 
-        with self.database.connect() as connection:
-            try:
-                connection.execute("BEGIN IMMEDIATE")
-                connection.execute(
-                    """
-                    INSERT INTO entries(
-                        id, kind, title, content, parent_id, favorite, status,
-                        metadata_json, created_at, updated_at
-                    )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """,
-                    (
-                        entry_id,
-                        clean_kind,
-                        clean_title,
-                        content,
-                        parent_id,
-                        int(favorite),
-                        clean_status,
-                        metadata_json,
-                        now,
-                        now,
-                    ),
+        def precheck(connection: sqlite3.Connection) -> None:
+            if parent_id is None:
+                return
+            row = connection.execute(
+                "SELECT id FROM entries WHERE id = ?",
+                (parent_id,),
+            ).fetchone()
+            if row is None:
+                raise EntryValidationError("Der gewählte übergeordnete Eintrag existiert nicht.")
+
+        def mutation(connection: sqlite3.Connection) -> str:
+            connection.execute(
+                """
+                INSERT INTO entries(
+                    id, kind, title, content, parent_id, favorite, status,
+                    metadata_json, created_at, updated_at
                 )
-                connection.commit()
-            except Exception:
-                connection.rollback()
-                raise
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    entry_id,
+                    clean_kind,
+                    clean_title,
+                    content,
+                    parent_id,
+                    int(favorite),
+                    clean_status,
+                    metadata_json,
+                    now,
+                    now,
+                ),
+            )
+            return entry_id
+
+        def postcheck(connection: sqlite3.Connection, created_id: str) -> None:
+            row = connection.execute(
+                "SELECT id, kind, title, status FROM entries WHERE id = ?",
+                (created_id,),
+            ).fetchone()
+            if row is None:
+                raise RuntimeError("POSTCHECK: Eintrag fehlt nach INSERT.")
+            if row["kind"] != clean_kind or row["title"] != clean_title:
+                raise RuntimeError("POSTCHECK: gespeicherte Kerndaten weichen ab.")
+            if row["status"] != clean_status:
+                raise RuntimeError("POSTCHECK: Status weicht vom geprüften Wert ab.")
+
+        self.coordinator.execute(
+            operation_kind="entry.create",
+            target=f"entry:{entry_id}",
+            mutation=mutation,
+            precheck=precheck,
+            postcheck=postcheck,
+            operation_key=operation_key,
+            details={
+                "entry_id": entry_id,
+                "kind": clean_kind,
+                "has_parent": parent_id is not None,
+                "content_chars": len(content),
+            },
+        )
 
         created = self.get(entry_id)
         if created is None:
