@@ -15,6 +15,11 @@ Wiederkehrende Prüfungen, die bei relevanten Änderungen erneut laufen müssen.
 - [ ] **REG-DATA-002** Import verändert Daten nur nach erfolgreicher Vorprüfung.
 - [ ] **REG-DATA-003** Export ist vollständig und schema-versioniert.
 - [ ] **REG-DATA-004** Recovery stellt letzten gültigen Zustand wieder her.
+- [x] **REG-DATA-005** frische Datenbank migriert automatisch auf Schema v1.
+- [x] **REG-DATA-006** wiederholte Initialisierung ist idempotent.
+- [x] **REG-DATA-007** geänderte Migrations-Prüfsumme blockiert den Start.
+- [x] **REG-DATA-008** ungültige Elternreferenzen werden durch Fremdschlüssel verhindert.
+- [x] **REG-DATA-009** `quick_check` und Fremdschlüsselprüfung sind auf frischer DB grün.
 
 ## Logging
 
