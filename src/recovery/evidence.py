@@ -87,13 +87,13 @@ class EvidenceJournal:
         self._atomic_write(destination, payload)
         return destination
 
-    def find_completed_key(self, key_hash: str, *, limit: int = 250) -> Path | None:
+    def find_completed_key(self, key_hash: str) -> Path | None:
         files = sorted(
             self.evidence_dir.glob("recovery_evidence_status_*.json"),
             key=lambda path: path.stat().st_mtime,
             reverse=True,
         )
-        for path in files[:limit]:
+        for path in files:
             try:
                 data = json.loads(path.read_text(encoding="utf-8"))
             except (OSError, json.JSONDecodeError):
