@@ -32,8 +32,16 @@ Wiederkehrende Prüfungen, die bei relevanten Änderungen erneut laufen müssen.
 - [x] **REG-DATA-019** manipuliertes Backup-Manifest scheitert am Verifikations-Gate.
 - [x] **REG-DATA-020** `.incomplete_*`-Backup wird niemals als gültige Sicherung akzeptiert.
 - [x] **REG-DATA-021** Fehler vor atomarer Veröffentlichung hinterlässt kein gültiges Backup.
-- [ ] **REG-DATA-022** Staging-Restore verändert bei fehlgeschlagener Prüfung niemals die Produktivdatenbank.
-- [ ] **REG-DATA-023** erfolgreicher Restore tauscht erst nach vollständigem Staging-Gate atomar aus.
+- [x] **REG-DATA-022** Staging-Restore verändert bei fehlgeschlagener Prüfung niemals die Produktivdatenbank.
+- [x] **REG-DATA-023** erfolgreicher Restore tauscht erst nach vollständigem Staging-Gate atomar aus.
+- [x] **REG-DATA-024** Restore verifiziert das Backup unmittelbar vor der Staging-Wiederherstellung erneut.
+- [x] **REG-DATA-025** Staging muss SHA-256, Schema, `quick_check` und Fremdschlüsselprüfung bestehen.
+- [x] **REG-DATA-026** kontrollierter Fehler nach `SWAPPED` stellt den vorherigen Produktivstand wieder her.
+- [x] **REG-DATA-027** Restore wird erst nach grünem produktivem POSTCHECK als COMMITTED markiert.
+- [x] **REG-DATA-028** Prozessabbruch an der Swap-Grenze bleibt als `SWAPPING` startblockierend sichtbar.
+- [x] **REG-DATA-029** Swap-Evidence enthält erwarteten Restore-Hash, vorherigen Hash und Rollback-Pfad.
+- [x] **REG-DATA-030** Restore-Staging wird nach kontrollierter Ablehnung bereinigt.
+- [x] **REG-DATA-031** Mutation und Restore teilen sich denselben exklusiven kritischen Datenbank-Gate.
 
 ## Logging
 
