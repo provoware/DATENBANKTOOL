@@ -14,9 +14,10 @@ function text(key, fallback = key) {
 }
 
 async function loadStaticConfig() {
+  const locale = document.documentElement.lang || "de";
   const [localeResponse, metaResponse] = await Promise.all([
-    fetch("/i18n/de.json", { cache: "no-store" }),
-    fetch("/project-meta.json", { cache: "no-store" }),
+    fetch(`/i18n/${locale}.json`, { cache: "no-store" }),
+    fetch("/api/project/meta", { cache: "no-store" }),
   ]);
   const catalog = await localeResponse.json();
   projectMeta = await metaResponse.json();
@@ -25,7 +26,10 @@ async function loadStaticConfig() {
     element.textContent = text(element.dataset.i18n, element.textContent);
   }
   for (const element of document.querySelectorAll("[data-i18n-aria]")) {
-    element.setAttribute("aria-label", text(element.dataset.i18nAria, element.getAttribute("aria-label") || ""));
+    element.setAttribute(
+      "aria-label",
+      text(element.dataset.i18nAria, element.getAttribute("aria-label") || ""),
+    );
   }
   document.title = text("page.title", document.title);
   helpButton.title = text("help.tip", "");
@@ -49,8 +53,10 @@ function renderProjectMeta() {
 
 function applyHealthStatus(data) {
   const traffic = String(data.ampel || "gelb").toLowerCase();
-  const className = traffic === "rot" ? "status-error" : traffic === "grün" ? "status-success" : "status-warning";
-  const label = projectMeta.product?.status_label_de || data.status || "status";
+  const className =
+    traffic === "rot" ? "status-error" : traffic === "grün" ? "status-success" : "status-warning";
+  const statusKey = data.status_message_key || projectMeta.product?.status_message_key;
+  const label = text(statusKey, data.status || "status");
   status.innerHTML = `<span aria-hidden="true">●</span> ${String(label).toUpperCase()} · ${traffic.toUpperCase()}`;
   status.className = `status-pill ${className}`;
   status.title = String(data.message || text("status.default_tip", "Status des lokalen Tools."));
