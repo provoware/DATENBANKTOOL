@@ -110,11 +110,14 @@ Details: `docs/BACKUP_VERTRAG.md`.
 
 ## Restore-Vertrag · P0-011B
 
-Ein Restore darf die produktive Datenbank erst nach einem vollständig grünen Staging-Gate austauschen.
+Ein Restore darf die produktive Datenbank erst nach einem vollständig grünen
+Staging-Gate austauschen.
 
 Ablauf:
 
-`BACKUP VERIFY → RESTORE STAGING → STAGING VERIFY → ROLLBACK SNAPSHOT → SWAP PREPARED → SWAPPING → SWAPPED → POSTCHECK → COMMITTED oder ROLLED_BACK → EVIDENCE`
+`BACKUP VERIFY → RESTORE STAGING → STAGING VERIFY → ROLLBACK SNAPSHOT → SWAP PREPARED`
+
+`SWAPPING → SWAPPED → POSTCHECK → COMMITTED oder ROLLED_BACK → EVIDENCE`
 
 Enthalten sind:
 
@@ -130,7 +133,8 @@ Enthalten sind:
 - automatischer Rücktausch bei kontrolliertem Fehler nach `SWAPPED`
 - rekonstruierbarer Crash-Zustand `SWAPPING` mit beiden Hashes und Rollback-Pfad
 - Start-Gate blockiert unvollständige Restore-Vorgänge
-- Restore-API akzeptiert nur aktuell verifizierte Backup-Namen und verlangt die exakte Bestätigung `DATENBANK WIEDERHERSTELLEN`
+- Restore-API akzeptiert nur aktuell verifizierte Backup-Namen
+- Restore-API verlangt die exakte Bestätigung `DATENBANK WIEDERHERSTELLEN`
 
 Status: `GET /api/restore/status`  
 Ausführung: `POST /api/restore/execute`
@@ -139,7 +143,8 @@ Details: `docs/RESTORE_VERTRAG.md`.
 
 ## Sicherheitsgrenze
 
-P0-011 Backup/Restore ist technisch implementiert und regressiv abgesichert. Der nächste P0-Schritt ist **P0-012 reale Browser-Endabnahme unter Kubuntu/KDE + Chrome**.
+P0-011 Backup/Restore ist technisch implementiert und regressiv abgesichert.
+Der nächste P0-Schritt ist **P0-012 reale Browser-Endabnahme unter Kubuntu/KDE + Chrome**.
 
 Direktlöschen, Massenänderungen und überschreibender Import bleiben weiterhin gesperrt,
 bis ihre jeweiligen Schutzverträge vollständig implementiert und regressiv geprüft sind.
