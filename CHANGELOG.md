@@ -2,6 +2,33 @@
 
 Alle wichtigen Projektänderungen werden hier in deutscher Sprache dokumentiert.
 
+## [0.3.0-alpha.1] – 2026-09-03
+
+### Hinzugefügt
+
+- 🟢 zentraler `MutationCoordinator` für produktive Datenänderungen.
+- 🟢 Zustandsmaschine `PRECHECK → MUTATION → POSTCHECK → COMMIT/ROLLBACK → EVIDENCE`.
+- 🟢 eindeutige Operation-ID für jede Mutation.
+- 🟢 Single-Writer-Gate gegen parallele kritische Mutationen.
+- 🟢 Idempotenzschlüssel gegen Doppel-Submit und Doppelklick-Mutationen.
+- 🟢 maschinenlesbares JSONL-Recovery-Journal außerhalb der Business-Transaktion.
+- 🟢 atomare finale Recovery-Evidence mit Status im Dateinamen.
+- 🟢 Start-Gate für unvollständige Operationen aus vorherigen Sitzungen.
+- 🟢 `/api/recovery/status` für lesbaren Recovery-Zustand.
+- 🟢 Regressionstests für Commit, Rollback, Gate, Idempotenz und Evidence.
+- 🟢 Entwicklerdokument `docs/TRANSAKTIONSVERTRAG.md`.
+
+### Geändert
+
+- 🟣 `EntryStore.create()` läuft jetzt über den zentralen Mutationsvertrag.
+- 🟣 Projektstatus auf `TRANSAKTIONSKERN / AUFBAU` und Fortschritt auf 50 % gesetzt.
+- 🟣 `P0-010` abgeschlossen; `P0-011` Backup/Restore ist jetzt der nächste P0-Schritt.
+
+### Sicherheitsgrenze
+
+- 🟡 Direktlöschen, Massenänderungen, überschreibender Import und Restore bleiben bewusst gesperrt,
+  bis die jeweiligen Fachverträge und P0-011 abgeschlossen sind.
+
 ## [0.2.0-alpha.1] – 2026-09-03
 
 ### Hinzugefügt
