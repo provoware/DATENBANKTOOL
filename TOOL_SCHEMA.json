@@ -3,6 +3,7 @@
   "purpose": "Maschinenlesbare Struktur des PROVOWARE DATENBANKTOOL",
   "version_source": "VERSION.json",
   "registry": "src/config/registry.json",
+  "runtime_project_meta": "/api/project/meta",
   "layers": [
     {
       "id": "ui",
@@ -44,7 +45,6 @@
     "MANIFEST.json",
     "src/config/registry.json",
     "src/web/i18n/de.json",
-    "src/web/project-meta.json",
     "REGRESSIONSPOOL.md",
     "AGENTS.md"
   ]
