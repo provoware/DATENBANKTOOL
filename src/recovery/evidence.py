@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import tempfile
+import threading
 from contextlib import suppress
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
@@ -36,6 +37,8 @@ class RecoveryEvidence:
 class EvidenceJournal:
     """Durable evidence outside the business-data transaction."""
 
+    _write_lock = threading.Lock()
+
     def __init__(self, runtime_dir: Path) -> None:
         self.root = Path(runtime_dir) / "recovery"
         self.root.mkdir(parents=True, exist_ok=True)
@@ -64,10 +67,11 @@ class EvidenceJournal:
             "details": sanitize_details(details or {}),
         }
         line = json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n"
-        with self.journal_path.open("a", encoding="utf-8") as handle:
-            handle.write(line)
-            handle.flush()
-            os.fsync(handle.fileno())
+        with self._write_lock:
+            with self.journal_path.open("a", encoding="utf-8") as handle:
+                handle.write(line)
+                handle.flush()
+                os.fsync(handle.fileno())
 
     def write_final(self, evidence: RecoveryEvidence) -> Path:
         safe_state = evidence.state.lower().replace("_", "-")
