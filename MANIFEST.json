@@ -2,9 +2,9 @@
   "schema_version": 1,
   "project": {
     "name": "PROVOWARE DATENBANKTOOL",
-    "version": "0.5.1-alpha.1",
+    "version": "0.5.2-alpha.1",
     "version_source": "VERSION.json",
-    "status": "restorekern",
+    "status": "browserabnahme_vorbereitet",
     "language": "de",
     "offline_first": true
   },
@@ -14,6 +14,7 @@
     "tool_schema": "TOOL_SCHEMA.json",
     "file_index": "ORDNER_UND_DATEIINDEX.md",
     "development_discipline": "docs/ENTWICKLUNGSDISZIPLIN.md",
+    "browser_acceptance": "docs/BROWSER_ABNAHME.md",
     "version_registry": "VERSION.json",
     "locale_catalog": "src/web/i18n/de.json",
     "runtime_project_meta": "/api/project/meta",
@@ -120,6 +121,19 @@
     "startup_gate_blocks_incomplete_restore": true,
     "explicit_confirmation_required": "DATENBANK WIEDERHERSTELLEN"
   },
+  "browser_acceptance": {
+    "contract_version": 1,
+    "automated_runner": "playwright",
+    "automated_workflow": ".github/workflows/browser-smoke.yml",
+    "automated_test_path": "tests/browser/",
+    "desktop_viewports": ["1366x768", "1600x900", "1920x1080"],
+    "real_target_os": "Kubuntu/KDE",
+    "real_target_browser": "Google Chrome",
+    "real_zoom_percent": [100, 125, 150, 200],
+    "manual_matrix": "docs/BROWSER_ABNAHME.md",
+    "ci_chromium_is_real_acceptance": false,
+    "real_acceptance_required_before_stable": true
+  },
   "file_limits": {
     "python": {
       "preferred_lines": 300,
@@ -175,6 +189,7 @@
     "python_linter": "ruff check",
     "web_formatter": "prettier",
     "test_runner": "pytest",
+    "browser_test_runner": "playwright",
     "project_checker": "python tools/check_project.py",
     "release_blocking": [
       "syntax",
