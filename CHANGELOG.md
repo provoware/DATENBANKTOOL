@@ -2,29 +2,34 @@
 
 Alle wichtigen Projektänderungen werden hier in deutscher Sprache dokumentiert.
 
-## [Unreleased] – Wartbarkeitskern
+## [0.5.1-alpha.1] – 2026-09-03
 
 ### Hinzugefügt
 
-- 🟢 `VERSION.json` als zentrale Übersicht für Produkt-, Schema- und Vertragsversionen.
-- 🟢 `src/config/registry.json` als Registry für Module, API-Endpunkte und Fehlercodes.
-- 🟢 `TOOL_SCHEMA.json` und `ORDNER_UND_DATEIINDEX.md` als technische und laienfreundliche Projektlandkarte.
-- 🟢 `src/core/project_meta.py` als wiederverwendbarer Zugriff auf Versionen und Registry.
-- 🟢 versionierter deutscher UI-Sprachkatalog unter `src/web/i18n/de.json`.
-- 🟢 Regressionen gegen Versions-, Registry-, Sprachkatalog- und Tool-Schema-Drift.
-- 🟢 `docs/ENTWICKLUNGSDISZIPLIN.md` mit Voranalyse- und Minimal-Patch-Vertrag.
+- 🟢 `GET /api/project/meta` als read-only Laufzeitquelle für Produktmetadaten.
+- 🟢 `status_message_key` in `VERSION.json` als sprachneutraler Verweis auf sichtbare Statusbezeichnungen.
+- 🟢 zusätzliche Regressionen gegen hart codierte Produktversionen, Statuswerte und sprachabhängige Produktmetadaten.
 
 ### Geändert
 
-- 🟣 Browseroberfläche entfernt veraltete fest verdrahtete Versions-/Statusangaben.
-- 🟣 wiederkehrende UI-Abstände, Radien, Schatten und Farben verwenden zentrale Design-Tokens.
-- 🟣 Projektprüfer behandelt Registry, Version, Tool-Schema und Sprachkatalog als Pflichtdateien.
-- 🟣 Laienhilfe und README erklären Datenorte, Backup, Restore, Recovery und Projektstruktur einfacher.
+- 🟣 `VERSION.json` ist die einzige fachliche Quelle für Produktversion, Status-ID und Fortschritt.
+- 🟣 `src/server.py` bezieht Version und Status über `src.core.project_meta` statt aus eigenen Konstanten.
+- 🟣 die Browseroberfläche bezieht Produktmetadaten über `/api/project/meta`.
+- 🟣 sichtbare Statusbezeichnungen liegen ausschließlich im versionierten Sprachkatalog.
+- 🟣 `src/config/registry.json` registriert den Metadaten-Endpunkt mit stabiler ID `project.meta`.
+- 🟣 `tools/check_project.py` übernimmt kritische Pflichtdateien aus `TOOL_SCHEMA.json` statt sie doppelt zu pflegen.
+- 🟣 README, Fortschrittsinfo und Dateiindex erklären die Metadaten- und Sprachtrennung laienverständlich.
 
-### Entwicklungsregel
+### Entfernt
 
-- 🟡 Sicherheitskerne für Persistenz, Recovery, Backup und Restore wurden nicht fachlich verändert.
-- 🟡 Produktversion bleibt `0.5.0-alpha.1`; die Wartbarkeitsänderung verändert keine Daten- oder Restore-Vertragssemantik.
+- 🟢 `src/web/project-meta.json` als driftanfällige zweite Produktmetadatenquelle.
+- 🟢 hart codierte `APP_VERSION`- und Statusquelle im Server.
+- 🟢 sprachspezifisches `status_label_de` aus `VERSION.json`.
+
+### Sicherheitsgrenze
+
+- 🟡 Persistenz-, Recovery-, Backup- und Restore-Verträge wurden fachlich nicht verändert.
+- 🟡 P0-012 reale Browser-Endabnahme bleibt der nächste releasekritische Schritt.
 
 ## [0.5.0-alpha.1] – 2026-09-03
 

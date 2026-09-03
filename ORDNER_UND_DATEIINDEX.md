@@ -40,11 +40,20 @@ src/
 │   ├── index.html           Grundstruktur der Oberfläche
 │   ├── app.js               UI-Verhalten und Statusabfrage
 │   ├── styles.css           Design-Tokens und Komponentenstile
-│   ├── project-meta.json    geprüfter UI-Spiegel der Projektmetadaten
 │   └── i18n/de.json         versionierter deutscher Sprachkatalog
 ├── logging_core.py          Maschinenlog und deutsche Kurzberichte
-└── server.py                lokaler HTTP-Server und API
+└── server.py                lokaler HTTP-Server, API und Runtime-Metadaten
 ```
+
+## Zentrale Metadaten – einfach erklärt
+
+`VERSION.json` ist die einzige fachliche Quelle für Produktversion, Status-ID,
+Fortschritt sowie Schema- und Vertragsversionen. Die Browseroberfläche erhält
+Produktmetadaten über `GET /api/project/meta`. Dadurch muss keine zweite
+Metadatendatei für die Oberfläche gepflegt werden.
+
+Sichtbare deutsche Bezeichnungen liegen nicht in `VERSION.json`, sondern im
+versionierten Sprachkatalog `src/web/i18n/de.json`.
 
 ## Entwicklung und Prüfung
 

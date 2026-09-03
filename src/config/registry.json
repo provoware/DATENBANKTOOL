@@ -35,6 +35,11 @@
   ],
   "api": [
     {
+      "id": "project.meta",
+      "method": "GET",
+      "path": "/api/project/meta"
+    },
+    {
       "id": "health",
       "method": "GET",
       "path": "/api/health"

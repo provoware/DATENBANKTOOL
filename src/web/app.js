@@ -6,6 +6,8 @@ const progressBar = document.querySelector("#progressBar");
 const progressBlocks = document.querySelector("#progressBlocks");
 const footer = document.querySelector("#footerText");
 
+const statusClasses = { rot: "status-error", grün: "status-success" };
+
 let messages = {};
 let projectMeta = {};
 
@@ -14,9 +16,10 @@ function text(key, fallback = key) {
 }
 
 async function loadStaticConfig() {
+  const locale = document.documentElement.lang || "de";
   const [localeResponse, metaResponse] = await Promise.all([
-    fetch("/i18n/de.json", { cache: "no-store" }),
-    fetch("/project-meta.json", { cache: "no-store" }),
+    fetch(`/i18n/${locale}.json`, { cache: "no-store" }),
+    fetch("/api/project/meta", { cache: "no-store" }),
   ]);
   const catalog = await localeResponse.json();
   projectMeta = await metaResponse.json();
@@ -49,8 +52,9 @@ function renderProjectMeta() {
 
 function applyHealthStatus(data) {
   const traffic = String(data.ampel || "gelb").toLowerCase();
-  const className = traffic === "rot" ? "status-error" : traffic === "grün" ? "status-success" : "status-warning";
-  const label = projectMeta.product?.status_label_de || data.status || "status";
+  const className = statusClasses[traffic] ?? "status-warning";
+  const statusKey = data.status_message_key || projectMeta.product?.status_message_key;
+  const label = text(statusKey, data.status || "status");
   status.innerHTML = `<span aria-hidden="true">●</span> ${String(label).toUpperCase()} · ${traffic.toUpperCase()}`;
   status.className = `status-pill ${className}`;
   status.title = String(data.message || text("status.default_tip", "Status des lokalen Tools."));

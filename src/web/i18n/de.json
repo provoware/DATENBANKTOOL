@@ -22,6 +22,7 @@
     "card.help.body": "Kurze Erklärungen und konkrete Handlungstipps ersetzen unnötige Fachsprache.",
     "card.recovery.title": "Recovery",
     "card.recovery.body": "Journal, Start-Gate, Backup und Staging-Restore mit atomarem Austausch sind aktiv.",
+    "status.restorekern": "RESTOREKERN / AUFBAU",
     "status.green": "✓ GRÜN",
     "help.open": "Hilfe anzeigen",
     "help.close": "Hilfe schließen",

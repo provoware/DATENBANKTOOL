@@ -5,6 +5,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = json.loads((ROOT / "MANIFEST.json").read_text(encoding="utf-8"))
+TOOL_SCHEMA = json.loads((ROOT / "TOOL_SCHEMA.json").read_text(encoding="utf-8"))
 
 TYPE_BY_SUFFIX = {
     ".py": "python",
@@ -26,23 +27,17 @@ EXCLUDED_PARTS = {
     "backups",
 }
 
-REQUIRED_FILES = [
+BASE_REQUIRED_FILES = [
     "README.md",
     "TODO.md",
     "CHANGELOG.md",
-    "REGRESSIONSPOOL.md",
     "FORTSCHRITTSINFO.md",
     "ENTWICKLUNGSPLAN.md",
-    "AGENTS.md",
-    "MANIFEST.json",
-    "VERSION.json",
     "TOOL_SCHEMA.json",
     "ORDNER_UND_DATEIINDEX.md",
-    "src/config/registry.json",
-    "src/web/i18n/de.json",
-    "src/web/project-meta.json",
     "docs/ENTWICKLUNGSDISZIPLIN.md",
 ]
+REQUIRED_FILES = tuple(dict.fromkeys([*BASE_REQUIRED_FILES, *TOOL_SCHEMA["critical_files"]]))
 
 
 def excluded(path: Path) -> bool:
