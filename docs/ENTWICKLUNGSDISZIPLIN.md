@@ -43,11 +43,26 @@ Vor Codeänderungen werden mindestens diese Punkte festgehalten:
 Eine interne Schemaänderung erzwingt nicht automatisch eine Produkt-Hauptversion.
 Bereits veröffentlichte Schema- oder Migrationsstände werden niemals still umgedeutet.
 
+### Single-Source-Regel für Produktmetadaten
+
+Produktversion, Status-ID und Fortschritt werden fachlich ausschließlich in
+`VERSION.json` gepflegt. Python-Code verwendet dafür `src.core.project_meta`.
+Die Browseroberfläche liest dieselben Daten read-only über `GET /api/project/meta`.
+Statische Spiegeldateien oder zusätzliche hart codierte Produktversionen sind verboten.
+
+Sprachabhängige sichtbare Bezeichnungen gehören nicht in `VERSION.json`.
+Dort steht nur ein stabiler Sprachschlüssel wie `status.restorekern`; die konkrete
+deutsche Formulierung liegt im versionierten Sprachkatalog.
+
 ## Registry-Regel
 
 `src/config/registry.json` ist der Index für stabile technische IDs, Module,
 API-Endpunkte, Fehlercodes und zentrale Querschnittspfade. Neue Funktionen prüfen zuerst,
 ob eine passende Registry-ID oder bestehende Implementierung vorhanden ist.
+
+Pflichtdateien, die bereits in `TOOL_SCHEMA.json` als kritisch geführt werden, sollen
+von Prüfwerkzeugen aus diesem Schema übernommen und nicht in einer zweiten Liste
+doppelt gepflegt werden.
 
 ## UI-Regel
 
