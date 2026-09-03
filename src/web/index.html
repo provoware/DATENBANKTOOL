@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PROVOWARE DATENBANKTOOL · BASIS</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Zum Hauptinhalt</a>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">PROVOWARE · CLEAN FOUNDATION</p>
+        <h1>DATENBANKTOOL</h1>
+      </div>
+      <div class="status-pill status-warning" id="liveStatus" aria-live="polite">
+        <span aria-hidden="true">●</span> BASIS / AUFBAU
+      </div>
+    </header>
+
+    <main id="main" class="shell">
+      <section class="hero panel">
+        <div>
+          <p class="kicker">Aktueller Fortschritt</p>
+          <h2>Saubere Basis vor neuen Fachfunktionen</h2>
+          <p>
+            Basistool, Konfiguration, Nutzerdaten, Logs und Tests sind bewusst getrennt.
+          </p>
+        </div>
+        <div class="progress-card" title="30 Prozent der Foundation-Roadmap sind abgeschlossen.">
+          <div class="progress-label"><span>Foundation</span><strong>30 %</strong></div>
+          <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="30">
+            <span style="width: 30%"></span>
+          </div>
+          <code>[■■■□□□□□□□]</code>
+        </div>
+      </section>
+
+      <section class="grid" aria-label="Projektübersicht">
+        <article class="card accent-cyan" tabindex="0">
+          <div class="icon" aria-hidden="true">🧱</div>
+          <h3>Architektur</h3>
+          <p>Basistool, Konfiguration, Nutzerdaten und Laufzeit sind getrennt.</p>
+          <span class="traffic traffic-green">✓ GRÜN</span>
+        </article>
+        <article class="card accent-purple" tabindex="0">
+          <div class="icon" aria-hidden="true">🧪</div>
+          <h3>Qualität</h3>
+          <p>CI, Tests, Formatter und Dateigrenzen sind als Pflicht-Gates angelegt.</p>
+          <span class="traffic traffic-green">✓ GRÜN</span>
+        </article>
+        <article class="card accent-yellow" tabindex="0">
+          <div class="icon" aria-hidden="true">💾</div>
+          <h3>Persistenz</h3>
+          <p>Der produktive Datenkern wird im nächsten Entwicklungsschritt aufgebaut.</p>
+          <span class="traffic traffic-yellow">! OFFEN</span>
+        </article>
+        <article class="card accent-green" tabindex="0">
+          <div class="icon" aria-hidden="true">📝</div>
+          <h3>Debugging</h3>
+          <p>JSONL für Maschinen, kurze deutsche TXT-Berichte für Nutzer.</p>
+          <span class="traffic traffic-green">✓ BASIS</span>
+        </article>
+        <article class="card accent-blue" tabindex="0">
+          <div class="icon" aria-hidden="true">?</div>
+          <h3>Laienhilfe</h3>
+          <p>Kurze Erklärungen, Ampeln und konkrete Handlungstipps statt Rohfehler.</p>
+          <button class="help-button" data-tip="Öffnet eine kurze Erklärung der Projektampeln." id="helpButton">Hilfe anzeigen</button>
+        </article>
+        <article class="card accent-red" tabindex="0">
+          <div class="icon" aria-hidden="true">🛡</div>
+          <h3>Recovery</h3>
+          <p>Transaktions- und Wiederherstellungsvertrag ist noch release-blockierend.</p>
+          <span class="traffic traffic-red">× OFFEN</span>
+        </article>
+      </section>
+
+      <section class="panel help-panel" id="helpPanel" hidden>
+        <h2>Kurzhilfe</h2>
+        <p><strong>GRÜN</strong> bedeutet geprüft. <strong>GELB</strong> bedeutet in Arbeit. <strong>ROT</strong> blockiert einen Release.</p>
+        <p>Tipp: Bei einem technischen Fehler zuerst den deutschen Kurzbericht im lokalen Logordner lesen.</p>
+      </section>
+    </main>
+
+    <footer>PROVOWARE DATENBANKTOOL · 0.1.0-foundation · lokale Basis</footer>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

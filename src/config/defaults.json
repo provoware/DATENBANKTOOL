@@ -1,0 +1,16 @@
+{
+  "ui": {
+    "theme": "contrast-dark",
+    "language": "de",
+    "show_tooltips": true,
+    "show_progress": true
+  },
+  "runtime": {
+    "host": "127.0.0.1",
+    "port": 8765
+  },
+  "logging": {
+    "level": "INFO",
+    "human_short_report": true
+  }
+}

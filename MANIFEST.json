@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "project": {
+    "name": "PROVOWARE DATENBANKTOOL",
+    "version": "0.1.0-foundation",
+    "status": "basis",
+    "language": "de",
+    "offline_first": true
+  },
+  "architecture": {
+    "layers": ["ui", "api", "application", "persistence", "recovery", "logging"],
+    "separation": {
+      "base_tool": "src/",
+      "default_config": "src/config/",
+      "public_config_examples": "config/",
+      "user_data": "data/user/",
+      "runtime": "runtime/",
+      "logs": "logs/",
+      "backups": "backups/",
+      "tests": "tests/",
+      "tools": "tools/"
+    }
+  },
+  "file_limits": {
+    "python": {"preferred_lines": 300, "max_lines": 450, "preferred_line_length": 100, "max_line_length": 120},
+    "javascript": {"preferred_lines": 320, "max_lines": 450, "preferred_line_length": 110, "max_line_length": 140},
+    "css": {"preferred_lines": 400, "max_lines": 650, "preferred_line_length": 100, "max_line_length": 140},
+    "html": {"preferred_lines": 450, "max_lines": 650, "preferred_line_length": 120, "max_line_length": 160},
+    "markdown": {"preferred_lines": 350, "max_lines": 600, "preferred_line_length": 100, "max_line_length": 140},
+    "json": {"preferred_lines": 400, "max_lines": 800, "preferred_line_length": 120, "max_line_length": 180}
+  },
+  "logging": {
+    "schema_version": 1,
+    "machine_format": "jsonl",
+    "human_format": "txt",
+    "levels": ["DEBUG", "INFO", "WARN", "ERROR", "CRITICAL"],
+    "max_jsonl_lines_per_file": 2500,
+    "max_jsonl_bytes_per_file": 2097152,
+    "max_short_report_lines": 120,
+    "max_detail_chars": 2000,
+    "max_detail_total_chars": 8000,
+    "redact_keys": ["password", "passwort", "token", "secret", "api_key", "authorization", "cookie", "credential"]
+  },
+  "quality": {
+    "python_formatter": "ruff format",
+    "python_linter": "ruff check",
+    "web_formatter": "prettier",
+    "test_runner": "pytest",
+    "project_checker": "python tools/check_project.py",
+    "release_blocking": ["syntax", "format", "tests", "file_limits", "manifest", "regressions_p0"]
+  },
+  "ui": {
+    "language": "de",
+    "minimum_focus_visibility": true,
+    "color_only_status_forbidden": true,
+    "tooltips_optional_support_only": true,
+    "zoom_target_percent": [100, 125, 150, 200],
+    "semantic_colors": {
+      "success": "#50e38a",
+      "warning": "#ffd24a",
+      "error": "#ff667a",
+      "info": "#8d7dff",
+      "primary": "#35e1dc"
+    }
+  }
+}

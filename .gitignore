@@ -1,13 +1,41 @@
+# Python
 __pycache__/
 *.py[cod]
-*.egg-info/
 .pytest_cache/
-.mypy_cache/
 .ruff_cache/
 .venv/
 venv/
-build/
-dist/
-coverage.xml
-.coverage
-reports/
+
+# Node
+node_modules/
+
+# Nutzer- und Laufzeitdaten
+data/user/
+data/private/
+config/local/
+runtime/*
+!runtime/README.md
+logs/*
+!logs/README.md
+backups/
+*.sqlite
+*.sqlite3
+*.db
+
+# Umgebungen / Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# OS / Editoren
+.DS_Store
+Thumbs.db
+.vscode/settings.json
+.idea/
+
+# generierte Diagnose
+*_status_laufend_*.jsonl
+*_status_beendet_*.txt
+*_status_absturz_*.txt

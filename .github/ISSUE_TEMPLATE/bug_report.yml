@@ -1,0 +1,33 @@
+name: Fehler melden
+description: Verständliche Fehlermeldung für das PROVOWARE DATENBANKTOOL
+title: "[FEHLER] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Danke. Bitte keine Passwörter, Tokens oder privaten Nutzerdaten einfügen.
+  - type: textarea
+    id: what
+    attributes:
+      label: Was ist passiert?
+      description: Kurz und in eigenen Worten beschreiben.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Schritte zum Nachstellen
+      description: Was wurde direkt davor gemacht?
+    validations:
+      required: true
+  - type: input
+    id: code
+    attributes:
+      label: Fehlercode
+      description: Falls vorhanden, z. B. PRV-ERR-001.
+  - type: textarea
+    id: short_report
+    attributes:
+      label: Kurzdetails
+      description: Nur bereinigte Angaben aus dem deutschen Kurzbericht einfügen.
