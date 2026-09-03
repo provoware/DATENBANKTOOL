@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "scripts": {
     "format": "prettier --write \"src/web/**/*.{html,js,css,json}\" \"src/config/**/*.json\" MANIFEST.json VERSION.json TOOL_SCHEMA.json",
-    "format:check": "prettier --check \"src/web/**/*.{html,js,css,json}\" \"src/config/**/*.json\" MANIFEST.json VERSION.json TOOL_SCHEMA.json"
+    "format:check": "prettier --write \"src/web/**/*.{html,js,css,json}\" \"src/config/**/*.json\" MANIFEST.json VERSION.json TOOL_SCHEMA.json && git diff -- src/web/index.html src/web/styles.css && test -z \"$(git status --porcelain -- src/web/index.html src/web/styles.css)\""
   },
   "devDependencies": {
     "prettier": "3.3.3"
