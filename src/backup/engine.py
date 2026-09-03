@@ -6,6 +6,7 @@ import os
 import sqlite3
 import tempfile
 import uuid
+from contextlib import suppress
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -96,10 +97,8 @@ def _atomic_json_write(path: Path, payload: dict[str, Any]) -> None:
         os.replace(temporary_name, path)
         _fsync_directory(path.parent)
     finally:
-        try:
+        with suppress(FileNotFoundError):
             os.unlink(temporary_name)
-        except FileNotFoundError:
-            pass
 
 
 def _inspect_database(path: Path) -> tuple[int, tuple[str, ...], int]:
@@ -199,13 +198,12 @@ class BackupManager:
         except Exception:
             if staging.exists():
                 marker = staging / "STATUS_UNVOLLSTAENDIG.txt"
-                try:
+                with suppress(OSError):
                     marker.write_text(
-                        "Dieses Backup ist unvollständig und darf nicht wiederhergestellt werden.\n",
+                        "Dieses Backup ist unvollständig und darf nicht "
+                        "wiederhergestellt werden.\n",
                         encoding="utf-8",
                     )
-                except OSError:
-                    pass
             raise
 
     def verify_backup(
