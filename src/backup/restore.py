@@ -110,7 +110,8 @@ class RestoreManager:
         if not self.gate.acquire():
             raise RestoreBusyError("Eine andere kritische Datenoperation läuft bereits.")
         try:
-            return self._restore_locked(Path(backup_path), fault_hook=fault_hook)
+            with self.database.exclusive_access():
+                return self._restore_locked(Path(backup_path), fault_hook=fault_hook)
         finally:
             self.gate.release()
 
@@ -156,13 +157,13 @@ class RestoreManager:
             if fault_hook is not None:
                 fault_hook("STAGING_VERIFIED")
 
-            previous_hash = self._prepare_previous_snapshot(rollback)
-            details["previous_sha256"] = previous_hash
             transition("RESTORE_RECEIVED")
             transition("STAGING_VERIFIED")
+            previous_hash = self._prepare_previous_snapshot(rollback)
+            details["previous_sha256"] = previous_hash
             transition("ROLLBACK_READY")
 
-            self._prepare_productive_for_swap()
+            self._assert_no_sqlite_sidecars()
             self._assert_staging(staging, expected_hash)
             transition("SWAP_PREPARED")
             if fault_hook is not None:
@@ -253,19 +254,11 @@ class RestoreManager:
             raise RestoreError("Rollback-Snapshot der Produktivdatenbank ist nicht integer.")
         return _sha256(rollback)
 
-    def _prepare_productive_for_swap(self) -> None:
-        connection = self.database.connect_raw()
-        try:
-            connection.execute("PRAGMA wal_checkpoint(TRUNCATE)")
-            mode = str(connection.execute("PRAGMA journal_mode = DELETE").fetchone()[0])
-            if mode.lower() != "delete":
-                raise RestoreError("Produktivdatenbank konnte nicht aus WAL gelöst werden.")
-        finally:
-            connection.close()
-        for suffix in ("-wal", "-shm"):
+    def _assert_no_sqlite_sidecars(self) -> None:
+        for suffix in ("-wal", "-shm", "-journal"):
             sidecar = Path(str(self.database.path) + suffix)
             if sidecar.exists():
-                raise RestoreError("SQLite-WAL-Seitendatei ist vor dem Swap noch aktiv.")
+                raise RestoreError("SQLite-Seitendatei ist vor dem atomaren Swap noch aktiv.")
 
     def _postcheck_productive(self, expected_hash: str) -> None:
         if _sha256(self.database.path) != expected_hash:
