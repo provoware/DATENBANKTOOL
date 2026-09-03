@@ -2,8 +2,8 @@
   "schema_version": 1,
   "project": {
     "name": "PROVOWARE DATENBANKTOOL",
-    "version": "0.1.0-foundation",
-    "status": "basis",
+    "version": "0.2.0-alpha.1",
+    "status": "datenkern",
     "language": "de",
     "offline_first": true
   },
@@ -20,6 +20,17 @@
       "tests": "tests/",
       "tools": "tools/"
     }
+  },
+  "persistence": {
+    "engine": "sqlite3",
+    "default_path": "data/user/provoware.sqlite3",
+    "schema_version": 1,
+    "journal_mode": "WAL",
+    "foreign_keys": true,
+    "busy_timeout_ms": 5000,
+    "migration_policy": "forward-only",
+    "migration_checksum": "sha256",
+    "integrity_checks": ["quick_check", "foreign_key_check"]
   },
   "file_limits": {
     "python": { "preferred_lines": 300, "max_lines": 450, "preferred_line_length": 100, "max_line_length": 120 },
