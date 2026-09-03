@@ -212,6 +212,8 @@ class RestoreManager:
                 final_state = "FAILED"
             else:
                 final_state = "REJECTED"
+            if not transitions or transitions[-1] != final_state:
+                transition(final_state, {"error": type(exc).__name__})
             self._finish(
                 operation_id=operation_id,
                 started_at=started_at,
