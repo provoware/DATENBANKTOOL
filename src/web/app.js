@@ -6,7 +6,7 @@ const progressBar = document.querySelector("#progressBar");
 const progressBlocks = document.querySelector("#progressBlocks");
 const footer = document.querySelector("#footerText");
 
-const statusClasses = { rot: "status-error", "grün": "status-success" };
+const statusClasses = { rot: "status-error", grün: "status-success" };
 
 let messages = {};
 let projectMeta = {};
