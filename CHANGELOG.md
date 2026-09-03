@@ -2,6 +2,40 @@
 
 Alle wichtigen Projektänderungen werden hier in deutscher Sprache dokumentiert.
 
+## [0.5.0-alpha.1] – 2026-09-03
+
+### Hinzugefügt
+
+- 🟢 `RestoreManager` mit eigenständigem Staging-Restore-Vertrag.
+- 🟢 unmittelbare erneute Backup-Verifikation vor jedem Restore.
+- 🟢 SHA-256-, Schema-, `quick_check`- und Fremdschlüsselprüfung im Staging.
+- 🟢 verifizierter Rollback-Snapshot des bisherigen Produktivstands.
+- 🟢 gemeinsamer kritischer Datenbank-Gate für Mutation und Restore.
+- 🟢 exklusives Datenbankzugriffsfenster während des Swap-Bereichs.
+- 🟢 atomarer Datenbanktausch per `os.replace()` erst nach grünem Staging-Gate.
+- 🟢 produktiver POSTCHECK als Pflicht vor `COMMITTED`.
+- 🟢 automatischer Rücktausch bei kontrolliertem Fehler nach `SWAPPED`.
+- 🟢 rekonstruierbarer Crash-Zustand `SWAPPING` mit Restore-Hash,
+  vorherigem Hash und Rollback-Pfad.
+- 🟢 `GET /api/restore/status` und bestätigungspflichtiger
+  `POST /api/restore/execute`.
+- 🟢 Regressionstests für Staging, Manipulation, Pre-Swap-Abbruch,
+  POSTCHECK-Rollback und Crash an der Swap-Grenze.
+- 🟢 Entwicklerdokument `docs/RESTORE_VERTRAG.md`.
+
+### Geändert
+
+- 🟣 Projektstatus auf `RESTOREKERN / AUFBAU` und Fortschritt auf 70 % gesetzt.
+- 🟣 `P0-011` Backup/Restore vollständig abgeschlossen.
+- 🟣 `P0-012` reale Browser-Endabnahme ist der nächste P0-Schritt.
+
+### Sicherheitsgrenze
+
+- 🟡 Ein Restore gilt erst nach grünem produktivem POSTCHECK und finaler Evidence
+  als `COMMITTED`.
+- 🟡 Ein unvollständiger Restore im Zustand `SWAPPING` blockiert den normalen Start
+  und muss anhand der gespeicherten Hashes rekonstruiert werden.
+
 ## [0.4.0-alpha.1] – 2026-09-03
 
 ### Hinzugefügt
