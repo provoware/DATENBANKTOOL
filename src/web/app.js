@@ -57,8 +57,8 @@ function applyHealthStatus(data) {
     traffic === "rot"
       ? "status-error"
       : traffic === "grün"
-        ? "status-success"
-        : "status-warning";
+      ? "status-success"
+      : "status-warning";
   const statusKey =
     data.status_message_key || projectMeta.product?.status_message_key;
   const label = text(statusKey, data.status || "status");
