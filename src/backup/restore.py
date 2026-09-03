@@ -200,7 +200,12 @@ class RestoreManager:
             )
         except Exception as exc:
             if "SWAPPED" in transitions:
-                self._rollback_after_failed_postcheck(rollback, details, transitions)
+                self._rollback_after_failed_postcheck(
+                    operation_id,
+                    rollback,
+                    details,
+                    transitions,
+                )
                 final_state = "ROLLED_BACK"
             elif "SWAPPING" in transitions:
                 final_state = "FAILED"
@@ -273,13 +278,14 @@ class RestoreManager:
 
     def _rollback_after_failed_postcheck(
         self,
+        operation_id: str,
         rollback: Path,
         details: dict,
         transitions: list[str],
     ) -> None:
         transitions.append("ROLLING_BACK")
         self.journal.append_transition(
-            operation_id=transitions and details.get("operation_id", "") or "",
+            operation_id=operation_id,
             operation_kind="database.restore",
             target=str(self.database.path),
             state="ROLLING_BACK",
@@ -297,6 +303,14 @@ class RestoreManager:
         if version != CURRENT_SCHEMA_VERSION or quick != ("ok",) or foreign_violations:
             raise RestoreError("Rollback-Datenbank ist nach Rücktausch nicht integer.")
         transitions.append("ROLLED_BACK")
+        self.journal.append_transition(
+            operation_id=operation_id,
+            operation_kind="database.restore",
+            target=str(self.database.path),
+            state="ROLLED_BACK",
+            key_hash=None,
+            details=details,
+        )
 
     def _finish(
         self,
