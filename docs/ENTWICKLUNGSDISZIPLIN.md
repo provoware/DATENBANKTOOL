@@ -2,7 +2,9 @@
 
 ## Ziel
 
-Änderungen sollen klein, nachvollziehbar und wiederverwendbar bleiben. Vor dem ersten Patch wird immer geklärt, wo die Ursache liegt und welche Datei tatsächlich verantwortlich ist.
+Änderungen sollen klein, nachvollziehbar und wiederverwendbar bleiben. Vor dem ersten
+Patch wird immer geklärt, wo die Ursache liegt und welche Datei tatsächlich
+verantwortlich ist.
 
 ## Pflichtablauf
 
@@ -38,18 +40,26 @@ Vor Codeänderungen werden mindestens diese Punkte festgehalten:
 - **Registry-Version**: Aufbau der zentralen Registry.
 - **Sprachkatalog-Version**: Aufbau der ausgelagerten UI-Texte.
 
-Eine interne Schemaänderung erzwingt nicht automatisch eine Produkt-Hauptversion. Bereits veröffentlichte Schema- oder Migrationsstände werden niemals still umgedeutet.
+Eine interne Schemaänderung erzwingt nicht automatisch eine Produkt-Hauptversion.
+Bereits veröffentlichte Schema- oder Migrationsstände werden niemals still umgedeutet.
 
 ## Registry-Regel
 
-`src/config/registry.json` ist der Index für stabile technische IDs, Module, API-Endpunkte, Fehlercodes und zentrale Querschnittspfade. Neue Funktionen prüfen zuerst, ob eine passende Registry-ID oder bestehende Implementierung vorhanden ist.
+`src/config/registry.json` ist der Index für stabile technische IDs, Module,
+API-Endpunkte, Fehlercodes und zentrale Querschnittspfade. Neue Funktionen prüfen zuerst,
+ob eine passende Registry-ID oder bestehende Implementierung vorhanden ist.
 
 ## UI-Regel
 
-Wiederkehrende Abstände, Radien, Schatten und semantische Farben werden als CSS-Variablen geführt. Neue Komponenten verwenden diese Tokens statt neue Einzelwerte zu erfinden.
+Wiederkehrende Abstände, Radien, Schatten und semantische Farben werden als
+CSS-Variablen geführt. Neue Komponenten verwenden diese Tokens statt neue Einzelwerte
+zu erfinden.
 
-Sichtbare deutsche UI-Texte gehören in `src/web/i18n/de.json`. Logik enthält nur notwendige technische Fallbacks.
+Sichtbare deutsche UI-Texte gehören in `src/web/i18n/de.json`.
+Logik enthält nur notwendige technische Fallbacks.
 
 ## Schutz bestehender Sicherheitskerne
 
-Persistence-, Recovery-, Backup- und Restore-Verträge werden bei Wartbarkeitsarbeiten nicht nebenbei umgebaut. Änderungen an diesen Schichten benötigen einen eigenen fachlichen Grund und eigene Regressionen.
+Persistence-, Recovery-, Backup- und Restore-Verträge werden bei Wartbarkeitsarbeiten
+nicht nebenbei umgebaut. Änderungen an diesen Schichten benötigen einen eigenen
+fachlichen Grund und eigene Regressionen.
