@@ -11,7 +11,7 @@ Anwendungsdienste
    ↓
 Daten-/Persistenzschicht
    ↓
-Recovery / Logging / Storage
+Recovery / Backup / Logging / Storage
 ```
 
 Querschnittsfunktionen wie Logging, Validierung und Konfiguration dürfen
@@ -23,13 +23,14 @@ Fachmodule nicht duplizieren.
 src/                 Basistool
 src/persistence/     SQLite, Migrationen und generischer Datenspeicher
 src/recovery/        Mutationsvertrag, Zustandsmaschine und Recovery-Evidence
+src/backup/          Snapshot, Backup-Manifest und Verifikations-Gate
 src/web/             Browseroberfläche
 src/config/          eingebaute Defaults
 config/              nutzeranpassbare, aber nicht private Beispielkonfiguration
 data/                keine echten Nutzerdaten im Git
 runtime/             Laufzeitzustand und Recovery-Journal, ignoriert
 logs/                Laufzeitlogs, ignoriert
-backups/             Backups, ignoriert
+backups/             lokale Backup-Artefakte, ignoriert
 docs/                vertiefende Dokumentation
 tests/               automatisierte Tests
 tools/               Entwicklungs-/Prüfwerkzeuge
@@ -71,6 +72,28 @@ Pflichtregeln:
 Neue produktive Schreibfunktionen dürfen keinen privaten Commit-/Rollback-Vertrag
 erfinden. Sie verwenden `MutationCoordinator` oder einen zentral geprüften Adapter.
 
+## Backup-Vertrag
+
+Der ausführbare Vertrag steht in `docs/BACKUP_VERTRAG.md`.
+
+P0-011A verwendet die SQLite-Backup-API für konsistente Snapshots. Eine einfache
+Dateikopie der produktiven SQLite-Datei ist als Backup-Verfahren nicht zulässig.
+
+Pflichtregeln:
+
+- Quelldatenbank muss Schema- und Integritätsprüfung bestehen.
+- Snapshot entsteht ausschließlich in `.incomplete_<backup-id>`.
+- Backup-ID beginnt mit `bkp-`.
+- Manifest v1 enthält Hash, Größe, Schema, UTC-Zeit und Integritätsdaten.
+- SHA-256, Größe, Schema, `quick_check` und Fremdschlüssel werden unabhängig nachgemessen.
+- nur erfolgreich verifiziertes Staging wird atomar als `backup_status_verified_*` veröffentlicht.
+- `.incomplete_*` darf niemals als gültiges Backup gelistet oder als Restore-Quelle akzeptiert werden.
+- beschädigte oder manipulierte Backups werden von `list_verified_backups()` ausgeschlossen.
+- Restore bleibt bis P0-011B deaktiviert.
+
+Neue Backup-Funktionen verwenden `BackupManager`. Fachmodule dürfen keine eigene
+SQLite-Dateikopie oder eigene Manifestlogik implementieren.
+
 ## Fehlervertrag
 
 Jeder technische Fehler sollte mindestens liefern:
@@ -96,6 +119,10 @@ Mindestens:
 - Mutation Commit/Rollback
 - Single-Writer-Gate und Idempotenz
 - Recovery-Evidence und Start-Gate
+- Backup unter WAL-Betrieb
+- Backup-Hash, Dateigröße und Manifest
+- manipulierte Backup-Datei und manipuliertes Manifest
+- unvollständiges Staging wird nicht veröffentlicht
 - keine sensitiven Repo-Daten
 - Smoke-Test
 - Regressionen
