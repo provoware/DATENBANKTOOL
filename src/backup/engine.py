@@ -3,7 +3,6 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-import shutil
 import sqlite3
 import tempfile
 import uuid
@@ -154,9 +153,7 @@ class BackupManager:
 
         backup_id = f"bkp-{uuid.uuid4().hex}"
         staging = self.backup_root / f".incomplete_{backup_id}"
-        final = self.backup_root / (
-            f"backup_status_verified_{_safe_stamp()}_{backup_id}"
-        )
+        final = self.backup_root / f"backup_status_verified_{_safe_stamp()}_{backup_id}"
         if staging.exists() or final.exists():
             raise BackupCreationError("Backup-Ziel existiert bereits.")
 
@@ -189,7 +186,15 @@ class BackupManager:
             os.replace(staging, final)
             _fsync_directory(self.backup_root)
             return BackupVerificationReport(
-                **{**asdict(verification), "backup_path": final}
+                ok=True,
+                backup_id=verification.backup_id,
+                backup_path=final,
+                manifest=verification.manifest,
+                measured_sha256=verification.measured_sha256,
+                measured_size_bytes=verification.measured_size_bytes,
+                measured_schema_version=verification.measured_schema_version,
+                quick_check=verification.quick_check,
+                foreign_key_violations=verification.foreign_key_violations,
             )
         except Exception:
             if staging.exists():
@@ -261,7 +266,7 @@ class BackupManager:
 
     def list_verified_backups(self) -> tuple[Path, ...]:
         candidates = sorted(
-            self.backup_root.glob("backup_status_verified_*") ,
+            self.backup_root.glob("backup_status_verified_*"),
             key=lambda path: path.stat().st_mtime,
             reverse=True,
         )
@@ -279,7 +284,6 @@ class BackupManager:
         target = sqlite3.connect(destination)
         try:
             source.backup(target)
-            target.execute("PRAGMA wal_checkpoint(FULL)")
             target.commit()
         finally:
             target.close()
