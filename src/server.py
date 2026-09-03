@@ -218,9 +218,7 @@ class Handler(SimpleHTTPRequestHandler):
     def _restore_status(self) -> None:
         incomplete = get_recovery_journal().incomplete_operations()
         restore_operations = [
-            item
-            for item in incomplete.values()
-            if item.get("operation_kind") == "database.restore"
+            item for item in incomplete.values() if item.get("operation_kind") == "database.restore"
         ]
         self._json(
             200 if not restore_operations else 503,
@@ -281,9 +279,7 @@ class Handler(SimpleHTTPRequestHandler):
             self._json(409, {"ok": False, "error": "Restore-Bestätigung fehlt."})
             return
         requested = str(payload.get("backup") or "").strip()
-        candidates = {
-            path.name: path for path in get_backup_manager().list_verified_backups()
-        }
+        candidates = {path.name: path for path in get_backup_manager().list_verified_backups()}
         backup_path = candidates.get(requested)
         if backup_path is None:
             self._json(404, {"ok": False, "error": "Verifiziertes Backup nicht gefunden."})
