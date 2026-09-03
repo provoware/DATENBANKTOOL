@@ -16,7 +16,7 @@ jobs:
   browser-smoke:
     runs-on: ubuntu-24.04
     env:
-      PROVOWARE_DB_PATH: ${{ runner.temp }}/provoware-browser.sqlite3
+      PROVOWARE_DB_PATH: /tmp/provoware-browser.sqlite3
     steps:
       - name: Repository auschecken
         uses: actions/checkout@v4
