@@ -2,10 +2,10 @@
   "schema_version": 1,
   "product": {
     "name": "PROVOWARE DATENBANKTOOL",
-    "version": "0.5.0-alpha.1",
+    "version": "0.5.1-alpha.1",
     "release_channel": "alpha",
     "status_id": "restorekern",
-    "status_label_de": "RESTOREKERN / AUFBAU",
+    "status_message_key": "status.restorekern",
     "progress_percent": 70
   },
   "schemas": {
