@@ -102,7 +102,7 @@ def test_failed_postcheck_rolls_back_business_data(tmp_path):
 def test_busy_gate_rejects_parallel_mutation(tmp_path):
     database = _database(tmp_path)
     coordinator = MutationCoordinator(database, tmp_path / "runtime")
-    coordinator._lock.acquire()
+    assert coordinator.gate.acquire() is True
     try:
         with pytest.raises(MutationBusyError) as error:
             coordinator.execute(
@@ -111,7 +111,7 @@ def test_busy_gate_rejects_parallel_mutation(tmp_path):
                 mutation=lambda connection: None,
             )
     finally:
-        coordinator._lock.release()
+        coordinator.gate.release()
 
     assert error.value.operation_id.startswith("op-")
     assert error.value.evidence_path is not None
