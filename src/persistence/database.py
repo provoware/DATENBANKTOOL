@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import sqlite3
+from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterator
 
 from src.persistence.migrations import (
     CURRENT_SCHEMA_VERSION,
