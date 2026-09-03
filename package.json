@@ -3,8 +3,8 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "format": "prettier --write \"src/web/**/*.{html,js,css}\" \"src/config/**/*.json\" MANIFEST.json",
-    "format:check": "prettier --check \"src/web/**/*.{html,js,css}\" \"src/config/**/*.json\" MANIFEST.json"
+    "format": "prettier --write \"src/web/**/*.{html,js,css,json}\" \"src/config/**/*.json\" MANIFEST.json VERSION.json TOOL_SCHEMA.json",
+    "format:check": "prettier --check \"src/web/**/*.{html,js,css,json}\" \"src/config/**/*.json\" MANIFEST.json VERSION.json TOOL_SCHEMA.json"
   },
   "devDependencies": {
     "prettier": "3.3.3"

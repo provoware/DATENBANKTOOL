@@ -14,6 +14,14 @@
 - [x] **CF-006** CI, Formatierung, Tests und Projektprüfer anlegen.
 - [x] **CF-007** professionelles JSONL-/TXT-Logging als Basis implementieren.
 - [x] **CF-008** deutsche Laienhilfe, Tooltips-Regeln, Ampeln und Fortschrittsdarstellung anlegen.
+- [x] **CF-009** Wartbarkeitskern etablieren.
+  - [x] Voranalyse- und Minimal-Patch-Vertrag dokumentiert.
+  - [x] `VERSION.json` als zentrale Versionsübersicht angelegt.
+  - [x] Registry für Module, Endpunkte und Fehlercodes angelegt.
+  - [x] Tool-Schema und Ordner-/Dateiindex angelegt.
+  - [x] deutschen UI-Sprachkatalog ausgelagert und versioniert.
+  - [x] UI-Abstände, Radien, Schatten und Farben über Design-Tokens vereinheitlicht.
+  - [x] Regressionen gegen Versions-, Registry- und Sprachdrift ergänzt.
 - [x] **P0-009** Persistenzschicht mit echtem Schema und Migration implementieren.
 - [x] **P0-010** Recovery-/Transaktionsvertrag für alle Datenänderungen implementieren.
   - [x] Operation-ID pro Datenänderung.
@@ -26,27 +34,7 @@
   - [x] Start-Gate erkennt unvollständige vorherige Operationen.
 - [x] **P0-011** Backup-/Restore-Funktion mit Integritätsprüfung implementieren.
   - [x] **P0-011A** Backup Engine + Backup Manifest v1.
-    - [x] konsistenter SQLite-Snapshot auch bei WAL-Betrieb.
-    - [x] eindeutige Backup-ID.
-    - [x] SHA-256 und Dateigröße.
-    - [x] Schema-Version und UTC-Zeit.
-    - [x] Manifest-Version und Integritätsstatus.
-    - [x] atomare Veröffentlichung erst nach erfolgreicher Verifikation.
-    - [x] `.incomplete_*` wird niemals als gültiges Backup geführt.
-    - [x] unabhängiges Backup-Verifikations-Gate.
-    - [x] Regressionen für WAL, Manipulation, Staging und Abbruch.
-  - [x] **P0-011B** Staging-Restore implementieren.
-    - [x] Backup vor Restore erneut verifizieren.
-    - [x] Restore ausschließlich in Staging-Ziel durchführen.
-    - [x] SHA-256, Schema, quick_check und foreign_key_check erneut prüfen.
-    - [x] exklusives Datenbankzugriffsfenster vor dem Swap.
-    - [x] Rollback-Snapshot des vorherigen Produktivstands vor dem Austausch.
-    - [x] produktive Datenbank erst nach grünem Staging-Gate atomar austauschen.
-    - [x] Fehler vor Austausch verändern keine produktiven Nutzdaten.
-    - [x] POSTCHECK nach Swap ist Pflicht vor COMMITTED.
-    - [x] fehlgeschlagener POSTCHECK rollt auf den vorherigen Produktivstand zurück.
-    - [x] Crash im Zustand SWAPPING bleibt als unvollständiger Vorgang startblockierend sichtbar.
-    - [x] Restore-Evidence und Recovery-Vertrag angebunden.
+  - [x] **P0-011B** Staging-Restore + atomarer Austausch + POSTCHECK.
 - [ ] **P0-012** reale Browser-Endabnahme unter Kubuntu/KDE + Chrome durchführen.
 
 ## P1 · Produktbasis

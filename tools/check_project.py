@@ -26,6 +26,24 @@ EXCLUDED_PARTS = {
     "backups",
 }
 
+REQUIRED_FILES = [
+    "README.md",
+    "TODO.md",
+    "CHANGELOG.md",
+    "REGRESSIONSPOOL.md",
+    "FORTSCHRITTSINFO.md",
+    "ENTWICKLUNGSPLAN.md",
+    "AGENTS.md",
+    "MANIFEST.json",
+    "VERSION.json",
+    "TOOL_SCHEMA.json",
+    "ORDNER_UND_DATEIINDEX.md",
+    "src/config/registry.json",
+    "src/web/i18n/de.json",
+    "src/web/project-meta.json",
+    "docs/ENTWICKLUNGSDISZIPLIN.md",
+]
+
 
 def excluded(path: Path) -> bool:
     relative = path.relative_to(ROOT).as_posix()
@@ -42,31 +60,16 @@ def check_file(path: Path, kind: str) -> list[str]:
     if len(lines) > rules["max_lines"]:
         errors.append(f"{relative}: {len(lines)} Zeilen > Maximum {rules['max_lines']}")
 
-    long_lines: list[int] = []
-    for index, line in enumerate(lines, 1):
-        if len(line) > rules["max_line_length"]:
-            long_lines.append(index)
-
+    long_lines = [index for index, line in enumerate(lines, 1) if len(line) > rules["max_line_length"]]
     if long_lines:
         preview = ", ".join(map(str, long_lines[:5]))
-        message = f"{relative}: Zeilen über {rules['max_line_length']} Zeichen: {preview}"
-        errors.append(message)
+        errors.append(f"{relative}: Zeilen über {rules['max_line_length']} Zeichen: {preview}")
     return errors
 
 
 def main() -> int:
     errors: list[str] = []
-    required = [
-        "README.md",
-        "TODO.md",
-        "CHANGELOG.md",
-        "REGRESSIONSPOOL.md",
-        "FORTSCHRITTSINFO.md",
-        "ENTWICKLUNGSPLAN.md",
-        "AGENTS.md",
-        "MANIFEST.json",
-    ]
-    for name in required:
+    for name in REQUIRED_FILES:
         if not (ROOT / name).is_file():
             errors.append(f"Pflichtdatei fehlt: {name}")
 

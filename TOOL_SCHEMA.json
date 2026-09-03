@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "purpose": "Maschinenlesbare Struktur des PROVOWARE DATENBANKTOOL",
+  "version_source": "VERSION.json",
+  "registry": "src/config/registry.json",
+  "layers": [
+    {"id": "ui", "path": "src/web/", "responsibility": "Darstellung und Bedienung"},
+    {"id": "api", "path": "src/server.py", "responsibility": "lokale HTTP-Schnittstelle"},
+    {"id": "persistence", "path": "src/persistence/", "responsibility": "SQLite, Schema und Migration"},
+    {"id": "recovery", "path": "src/recovery/", "responsibility": "Mutation, Journal und Evidence"},
+    {"id": "backup", "path": "src/backup/", "responsibility": "Backup, Restore und Verifikation"},
+    {"id": "diagnostics", "path": "src/logging_core.py", "responsibility": "Logging und Kurzberichte"}
+  ],
+  "data_classes": {
+    "versioned": ["src/", "docs/", "tests/", "tools/", "config/"],
+    "local_not_versioned": ["data/user/", "runtime/", "logs/", "backups/"]
+  },
+  "critical_files": [
+    "VERSION.json",
+    "MANIFEST.json",
+    "src/config/registry.json",
+    "src/web/i18n/de.json",
+    "src/web/project-meta.json",
+    "REGRESSIONSPOOL.md",
+    "AGENTS.md"
+  ]
+}
