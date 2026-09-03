@@ -10,12 +10,13 @@ from urllib.parse import urlparse
 
 from src.logging_core import EventLogger
 from src.persistence import Database, MigrationError
+from src.recovery import EvidenceJournal
 
 ROOT = Path(__file__).resolve().parents[1]
 WEB = ROOT / "src" / "web"
 LOGGER: EventLogger | None = None
 DATABASE: Database | None = None
-APP_VERSION = "0.2.0-alpha.1"
+APP_VERSION = "0.3.0-alpha.1"
 
 
 def get_logger() -> EventLogger:
@@ -32,6 +33,10 @@ def get_database() -> Database:
         path = Path(configured) if configured else ROOT / "data" / "user" / "provoware.sqlite3"
         DATABASE = Database(path)
     return DATABASE
+
+
+def get_recovery_journal() -> EvidenceJournal:
+    return EvidenceJournal(ROOT / "runtime")
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -52,23 +57,29 @@ class Handler(SimpleHTTPRequestHandler):
         if path == "/api/health":
             logger = get_logger()
             storage = get_database().schema_status()
+            incomplete = get_recovery_journal().incomplete_operations()
+            healthy = storage.ready and not incomplete
             self._json(
-                200,
+                200 if healthy else 503,
                 {
-                    "ok": storage.ready,
-                    "status": "datenkern",
+                    "ok": healthy,
+                    "status": "transaktionskern",
                     "version": APP_VERSION,
-                    "ampel": "gelb" if storage.ready else "rot",
+                    "ampel": "gelb" if healthy else "rot",
                     "message": (
-                        "Datenkern ist bereit. Recovery-Vertrag ist noch im Aufbau."
-                        if storage.ready
-                        else "Datenkern ist nicht bereit."
+                        "Daten- und Transaktionskern sind bereit. Backup/Restore ist noch offen."
+                        if healthy
+                        else "Datenkern oder Recovery-Zustand benötigt Prüfung."
                     ),
                     "session_id": logger.session_id,
                     "storage": {
                         "ready": storage.ready,
                         "schema_version": storage.current_version,
                         "target_version": storage.target_version,
+                    },
+                    "recovery": {
+                        "contract_ready": True,
+                        "incomplete_operations": len(incomplete),
                     },
                 },
             )
@@ -90,6 +101,24 @@ class Handler(SimpleHTTPRequestHandler):
                     }
                     if integrity
                     else None,
+                },
+            )
+            return
+
+        if path == "/api/recovery/status":
+            incomplete = get_recovery_journal().incomplete_operations()
+            self._json(
+                200 if not incomplete else 503,
+                {
+                    "ok": not incomplete,
+                    "contract_ready": True,
+                    "incomplete_operations": len(incomplete),
+                    "operations": list(incomplete.values())[:20],
+                    "message": (
+                        "Keine unvollständigen Datenänderungen erkannt."
+                        if not incomplete
+                        else "Unvollständige Datenänderung erkannt. Vor neuen Änderungen prüfen."
+                    ),
                 },
             )
             return
@@ -164,6 +193,26 @@ def _initialize_storage(logger: EventLogger) -> bool:
     return True
 
 
+def _check_recovery_state(logger: EventLogger) -> bool:
+    incomplete = get_recovery_journal().incomplete_operations()
+    if not incomplete:
+        logger.log(
+            "PRV-REC-100",
+            "Recovery-Journal enthält keine unvollständige Datenänderung.",
+            component="recovery",
+        )
+        return True
+    logger.log(
+        "PRV-REC-001",
+        "Unvollständige Datenänderung aus einer vorherigen Sitzung erkannt.",
+        level="CRITICAL",
+        component="recovery",
+        action="Keine neue Änderung starten. Recovery-Evidence prüfen.",
+        details={"incomplete_operations": len(incomplete)},
+    )
+    return False
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="PROVOWARE DATENBANKTOOL Clean Foundation")
     parser.add_argument("--host", default="127.0.0.1")
@@ -174,9 +223,9 @@ def main() -> int:
     logger = get_logger()
     logger.log("PRV-START-001", "Lokaler Server startet.")
 
-    if not _initialize_storage(logger):
+    if not _initialize_storage(logger) or not _check_recovery_state(logger):
         report = logger.write_short_report("absturz")
-        print("Datenbankstart fehlgeschlagen. Das Tool wurde sicher angehalten.")
+        print("Sicherheitsprüfung fehlgeschlagen. Das Tool wurde angehalten.")
         print(f"Kurzbericht: {report}")
         return 2
 
