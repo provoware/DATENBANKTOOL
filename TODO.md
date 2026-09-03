@@ -1,7 +1,7 @@
 # TODO · CLEAN FOUNDATION
 
-**Status:** 🟡 TRANSAKTIONSKERN / AUFBAU  
-**Fortschritt:** `[■■■■■□□□□□] 50 %`
+**Status:** 🟡 BACKUPKERN / AUFBAU  
+**Fortschritt:** `[■■■■■■□□□□] 60 %`
 
 ## P0 · Muss vor erster produktiver Nutzung
 
@@ -25,6 +25,23 @@
   - [x] sensible Evidence-Details werden geschwärzt.
   - [x] Start-Gate erkennt unvollständige vorherige Operationen.
 - [ ] **P0-011** Backup-/Restore-Funktion mit Integritätsprüfung implementieren.
+  - [x] **P0-011A** Backup Engine + Backup Manifest v1.
+    - [x] konsistenter SQLite-Snapshot auch bei WAL-Betrieb.
+    - [x] eindeutige Backup-ID.
+    - [x] SHA-256 und Dateigröße.
+    - [x] Schema-Version und UTC-Zeit.
+    - [x] Manifest-Version und Integritätsstatus.
+    - [x] atomare Veröffentlichung erst nach erfolgreicher Verifikation.
+    - [x] `.incomplete_*` wird niemals als gültiges Backup geführt.
+    - [x] unabhängiges Backup-Verifikations-Gate.
+    - [x] Regressionen für WAL, Manipulation, Staging und Abbruch.
+  - [ ] **P0-011B** Staging-Restore implementieren.
+    - [ ] Backup vor Restore erneut verifizieren.
+    - [ ] Restore ausschließlich in Staging-Ziel durchführen.
+    - [ ] SHA-256, Schema, quick_check und foreign_key_check erneut prüfen.
+    - [ ] produktive Datenbank erst nach grünem Staging-Gate atomar austauschen.
+    - [ ] Fehler vor Austausch dürfen produktive Datenbank nicht verändern.
+    - [ ] Restore-Evidence und Recovery-Vertrag anbinden.
 - [ ] **P0-012** reale Browser-Endabnahme unter Kubuntu/KDE + Chrome durchführen.
 
 ## P1 · Produktbasis
