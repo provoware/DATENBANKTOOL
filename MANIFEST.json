@@ -22,12 +22,12 @@
     }
   },
   "file_limits": {
-    "python": {"preferred_lines": 300, "max_lines": 450, "preferred_line_length": 100, "max_line_length": 120},
-    "javascript": {"preferred_lines": 320, "max_lines": 450, "preferred_line_length": 110, "max_line_length": 140},
-    "css": {"preferred_lines": 400, "max_lines": 650, "preferred_line_length": 100, "max_line_length": 140},
-    "html": {"preferred_lines": 450, "max_lines": 650, "preferred_line_length": 120, "max_line_length": 160},
-    "markdown": {"preferred_lines": 350, "max_lines": 600, "preferred_line_length": 100, "max_line_length": 140},
-    "json": {"preferred_lines": 400, "max_lines": 800, "preferred_line_length": 120, "max_line_length": 180}
+    "python": { "preferred_lines": 300, "max_lines": 450, "preferred_line_length": 100, "max_line_length": 120 },
+    "javascript": { "preferred_lines": 320, "max_lines": 450, "preferred_line_length": 110, "max_line_length": 140 },
+    "css": { "preferred_lines": 400, "max_lines": 650, "preferred_line_length": 100, "max_line_length": 140 },
+    "html": { "preferred_lines": 450, "max_lines": 650, "preferred_line_length": 120, "max_line_length": 160 },
+    "markdown": { "preferred_lines": 350, "max_lines": 600, "preferred_line_length": 100, "max_line_length": 140 },
+    "json": { "preferred_lines": 400, "max_lines": 800, "preferred_line_length": 120, "max_line_length": 180 }
   },
   "logging": {
     "schema_version": 1,
