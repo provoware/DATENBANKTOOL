@@ -209,8 +209,9 @@ class MutationCoordinator:
         except Exception as exc:
             if committed:
                 raise MutationContractError(
-                    "Die Datenänderung wurde gespeichert, aber die Recovery-Evidence ist unvollständig. "
-                    "Vorgang nicht erneut ausführen; Recovery-Prüfung verwenden.",
+                    "Die Datenänderung wurde gespeichert, aber die Recovery-Evidence "
+                    "ist unvollständig. Vorgang nicht erneut ausführen; "
+                    "Recovery-Prüfung verwenden.",
                     operation_id=operation_id,
                 ) from exc
             if connection is not None:
