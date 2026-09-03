@@ -72,8 +72,10 @@ class EvidenceJournal:
         safe_state = evidence.state.lower().replace("_", "-")
         filename = f"recovery_evidence_status_{safe_state}_{evidence.operation_id}.json"
         destination = self.evidence_dir / filename
+        data = asdict(evidence)
+        data["details"] = sanitize_details(evidence.details)
         payload = json.dumps(
-            asdict(evidence),
+            data,
             ensure_ascii=False,
             indent=2,
             sort_keys=True,
