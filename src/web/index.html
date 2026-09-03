@@ -7,19 +7,13 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <a class="skip-link" href="#main" data-i18n="skip.main">
-      Zum Hauptinhalt
-    </a>
+    <a class="skip-link" href="#main" data-i18n="skip.main"> Zum Hauptinhalt </a>
     <header class="topbar">
       <div>
         <p class="eyebrow" data-i18n="header.eyebrow">PROVOWARE</p>
         <h1>DATENBANKTOOL</h1>
       </div>
-      <div
-        class="status-pill status-warning"
-        id="liveStatus"
-        aria-live="polite"
-      >
+      <div class="status-pill status-warning" id="liveStatus" aria-live="polite">
         <span aria-hidden="true">●</span> STATUS WIRD GELADEN
       </div>
     </header>
@@ -29,14 +23,11 @@
         <div>
           <p class="kicker" data-i18n="hero.kicker">Aktueller Fortschritt</p>
           <h2 data-i18n="hero.title">Sicherer und wartbarer Datenkern</h2>
-          <p data-i18n="hero.body">
-            Projektinformationen werden zentral geladen.
-          </p>
+          <p data-i18n="hero.body">Projektinformationen werden zentral geladen.</p>
         </div>
         <div class="progress-card">
           <div class="progress-label">
-            <span data-i18n="progress.total">Gesamt</span
-            ><strong id="progressValue">–</strong>
+            <span data-i18n="progress.total">Gesamt</span><strong id="progressValue">–</strong>
           </div>
           <div
             id="progressBar"
@@ -52,79 +43,49 @@
         </div>
       </section>
 
-      <section
-        class="grid"
-        aria-label="Projektübersicht"
-        data-i18n-aria="overview.label"
-      >
+      <section class="grid" aria-label="Projektübersicht" data-i18n-aria="overview.label">
         <article class="card accent-cyan" tabindex="0">
           <div class="icon" aria-hidden="true">🧱</div>
           <h3 data-i18n="card.architecture.title">Architektur</h3>
-          <p data-i18n="card.architecture.body">
-            Projektbereiche sind klar getrennt.
-          </p>
-          <span class="traffic traffic-green" data-i18n="status.green">
-            ✓ GRÜN
-          </span>
+          <p data-i18n="card.architecture.body">Projektbereiche sind klar getrennt.</p>
+          <span class="traffic traffic-green" data-i18n="status.green"> ✓ GRÜN </span>
         </article>
         <article class="card accent-purple" tabindex="0">
           <div class="icon" aria-hidden="true">🧪</div>
           <h3 data-i18n="card.quality.title">Qualität</h3>
-          <p data-i18n="card.quality.body">
-            Automatische Prüfungen verhindern Rückschritte.
-          </p>
-          <span class="traffic traffic-green" data-i18n="status.green">
-            ✓ GRÜN
-          </span>
+          <p data-i18n="card.quality.body">Automatische Prüfungen verhindern Rückschritte.</p>
+          <span class="traffic traffic-green" data-i18n="status.green"> ✓ GRÜN </span>
         </article>
         <article class="card accent-yellow" tabindex="0">
           <div class="icon" aria-hidden="true">💾</div>
           <h3 data-i18n="card.persistence.title">Persistenz</h3>
-          <p data-i18n="card.persistence.body">
-            Der SQLite-Datenkern ist geprüft.
-          </p>
-          <span class="traffic traffic-green" data-i18n="status.green">
-            ✓ GRÜN
-          </span>
+          <p data-i18n="card.persistence.body">Der SQLite-Datenkern ist geprüft.</p>
+          <span class="traffic traffic-green" data-i18n="status.green"> ✓ GRÜN </span>
         </article>
         <article class="card accent-green" tabindex="0">
           <div class="icon" aria-hidden="true">🔒</div>
           <h3 data-i18n="card.safety.title">Datensicherheit</h3>
-          <p data-i18n="card.safety.body">
-            Sicherheitsverträge schützen Änderungen und Restore.
-          </p>
-          <span class="traffic traffic-green" data-i18n="status.green">
-            ✓ GRÜN
-          </span>
+          <p data-i18n="card.safety.body">Sicherheitsverträge schützen Änderungen und Restore.</p>
+          <span class="traffic traffic-green" data-i18n="status.green"> ✓ GRÜN </span>
         </article>
         <article class="card accent-blue" tabindex="0">
           <div class="icon" aria-hidden="true">?</div>
           <h3 data-i18n="card.help.title">Laienhilfe</h3>
-          <p data-i18n="card.help.body">
-            Erklärungen bleiben kurz und verständlich.
-          </p>
-          <button class="help-button" id="helpButton" data-i18n="help.open">
-            Hilfe anzeigen
-          </button>
+          <p data-i18n="card.help.body">Erklärungen bleiben kurz und verständlich.</p>
+          <button class="help-button" id="helpButton" data-i18n="help.open">Hilfe anzeigen</button>
         </article>
         <article class="card accent-red" tabindex="0">
           <div class="icon" aria-hidden="true">🛡</div>
           <h3 data-i18n="card.recovery.title">Recovery</h3>
-          <p data-i18n="card.recovery.body">
-            Wiederherstellung ist abgesichert.
-          </p>
-          <span class="traffic traffic-green" data-i18n="status.green">
-            ✓ GRÜN
-          </span>
+          <p data-i18n="card.recovery.body">Wiederherstellung ist abgesichert.</p>
+          <span class="traffic traffic-green" data-i18n="status.green"> ✓ GRÜN </span>
         </article>
       </section>
 
       <section class="panel help-panel" id="helpPanel" hidden tabindex="-1">
         <h2 data-i18n="help.title">Kurzhilfe</h2>
         <p data-i18n="help.traffic">Ampeln erklären den Prüfstatus.</p>
-        <p data-i18n="help.recovery">
-          Bei Recovery zuerst den Status prüfen.
-        </p>
+        <p data-i18n="help.recovery">Bei Recovery zuerst den Status prüfen.</p>
       </section>
     </main>
 
