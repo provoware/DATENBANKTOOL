@@ -8,15 +8,7 @@
     "offline_first": true
   },
   "architecture": {
-    "layers": [
-      "ui",
-      "api",
-      "application",
-      "persistence",
-      "recovery",
-      "backup",
-      "logging"
-    ],
+    "layers": ["ui", "api", "application", "persistence", "recovery", "backup", "logging"],
     "separation": {
       "base_tool": "src/",
       "default_config": "src/config/",
@@ -42,13 +34,7 @@
   },
   "recovery": {
     "contract_version": 1,
-    "flow": [
-      "PRECHECK",
-      "MUTATION",
-      "POSTCHECK",
-      "COMMIT_OR_ROLLBACK",
-      "EVIDENCE"
-    ],
+    "flow": ["PRECHECK", "MUTATION", "POSTCHECK", "COMMIT_OR_ROLLBACK", "EVIDENCE"],
     "states": [
       "RECEIVED",
       "PRECHECK",
@@ -93,13 +79,7 @@
       "quick_check",
       "foreign_key_violations"
     ],
-    "verification_checks": [
-      "sha256",
-      "size_bytes",
-      "schema_version",
-      "quick_check",
-      "foreign_key_check"
-    ],
+    "verification_checks": ["sha256", "size_bytes", "schema_version", "quick_check", "foreign_key_check"],
     "atomic_publish_after_verification": true,
     "incomplete_backup_is_valid": false,
     "restore_enabled": false,
@@ -153,16 +133,7 @@
     "max_short_report_lines": 120,
     "max_detail_chars": 2000,
     "max_detail_total_chars": 8000,
-    "redact_keys": [
-      "password",
-      "passwort",
-      "token",
-      "secret",
-      "api_key",
-      "authorization",
-      "cookie",
-      "credential"
-    ]
+    "redact_keys": ["password", "passwort", "token", "secret", "api_key", "authorization", "cookie", "credential"]
   },
   "quality": {
     "python_formatter": "ruff format",
@@ -170,14 +141,7 @@
     "web_formatter": "prettier",
     "test_runner": "pytest",
     "project_checker": "python tools/check_project.py",
-    "release_blocking": [
-      "syntax",
-      "format",
-      "tests",
-      "file_limits",
-      "manifest",
-      "regressions_p0"
-    ]
+    "release_blocking": ["syntax", "format", "tests", "file_limits", "manifest", "regressions_p0"]
   },
   "ui": {
     "language": "de",
