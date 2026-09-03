@@ -14,12 +14,12 @@ Ziel: sauberer, verständlicher, prüfbarer Unterbau.
 
 Ziel: robuste Datenhaltung ohne Datenverlust.
 
-1. Schema definieren
-2. Transaktionen und Validierungsverträge
-3. Migrationen
-4. Backup / Restore
-5. Recovery-Journal
-6. Import / Export
+1. ✅ Schema v1 definieren
+2. ✅ versionierte Migrationen und Drift-Erkennung
+3. 🔄 Transaktionen und Validierungsverträge
+4. ⬜ Backup / Restore
+5. ⬜ Recovery-Journal
+6. ⬜ Import / Export
 
 ## Phase C · Hauptdatenbank – ⚪
 

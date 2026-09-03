@@ -1,7 +1,7 @@
 [project]
 name = "provoware-datenbanktool"
-version = "0.1.0"
-description = "Clean Foundation für das PROVOWARE DATENBANKTOOL"
+version = "0.2.0a1"
+description = "Lokaler Datenkern für das PROVOWARE DATENBANKTOOL"
 requires-python = ">=3.10"
 
 [tool.ruff]

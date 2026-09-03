@@ -10,4 +10,7 @@ def test_manifest_has_required_standards() -> None:
     assert manifest["file_limits"]["python"]["max_lines"] <= 500
     assert manifest["file_limits"]["javascript"]["max_lines"] <= 500
     assert manifest["logging"]["machine_format"] == "jsonl"
+    assert manifest["persistence"]["engine"] == "sqlite3"
+    assert manifest["persistence"]["schema_version"] == 1
+    assert manifest["persistence"]["foreign_keys"] is True
     assert "tests" in manifest["quality"]["release_blocking"]
