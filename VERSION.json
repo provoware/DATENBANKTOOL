@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "product": {
+    "name": "PROVOWARE DATENBANKTOOL",
+    "version": "0.5.0-alpha.1",
+    "release_channel": "alpha",
+    "status_id": "restorekern",
+    "status_label_de": "RESTOREKERN / AUFBAU",
+    "progress_percent": 70
+  },
+  "schemas": {
+    "database": 1,
+    "project_manifest": 1,
+    "registry": 1,
+    "tool_schema": 1,
+    "locale_catalog": 1,
+    "logging": 1,
+    "recovery_evidence": 1,
+    "backup_manifest": 1
+  },
+  "contracts": {
+    "recovery": 1,
+    "backup": 1,
+    "restore": 1
+  },
+  "compatibility": {
+    "minimum_python": "3.12",
+    "default_locale": "de",
+    "offline_first": true
+  }
+}

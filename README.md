@@ -8,27 +8,53 @@
 
 `[■■■■■■■□□□] 70 % · RESTOREKERN / AUFBAU`
 
-Die Clean Foundation, der SQLite-Datenkern und der zentrale Mutations-/Recovery-Vertrag stehen.
-Mit `0.5.0-alpha.1` ist P0-011 vollständig: verifizierte WAL-taugliche Backups plus
-Staging-Restore, Rollback-Snapshot, atomarer Austausch, POSTCHECK und Recovery-Evidence.
+Version `0.5.0-alpha.1` besitzt einen abgesicherten SQLite-Datenkern,
+einen zentralen Mutations-/Recovery-Vertrag sowie verifizierte Backups und Restore.
+Die reale Browser-Endabnahme unter Kubuntu/KDE + Chrome ist der nächste P0-Schritt.
 
-Der Stand vor dem Clean Rebuild bleibt auf
-`backup/pre-clean-rebuild-20260903` gesichert.
+## Was ist das Tool?
 
-## Ziel
+PROVOWARE DATENBANKTOOL ist die lokale technische Grundlage für ein späteres
+Datenbank- und Wissenswerkzeug. Informationen sollen übersichtlich gespeichert,
+wiedergefunden, gesichert und nach Fehlern kontrolliert wiederhergestellt werden.
 
-PROVOWARE DATENBANKTOOL soll ein lokal betreibbares, laienfreundliches
-und robustes Datenbank-/Wissenswerkzeug werden.
+**Offline-first** bedeutet: echte Nutzerdaten, Logs und Backups bleiben standardmäßig
+auf dem eigenen Rechner und werden nicht als Projektcode versioniert.
 
-Die Architektur trennt konsequent:
+## Sicherheitskern
 
-- **Basistool** – Programmcode und feste UI-Grundlage
-- **Konfiguration** – versionierbare Standardwerte, keine privaten Einstellungen
-- **Nutzerdaten** – lokal, nicht im Repository
-- **Laufzeitdaten** – Logs, Recovery-Evidence, Caches und Sessions; nicht im Repository
-- **Backups** – lokal und getrennt vom Basistool
-- **Dokumentation** – Laien- und Entwicklerwissen getrennt
-- **Tests & Werkzeuge** – reproduzierbare Qualitätskontrolle
+### Datenänderungen
+
+`PRECHECK → MUTATION → POSTCHECK → COMMIT oder ROLLBACK → EVIDENCE`
+
+Jede kritische Änderung erhält eine Operation-ID. Parallele kritische Änderungen
+werden zentral koordiniert. Unvollständige Vorgänge bleiben im Recovery-Journal sichtbar.
+
+### Backup
+
+`SOURCE CHECK → SQLITE SNAPSHOT → INTEGRITY → HASH/METADATA → MANIFEST → VERIFY → ATOMIC PUBLISH`
+
+Ein Backup gilt erst nach erneuter unabhängiger Verifikation als gültig.
+
+### Restore
+
+`BACKUP VERIFY → RESTORE STAGING → STAGING VERIFY → ROLLBACK SNAPSHOT → SWAPPING → POSTCHECK → EVIDENCE`
+
+Die produktive Datenbank wird erst nach vollständig grünem Staging-Gate ausgetauscht.
+Nach dem Austausch ist ein produktiver POSTCHECK Pflicht vor `COMMITTED`.
+
+## Wartbarkeitsgrundlage
+
+Damit spätere Entwicklung gezielter und codesparsamer bleibt, gibt es nun zentrale
+Quellen und Indizes:
+
+- `VERSION.json` – Produkt-, Schema- und Vertragsversionen
+- `src/config/registry.json` – stabile Module, API-Endpunkte und Fehlercodes
+- `TOOL_SCHEMA.json` – maschinenlesbare Struktur des Tools
+- `ORDNER_UND_DATEIINDEX.md` – dieselbe Struktur in einfacher Sprache
+- `src/web/i18n/de.json` – versionierter deutscher UI-Sprachkatalog
+- `src/web/styles.css` – zentrale Design-Tokens für Abstände, Radien, Schatten und Farben
+- `docs/ENTWICKLUNGSDISZIPLIN.md` – Voranalyse- und Minimal-Patch-Vertrag
 
 ## Schnellstart
 
@@ -40,149 +66,79 @@ Danach im Browser öffnen:
 
 `http://127.0.0.1:8765`
 
-Die lokale Datenbank wird beim ersten Start automatisch unter
-`data/user/provoware.sqlite3` angelegt und auf die aktuelle Schema-Version migriert.
-
 Optional kann der Datenbankpfad gesetzt werden:
 
 ```bash
 PROVOWARE_DB_PATH=/anderer/pfad/provoware.sqlite3 python3 -m src.server
 ```
 
-## Datenkern
+## Ordner in einfacher Sprache
 
-Der Persistenzkern verwendet die Python-Standardbibliothek `sqlite3`.
+```text
+src/                 Programmcode
+src/core/            gemeinsame Metadaten-Helfer
+src/persistence/     SQLite, Schema und Migrationen
+src/recovery/        Mutationsschutz, Journal und Evidence
+src/backup/          Backup, Restore und Verifikation
+src/config/          eingebaute Registry und Standardwerte
+src/web/             Browseroberfläche, Sprachkatalog und Design-Tokens
+data/user/           echte lokale Nutzerdaten – nicht im Git
+runtime/             Recovery-Laufzeitdaten – nicht im Git
+logs/                Logs und Kurzberichte – nicht im Git
+backups/             lokale Sicherungen – nicht im Git
+tests/               automatische Regressionen
+tools/               Entwicklungs- und Prüfwerkzeuge
+docs/                technische Verträge und Erklärungen
+```
 
-Enthalten sind:
+Mehr Details: `ORDNER_UND_DATEIINDEX.md`.
 
-- Schema-Version `1`
-- Migrationen mit SHA-256-Prüfsumme
-- SQLite-Fremdschlüssel und WAL
-- `PRAGMA quick_check` und Fremdschlüsselprüfung
-- hierarchische Einträge über `parent_id`
-- Tags und App-Einstellungen
-- generischer `EntryStore`
-- exklusives Datenbankzugriffsfenster für den kritischen Restore-Swap
+## Entwicklungsregel
 
-Details: `docs/PERSISTENCE.md`.
+Vor jedem Patch:
 
-## Transaktions- und Recovery-Vertrag
+`Gate prüfen → Ursache eingrenzen → Code-Ort bestimmen → Wiederverwendung suchen → kleinsten Patch festlegen`
 
-Produktive Mutationen folgen zentral:
+Danach:
 
-`PRECHECK → MUTATION → POSTCHECK → COMMIT oder ROLLBACK → EVIDENCE`
+`Ändern → Formatieren → Tests → Regression → Diff-Audit → PR-CI → Merge → Main-Gates`
 
-Zusätzlich aktiv:
+Bestehende Sicherheitskerne werden bei Wartbarkeitsarbeiten nicht nebenbei umgebaut.
+Details: `docs/ENTWICKLUNGSDISZIPLIN.md`.
 
-- eindeutige `operation_id`
-- Single-Writer-Gate gegen parallele kritische Änderungen
-- optionaler Idempotenzschlüssel gegen Doppel-Submit/Doppelklick
-- JSONL-Recovery-Journal unter `runtime/recovery/`
-- atomare finale JSON-Evidence mit Status im Dateinamen
-- sensible Evidence-Details werden geschwärzt
-- unvollständige frühere Operation blockiert den normalen Start
-- Status-Endpunkt: `GET /api/recovery/status`
+## Wichtige Dokumente
 
-Details: `docs/TRANSAKTIONSVERTRAG.md`.
-
-## Backup-Vertrag · P0-011A
-
-Ein Backup ist erst gültig, wenn es vollständig verifiziert und atomar veröffentlicht wurde.
-
-Ablauf:
-
-`SOURCE CHECK → SQLITE SNAPSHOT → INTEGRITY → HASH/METADATA → MANIFEST → VERIFY → ATOMIC PUBLISH`
-
-Enthalten sind:
-
-- SQLite-Backup-API statt einfacher Dateikopie
-- konsistenter Snapshot auch bei WAL-Quelldatenbank
-- eindeutige `bkp-...`-Backup-ID
-- Backup-Manifest v1
-- SHA-256 und Dateigröße
-- Schema-Version und UTC-Zeit
-- `quick_check` und `foreign_key_check`
-- zweites unabhängiges Verifikations-Gate
-- `.incomplete_*`-Staging wird niemals als gültiges Backup geführt
-- finale Veröffentlichung als `backup_status_verified_*`
-
-Details: `docs/BACKUP_VERTRAG.md`.
-
-## Restore-Vertrag · P0-011B
-
-Ein Restore darf die produktive Datenbank erst nach einem vollständig grünen
-Staging-Gate austauschen.
-
-Ablauf:
-
-`BACKUP VERIFY → RESTORE STAGING → STAGING VERIFY → ROLLBACK SNAPSHOT → SWAP PREPARED`
-
-`SWAPPING → SWAPPED → POSTCHECK → COMMITTED oder ROLLED_BACK → EVIDENCE`
-
-Enthalten sind:
-
-- unmittelbare erneute Backup-Verifikation
-- separate Staging-Datenbank
-- SHA-256-, Schema-, `quick_check`- und Fremdschlüssel-Gate
-- gemeinsamer Gate für kritische Mutationen und Restore
-- exklusives Prozesszugriffsfenster während des Swap-Bereichs
-- verifizierter Rollback-Snapshot des bisherigen Produktivstands
-- Abbruch bei aktiven SQLite-Seitendateien statt Vorabmutation
-- atomarer Austausch per `os.replace()` erst nach grünem Staging-Gate
-- vollständiger POSTCHECK der produktiven Datei
-- automatischer Rücktausch bei kontrolliertem Fehler nach `SWAPPED`
-- rekonstruierbarer Crash-Zustand `SWAPPING` mit beiden Hashes und Rollback-Pfad
-- Start-Gate blockiert unvollständige Restore-Vorgänge
-- Restore-API akzeptiert nur aktuell verifizierte Backup-Namen
-- Restore-API verlangt die exakte Bestätigung `DATENBANK WIEDERHERSTELLEN`
-
-Status: `GET /api/restore/status`  
-Ausführung: `POST /api/restore/execute`
-
-Details: `docs/RESTORE_VERTRAG.md`.
-
-## Sicherheitsgrenze
-
-P0-011 Backup/Restore ist technisch implementiert und regressiv abgesichert.
-Der nächste P0-Schritt ist **P0-012 reale Browser-Endabnahme unter Kubuntu/KDE + Chrome**.
-
-Direktlöschen, Massenänderungen und überschreibender Import bleiben weiterhin gesperrt,
-bis ihre jeweiligen Schutzverträge vollständig implementiert und regressiv geprüft sind.
+| Datei | Zweck |
+|---|---|
+| `VERSION.json` | zentrale Versionierungsübersicht |
+| `MANIFEST.json` | verbindliche Qualitäts- und Sicherheitsregeln |
+| `TOOL_SCHEMA.json` | maschinenlesbare Toolstruktur |
+| `ORDNER_UND_DATEIINDEX.md` | laienfreundlicher Datei-/Ordnerindex |
+| `AGENTS.md` | verbindliche Entwicklungsregeln |
+| `LAIENHILFE.md` | einfache Hilfe und Fachbegriffserklärungen |
+| `TODO.md` | aktuelle Abhakliste |
+| `REGRESSIONSPOOL.md` | wiederkehrende Pflichtprüfungen |
+| `FORTSCHRITTSINFO.md` | kompakter Projektstatus |
+| `docs/PERSISTENCE.md` | Datenbank- und Migrationsvertrag |
+| `docs/TRANSAKTIONSVERTRAG.md` | Mutations-/Recovery-Vertrag |
+| `docs/BACKUP_VERTRAG.md` | Backup-Vertrag |
+| `docs/RESTORE_VERTRAG.md` | Restore-, Swap- und Rollback-Vertrag |
+| `docs/ENTWICKLUNGSDISZIPLIN.md` | Voranalyse- und Minimal-Patch-Regeln |
 
 ## Ampeln
 
 - 🟢 **GRÜN** – Prüfung bestanden / normaler Betrieb
 - 🟡 **GELB** – Hinweis / noch nicht releasefertig
 - 🔴 **ROT** – Fehler / Gate blockiert
-- 🟣 **INFO** – Erklärung, Tipp oder Entwicklungsdetail
-
-## Wichtige Dokumente
-
-| Datei | Zweck |
-|---|---|
-| `TODO.md` | aktuelle Abhakliste |
-| `FORTSCHRITTSINFO.md` | kompakter Status |
-| `ENTWICKLUNGSPLAN.md` | Roadmap |
-| `REGRESSIONSPOOL.md` | wiederkehrende Fehlerprüfungen |
-| `AGENTS.md` | verbindliche Entwicklungsregeln |
-| `DEVELOPER_HANDBOOK.md` | Architektur & Entwicklerwissen |
-| `LAIENHILFE.md` | einfache Hilfe & Tipps |
-| `DEBUGGING_LOGGING.md` | Logging-/Fehlerstandard |
-| `docs/PERSISTENCE.md` | Datenbank-, Schema- und Migrationsvertrag |
-| `docs/TRANSAKTIONSVERTRAG.md` | Mutations-, Rollback- und Recovery-Vertrag |
-| `docs/BACKUP_VERTRAG.md` | Snapshot-, Manifest- und Backup-Verifikationsvertrag |
-| `docs/RESTORE_VERTRAG.md` | Staging-, Swap-, Rollback- und Restore-Recovery-Vertrag |
-| `MANIFEST.json` | maschinenlesbare Projektstandards |
+- 🟣 **INFO** – Erklärung oder Entwicklungsdetail
 
 ## Datenschutz
 
-Das Repository enthält **keine echten Nutzerdaten, Accounts, E-Mails,
-Tokens, Passwörter, Browserprofile, Backups oder Betriebslogs**.
-Beispielwerte müssen eindeutig als Beispiel gekennzeichnet sein.
+Das Repository enthält keine echten Nutzerdaten, Accounts, Passwörter, Tokens,
+Backups oder Betriebslogs. Beispielwerte müssen eindeutig als Beispiel erkennbar sein.
 
-## Entwicklungsprinzip
+## Release-Grenze
 
-`Besprechen → Implementieren → Formatieren → Prüfen → Regression → Status aktualisieren → Merge`
-
-Vor einer STABLE-Kennzeichnung müssen alle Release-Gates in
-`MANIFEST.json` und `REGRESSIONSPOOL.md` grün sein.
+Kein `STABLE`, bevor Persistenz-, Recovery-, Backup/Restore-, UI-, A11y- und
+Regression-Gates vollständig grün sind. Automatische Tests ersetzen keine reale
+Browser-/Plattform-Endabnahme.

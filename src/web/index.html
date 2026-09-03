@@ -3,95 +3,93 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>PROVOWARE DATENBANKTOOL · TRANSAKTIONSKERN</title>
+    <title>PROVOWARE DATENBANKTOOL</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <a class="skip-link" href="#main">Zum Hauptinhalt</a>
+    <a class="skip-link" href="#main" data-i18n="skip.main"> Zum Hauptinhalt </a>
     <header class="topbar">
       <div>
-        <p class="eyebrow">PROVOWARE · TRANSAKTIONSKERN</p>
+        <p class="eyebrow" data-i18n="header.eyebrow">PROVOWARE</p>
         <h1>DATENBANKTOOL</h1>
       </div>
       <div class="status-pill status-warning" id="liveStatus" aria-live="polite">
-        <span aria-hidden="true">●</span> TRANSAKTIONSKERN / AUFBAU
+        <span aria-hidden="true">●</span> STATUS WIRD GELADEN
       </div>
     </header>
 
     <main id="main" class="shell">
       <section class="hero panel">
         <div>
-          <p class="kicker">Aktueller Fortschritt</p>
-          <h2>Datenänderungen jetzt mit zentralem Sicherheitsvertrag</h2>
-          <p>
-            PRECHECK, Mutation, POSTCHECK, Commit/Rollback und Recovery-Evidence laufen über einen gemeinsamen geprüften
-            Vertrag.
-          </p>
+          <p class="kicker" data-i18n="hero.kicker">Aktueller Fortschritt</p>
+          <h2 data-i18n="hero.title">Sicherer und wartbarer Datenkern</h2>
+          <p data-i18n="hero.body">Projektinformationen werden zentral geladen.</p>
         </div>
-        <div class="progress-card" title="50 Prozent der Entwicklungsroadmap sind abgeschlossen.">
-          <div class="progress-label"><span>Gesamt</span><strong>50 %</strong></div>
-          <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
-            <span style="width: 50%"></span>
+        <div class="progress-card">
+          <div class="progress-label">
+            <span data-i18n="progress.total">Gesamt</span><strong id="progressValue">–</strong>
           </div>
-          <code>[■■■■■□□□□□]</code>
+          <div
+            id="progressBar"
+            class="progress"
+            role="progressbar"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow="0"
+          >
+            <span></span>
+          </div>
+          <code id="progressBlocks">[□□□□□□□□□□]</code>
         </div>
       </section>
 
-      <section class="grid" aria-label="Projektübersicht">
+      <section class="grid" aria-label="Projektübersicht" data-i18n-aria="overview.label">
         <article class="card accent-cyan" tabindex="0">
           <div class="icon" aria-hidden="true">🧱</div>
-          <h3>Architektur</h3>
-          <p>Basistool, Konfiguration, Nutzerdaten und Laufzeit sind getrennt.</p>
-          <span class="traffic traffic-green">✓ GRÜN</span>
+          <h3 data-i18n="card.architecture.title">Architektur</h3>
+          <p data-i18n="card.architecture.body">Projektbereiche sind klar getrennt.</p>
+          <span class="traffic traffic-green" data-i18n="status.green"> ✓ GRÜN </span>
         </article>
         <article class="card accent-purple" tabindex="0">
           <div class="icon" aria-hidden="true">🧪</div>
-          <h3>Qualität</h3>
-          <p>CI, Tests, Formatter und Dateigrenzen sind als Pflicht-Gates angelegt.</p>
-          <span class="traffic traffic-green">✓ GRÜN</span>
+          <h3 data-i18n="card.quality.title">Qualität</h3>
+          <p data-i18n="card.quality.body">Automatische Prüfungen verhindern Rückschritte.</p>
+          <span class="traffic traffic-green" data-i18n="status.green"> ✓ GRÜN </span>
         </article>
         <article class="card accent-yellow" tabindex="0">
           <div class="icon" aria-hidden="true">💾</div>
-          <h3>Persistenz</h3>
-          <p>SQLite-Schema v1, Migrationen und Fremdschlüssel sind implementiert.</p>
-          <span class="traffic traffic-green">✓ GRÜN</span>
+          <h3 data-i18n="card.persistence.title">Persistenz</h3>
+          <p data-i18n="card.persistence.body">Der SQLite-Datenkern ist geprüft.</p>
+          <span class="traffic traffic-green" data-i18n="status.green"> ✓ GRÜN </span>
         </article>
         <article class="card accent-green" tabindex="0">
           <div class="icon" aria-hidden="true">🔒</div>
-          <h3>Mutationsschutz</h3>
-          <p>Operation-ID, PRE-/POST-Prüfung, Rollback, Doppelklickschutz und Evidence sind aktiv.</p>
-          <span class="traffic traffic-green">✓ GRÜN</span>
+          <h3 data-i18n="card.safety.title">Datensicherheit</h3>
+          <p data-i18n="card.safety.body">Sicherheitsverträge schützen Änderungen und Restore.</p>
+          <span class="traffic traffic-green" data-i18n="status.green"> ✓ GRÜN </span>
         </article>
         <article class="card accent-blue" tabindex="0">
           <div class="icon" aria-hidden="true">?</div>
-          <h3>Laienhilfe</h3>
-          <p>Kurze Erklärungen, Ampeln und konkrete Handlungstipps statt Rohfehler.</p>
-          <button class="help-button" data-tip="Öffnet eine kurze Erklärung der Projektampeln." id="helpButton">
-            Hilfe anzeigen
-          </button>
+          <h3 data-i18n="card.help.title">Laienhilfe</h3>
+          <p data-i18n="card.help.body">Erklärungen bleiben kurz und verständlich.</p>
+          <button class="help-button" id="helpButton" data-i18n="help.open">Hilfe anzeigen</button>
         </article>
         <article class="card accent-red" tabindex="0">
           <div class="icon" aria-hidden="true">🛡</div>
-          <h3>Recovery</h3>
-          <p>Journal und Start-Gate sind aktiv. Backup/Restore mit Integritätsprüfung folgt in P0-011.</p>
-          <span class="traffic traffic-yellow">! RESTORE OFFEN</span>
+          <h3 data-i18n="card.recovery.title">Recovery</h3>
+          <p data-i18n="card.recovery.body">Wiederherstellung ist abgesichert.</p>
+          <span class="traffic traffic-green" data-i18n="status.green"> ✓ GRÜN </span>
         </article>
       </section>
 
-      <section class="panel help-panel" id="helpPanel" hidden>
-        <h2>Kurzhilfe</h2>
-        <p>
-          <strong>GRÜN</strong> bedeutet geprüft. <strong>GELB</strong> bedeutet in Arbeit.
-          <strong>ROT</strong> blockiert einen Release.
-        </p>
-        <p>
-          Tipp: Meldet Recovery eine unvollständige Operation, dieselbe Änderung nicht erneut starten. Zuerst den
-          Recovery-Status und den deutschen Kurzbericht prüfen.
-        </p>
+      <section class="panel help-panel" id="helpPanel" hidden tabindex="-1">
+        <h2 data-i18n="help.title">Kurzhilfe</h2>
+        <p data-i18n="help.traffic">Ampeln erklären den Prüfstatus.</p>
+        <p data-i18n="help.recovery">Bei Recovery zuerst den Status prüfen.</p>
       </section>
     </main>
 
-    <footer>PROVOWARE DATENBANKTOOL · 0.3.0-alpha.1 · lokaler Transaktionskern</footer>
+    <footer id="footerText">PROVOWARE DATENBANKTOOL</footer>
     <script type="module" src="app.js"></script>
   </body>
 </html>

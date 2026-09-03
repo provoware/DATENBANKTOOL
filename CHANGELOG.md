@@ -2,6 +2,30 @@
 
 Alle wichtigen Projektänderungen werden hier in deutscher Sprache dokumentiert.
 
+## [Unreleased] – Wartbarkeitskern
+
+### Hinzugefügt
+
+- 🟢 `VERSION.json` als zentrale Übersicht für Produkt-, Schema- und Vertragsversionen.
+- 🟢 `src/config/registry.json` als Registry für Module, API-Endpunkte und Fehlercodes.
+- 🟢 `TOOL_SCHEMA.json` und `ORDNER_UND_DATEIINDEX.md` als technische und laienfreundliche Projektlandkarte.
+- 🟢 `src/core/project_meta.py` als wiederverwendbarer Zugriff auf Versionen und Registry.
+- 🟢 versionierter deutscher UI-Sprachkatalog unter `src/web/i18n/de.json`.
+- 🟢 Regressionen gegen Versions-, Registry-, Sprachkatalog- und Tool-Schema-Drift.
+- 🟢 `docs/ENTWICKLUNGSDISZIPLIN.md` mit Voranalyse- und Minimal-Patch-Vertrag.
+
+### Geändert
+
+- 🟣 Browseroberfläche entfernt veraltete fest verdrahtete Versions-/Statusangaben.
+- 🟣 wiederkehrende UI-Abstände, Radien, Schatten und Farben verwenden zentrale Design-Tokens.
+- 🟣 Projektprüfer behandelt Registry, Version, Tool-Schema und Sprachkatalog als Pflichtdateien.
+- 🟣 Laienhilfe und README erklären Datenorte, Backup, Restore, Recovery und Projektstruktur einfacher.
+
+### Entwicklungsregel
+
+- 🟡 Sicherheitskerne für Persistenz, Recovery, Backup und Restore wurden nicht fachlich verändert.
+- 🟡 Produktversion bleibt `0.5.0-alpha.1`; die Wartbarkeitsänderung verändert keine Daten- oder Restore-Vertragssemantik.
+
 ## [0.5.0-alpha.1] – 2026-09-03
 
 ### Hinzugefügt
@@ -79,7 +103,7 @@ Alle wichtigen Projektänderungen werden hier in deutscher Sprache dokumentiert.
 
 - 🟣 `EntryStore.create()` läuft jetzt über den zentralen Mutationsvertrag.
 - 🟣 Projektstatus auf `TRANSAKTIONSKERN / AUFBAU` und Fortschritt auf 50 % gesetzt.
-- 🟣 `P0-010` abgeschlossen; `P0-011` Backup/Restore ist jetzt der nächste P0-Schritt.
+- 🟣 `P0-010` abgeschlossen; `P0-011` Backup/Restore ist jetzt der nächste releasekritische Schritt.
 
 ### Sicherheitsgrenze
 
@@ -106,12 +130,6 @@ Alle wichtigen Projektänderungen werden hier in deutscher Sprache dokumentiert.
 - 🟣 Entwicklungsfortschritt von 30 % auf 40 %.
 - 🟣 `P0-009` abgeschlossen; `P0-010` ist jetzt der nächste releasekritische Schritt.
 
-### Bewusst noch offen
-
-- 🟡 vollständiger PRE-/POST-/Rollback-Vertrag für Mutationen.
-- 🟡 Recovery-Journal und Wiederaufnahme nach Prozessabbruch.
-- 🟡 Backup-/Restore-Vertrag.
-
 ## [0.1.0-foundation] – 2026-09-03
 
 ### Hinzugefügt
@@ -127,11 +145,6 @@ Alle wichtigen Projektänderungen werden hier in deutscher Sprache dokumentiert.
 - 🟢 sensible-Feld-Schwärzung in Logs.
 - 🟢 dunkle kontrastreiche Basisoberfläche mit Ampeln, Tooltips und Fortschrittsanzeige.
 
-### Entfernt
-
-- 🔴 alter Projektbaum aus `main`.
-- 🔴 alte Laufzeit-/Nutzerdatenstrukturen aus dem versionierten Bestand.
-
 ### Hinweis
 
-Die Git-Historie wurde nicht gelöscht. Der Rebuild ist daher nachvollziehbar und rücksetzbar.
+Die Git-Historie wurde nicht gelöscht. Der Rebuild ist nachvollziehbar und rücksetzbar.

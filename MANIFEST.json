@@ -3,12 +3,20 @@
   "project": {
     "name": "PROVOWARE DATENBANKTOOL",
     "version": "0.5.0-alpha.1",
+    "version_source": "VERSION.json",
     "status": "restorekern",
     "language": "de",
     "offline_first": true
   },
   "architecture": {
     "layers": ["ui", "api", "application", "persistence", "recovery", "backup", "logging"],
+    "registry": "src/config/registry.json",
+    "tool_schema": "TOOL_SCHEMA.json",
+    "file_index": "ORDNER_UND_DATEIINDEX.md",
+    "development_discipline": "docs/ENTWICKLUNGSDISZIPLIN.md",
+    "version_registry": "VERSION.json",
+    "locale_catalog": "src/web/i18n/de.json",
+    "ui_meta_mirror": "src/web/project-meta.json",
     "separation": {
       "base_tool": "src/",
       "default_config": "src/config/",
@@ -168,10 +176,22 @@
     "web_formatter": "prettier",
     "test_runner": "pytest",
     "project_checker": "python tools/check_project.py",
-    "release_blocking": ["syntax", "format", "tests", "file_limits", "manifest", "regressions_p0"]
+    "release_blocking": [
+      "syntax",
+      "format",
+      "tests",
+      "file_limits",
+      "manifest",
+      "version_registry",
+      "registry",
+      "locale_catalog",
+      "regressions_p0"
+    ]
   },
   "ui": {
     "language": "de",
+    "language_catalog_versioned": true,
+    "design_tokens_required": true,
     "minimum_focus_visibility": true,
     "color_only_status_forbidden": true,
     "tooltips_optional_support_only": true,
