@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sqlite3
+import threading
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -31,7 +32,25 @@ class IntegrityReport:
     foreign_key_violations: int
 
 
+class _GuardedConnection(sqlite3.Connection):
+    _access_gate: threading.RLock | None = None
+    _gate_released = False
+
+    def close(self) -> None:
+        if self._gate_released:
+            return
+        try:
+            super().close()
+        finally:
+            self._gate_released = True
+            if self._access_gate is not None:
+                self._access_gate.release()
+
+
 class Database:
+    _registry_guard = threading.Lock()
+    _access_gates: dict[str, threading.RLock] = {}
+
     def __init__(
         self,
         path: Path,
@@ -40,15 +59,25 @@ class Database:
     ) -> None:
         self.path = Path(path)
         self.busy_timeout_ms = busy_timeout_ms
+        key = str(self.path.resolve())
+        with self._registry_guard:
+            self._access_gate = self._access_gates.setdefault(key, threading.RLock())
 
     def connect_raw(self) -> sqlite3.Connection:
         """Open a configured connection whose transaction lifecycle is caller-owned."""
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        connection = sqlite3.connect(
-            self.path,
-            timeout=self.busy_timeout_ms / 1000,
-            isolation_level=None,
-        )
+        self._access_gate.acquire()
+        try:
+            connection = sqlite3.connect(
+                self.path,
+                timeout=self.busy_timeout_ms / 1000,
+                isolation_level=None,
+                factory=_GuardedConnection,
+            )
+        except Exception:
+            self._access_gate.release()
+            raise
+        connection._access_gate = self._access_gate
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA foreign_keys = ON")
         connection.execute(f"PRAGMA busy_timeout = {self.busy_timeout_ms}")
@@ -63,6 +92,15 @@ class Database:
             yield connection
         finally:
             connection.close()
+
+    @contextmanager
+    def exclusive_access(self) -> Iterator[None]:
+        """Block all other process-local database connections for a critical file swap."""
+        self._access_gate.acquire()
+        try:
+            yield
+        finally:
+            self._access_gate.release()
 
     def initialize(self) -> MigrationReport:
         with self.connect() as connection:
