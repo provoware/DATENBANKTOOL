@@ -8,7 +8,14 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
 
-from src.backup import BackupCreationError, BackupManager, BackupVerificationError
+from src.backup import (
+    BackupCreationError,
+    BackupManager,
+    BackupVerificationError,
+    RestoreBusyError,
+    RestoreError,
+    RestoreManager,
+)
 from src.logging_core import EventLogger
 from src.persistence import Database, MigrationError
 from src.recovery import EvidenceJournal
@@ -18,7 +25,9 @@ WEB = ROOT / "src" / "web"
 LOGGER: EventLogger | None = None
 DATABASE: Database | None = None
 BACKUP_MANAGER: BackupManager | None = None
-APP_VERSION = "0.4.0-alpha.1"
+RESTORE_MANAGER: RestoreManager | None = None
+APP_VERSION = "0.5.0-alpha.1"
+RESTORE_CONFIRMATION = "DATENBANK WIEDERHERSTELLEN"
 
 
 def get_logger() -> EventLogger:
@@ -48,6 +57,17 @@ def get_backup_manager() -> BackupManager:
     return BACKUP_MANAGER
 
 
+def get_restore_manager() -> RestoreManager:
+    global RESTORE_MANAGER
+    if RESTORE_MANAGER is None:
+        RESTORE_MANAGER = RestoreManager(
+            get_database(),
+            get_backup_manager(),
+            ROOT / "runtime",
+        )
+    return RESTORE_MANAGER
+
+
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(WEB), **kwargs)
@@ -61,103 +81,36 @@ class Handler(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _read_json_body(self) -> dict | None:
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+        except ValueError:
+            return None
+        if length <= 0 or length > 65536:
+            return None
+        try:
+            payload = json.loads(self.rfile.read(length).decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            return None
+        return payload if isinstance(payload, dict) else None
+
     def do_GET(self) -> None:
         path = urlparse(self.path).path
         if path == "/api/health":
-            logger = get_logger()
-            storage = get_database().schema_status()
-            incomplete = get_recovery_journal().incomplete_operations()
-            verified_backups = get_backup_manager().list_verified_backups()
-            healthy = storage.ready and not incomplete
-            ready_message = "Daten-, Transaktions- und Backupkern sind bereit."
-            message = (
-                f"{ready_message} Restore ist noch gesperrt."
-                if healthy
-                else "Datenkern oder Recovery-Zustand benötigt Prüfung."
-            )
-            self._json(
-                200 if healthy else 503,
-                {
-                    "ok": healthy,
-                    "status": "backupkern",
-                    "version": APP_VERSION,
-                    "ampel": "gelb" if healthy else "rot",
-                    "message": message,
-                    "session_id": logger.session_id,
-                    "storage": {
-                        "ready": storage.ready,
-                        "schema_version": storage.current_version,
-                        "target_version": storage.target_version,
-                    },
-                    "recovery": {
-                        "contract_ready": True,
-                        "incomplete_operations": len(incomplete),
-                    },
-                    "backup": {
-                        "contract_ready": True,
-                        "manifest_version": 1,
-                        "verified_backups": len(verified_backups),
-                        "restore_enabled": False,
-                    },
-                },
-            )
+            self._health()
             return
-
         if path == "/api/storage/status":
-            storage = get_database().schema_status()
-            integrity = get_database().integrity_check() if storage.ready else None
-            self._json(
-                200 if storage.ready else 503,
-                {
-                    "ok": storage.ready and bool(integrity and integrity.ok),
-                    "schema_version": storage.current_version,
-                    "target_version": storage.target_version,
-                    "journal_mode": storage.journal_mode,
-                    "integrity": {
-                        "ok": integrity.ok,
-                        "foreign_key_violations": integrity.foreign_key_violations,
-                    }
-                    if integrity
-                    else None,
-                },
-            )
+            self._storage_status()
             return
-
         if path == "/api/recovery/status":
-            incomplete = get_recovery_journal().incomplete_operations()
-            self._json(
-                200 if not incomplete else 503,
-                {
-                    "ok": not incomplete,
-                    "contract_ready": True,
-                    "incomplete_operations": len(incomplete),
-                    "operations": list(incomplete.values())[:20],
-                    "message": (
-                        "Keine unvollständigen Datenänderungen erkannt."
-                        if not incomplete
-                        else "Unvollständige Datenänderung erkannt. Vor neuen Änderungen prüfen."
-                    ),
-                },
-            )
+            self._recovery_status()
             return
-
         if path == "/api/backup/status":
-            backups = get_backup_manager().list_verified_backups()
-            backup_message = "Backup-Verifikation ist aktiv."
-            self._json(
-                200,
-                {
-                    "ok": True,
-                    "contract_ready": True,
-                    "manifest_version": 1,
-                    "verified_backups": len(backups),
-                    "backups": [backup.name for backup in backups[:20]],
-                    "restore_enabled": False,
-                    "message": f"{backup_message} Restore bleibt bis P0-011B gesperrt.",
-                },
-            )
+            self._backup_status()
             return
-
+        if path == "/api/restore/status":
+            self._restore_status()
+            return
         super().do_GET()
 
     def do_POST(self) -> None:
@@ -165,41 +118,118 @@ class Handler(SimpleHTTPRequestHandler):
         if path == "/api/backup/create":
             self._create_backup()
             return
-        if path != "/api/log-event":
-            self._json(404, {"ok": False, "error": "Unbekannter Endpunkt."})
+        if path == "/api/restore/execute":
+            self._execute_restore()
             return
-        try:
-            length = int(self.headers.get("Content-Length", "0"))
-        except ValueError:
-            length = 0
-        if length <= 0 or length > 65536:
-            self._json(400, {"ok": False, "error": "Ungültige Ereignisgröße."})
+        if path == "/api/log-event":
+            self._log_event()
             return
+        self._json(404, {"ok": False, "error": "Unbekannter Endpunkt."})
+
+    def _health(self) -> None:
         logger = get_logger()
-        try:
-            payload = json.loads(self.rfile.read(length).decode("utf-8"))
-            details = payload.get("details")
-            if not isinstance(details, dict):
-                details = {}
-            record = logger.log(
-                str(payload.get("code") or "PRV-UI-900"),
-                str(payload.get("summary") or "UI-Ereignis"),
-                level=str(payload.get("level") or "INFO"),
-                component="browser",
-                action=str(payload.get("action") or "Keine Aktion nötig."),
-                details=details,
-            )
-            self._json(200, {"ok": True, "event_id": record["event_id"]})
-        except Exception as exc:
-            logger.log(
-                "PRV-ERR-001",
-                "Browser-Ereignis konnte nicht verarbeitet werden.",
-                level="ERROR",
-                component="server",
-                action="Kurzbericht prüfen und Anfrage erneut versuchen.",
-                details={"error": type(exc).__name__},
-            )
-            self._json(400, {"ok": False, "error": "Ereignis konnte nicht gespeichert werden."})
+        storage = get_database().schema_status()
+        incomplete = get_recovery_journal().incomplete_operations()
+        verified_backups = get_backup_manager().list_verified_backups()
+        healthy = storage.ready and not incomplete
+        ready_message = "Daten-, Transaktions-, Backup- und Restorekern sind bereit."
+        self._json(
+            200 if healthy else 503,
+            {
+                "ok": healthy,
+                "status": "restorekern",
+                "version": APP_VERSION,
+                "ampel": "gelb" if healthy else "rot",
+                "message": (
+                    ready_message
+                    if healthy
+                    else "Datenkern oder Recovery-Zustand benötigt Prüfung."
+                ),
+                "session_id": logger.session_id,
+                "storage": {
+                    "ready": storage.ready,
+                    "schema_version": storage.current_version,
+                    "target_version": storage.target_version,
+                },
+                "recovery": {
+                    "contract_ready": True,
+                    "incomplete_operations": len(incomplete),
+                },
+                "backup": {
+                    "contract_ready": True,
+                    "manifest_version": 1,
+                    "verified_backups": len(verified_backups),
+                    "restore_enabled": True,
+                },
+            },
+        )
+
+    def _storage_status(self) -> None:
+        storage = get_database().schema_status()
+        integrity = get_database().integrity_check() if storage.ready else None
+        self._json(
+            200 if storage.ready else 503,
+            {
+                "ok": storage.ready and bool(integrity and integrity.ok),
+                "schema_version": storage.current_version,
+                "target_version": storage.target_version,
+                "journal_mode": storage.journal_mode,
+                "integrity": {
+                    "ok": integrity.ok,
+                    "foreign_key_violations": integrity.foreign_key_violations,
+                }
+                if integrity
+                else None,
+            },
+        )
+
+    def _recovery_status(self) -> None:
+        incomplete = get_recovery_journal().incomplete_operations()
+        self._json(
+            200 if not incomplete else 503,
+            {
+                "ok": not incomplete,
+                "contract_ready": True,
+                "incomplete_operations": len(incomplete),
+                "operations": list(incomplete.values())[:20],
+                "message": (
+                    "Keine unvollständigen Datenoperationen erkannt."
+                    if not incomplete
+                    else "Unvollständige Datenoperation erkannt. Vor neuen Änderungen prüfen."
+                ),
+            },
+        )
+
+    def _backup_status(self) -> None:
+        backups = get_backup_manager().list_verified_backups()
+        self._json(
+            200,
+            {
+                "ok": True,
+                "contract_ready": True,
+                "manifest_version": 1,
+                "verified_backups": len(backups),
+                "backups": [backup.name for backup in backups[:20]],
+                "restore_enabled": True,
+                "message": "Backup-Verifikation und Staging-Restore sind aktiv.",
+            },
+        )
+
+    def _restore_status(self) -> None:
+        incomplete = get_recovery_journal().incomplete_operations()
+        restore_operations = [
+            item for item in incomplete.values() if item.get("operation_kind") == "database.restore"
+        ]
+        self._json(
+            200 if not restore_operations else 503,
+            {
+                "ok": not restore_operations,
+                "restore_enabled": True,
+                "confirmation_required": RESTORE_CONFIRMATION,
+                "incomplete_restore_operations": len(restore_operations),
+                "operations": restore_operations[:20],
+            },
+        )
 
     def _create_backup(self) -> None:
         logger = get_logger()
@@ -236,9 +266,92 @@ class Handler(SimpleHTTPRequestHandler):
                 "sha256": report.measured_sha256,
                 "size_bytes": report.measured_size_bytes,
                 "schema_version": report.measured_schema_version,
-                "restore_enabled": False,
+                "restore_enabled": True,
             },
         )
+
+    def _execute_restore(self) -> None:
+        payload = self._read_json_body()
+        if payload is None:
+            self._json(400, {"ok": False, "error": "Ungültige Restore-Anfrage."})
+            return
+        if payload.get("confirm") != RESTORE_CONFIRMATION:
+            self._json(409, {"ok": False, "error": "Restore-Bestätigung fehlt."})
+            return
+        requested = str(payload.get("backup") or "").strip()
+        candidates = {path.name: path for path in get_backup_manager().list_verified_backups()}
+        backup_path = candidates.get(requested)
+        if backup_path is None:
+            self._json(404, {"ok": False, "error": "Verifiziertes Backup nicht gefunden."})
+            return
+        logger = get_logger()
+        try:
+            report = get_restore_manager().restore_backup(backup_path)
+        except RestoreBusyError as exc:
+            self._json(409, {"ok": False, "error": str(exc)})
+            return
+        except (BackupVerificationError, RestoreError, sqlite3.Error, OSError) as exc:
+            logger.log(
+                "PRV-RST-001",
+                "Restore wurde durch ein Sicherheits-Gate abgebrochen.",
+                level="ERROR",
+                component="restore",
+                action="Recovery-Status und Restore-Evidence prüfen.",
+                details={"error": type(exc).__name__, "backup": requested},
+            )
+            self._json(503, {"ok": False, "error": "Restore-Sicherheitsprüfung fehlgeschlagen."})
+            return
+        logger.log(
+            "PRV-RST-100",
+            "Restore wurde nach POSTCHECK als COMMITTED abgeschlossen.",
+            component="restore",
+            details={
+                "operation_id": report.operation_id,
+                "backup_id": report.backup_id,
+                "schema_version": report.schema_version,
+            },
+        )
+        self._json(
+            200,
+            {
+                "ok": True,
+                "state": "COMMITTED",
+                "operation_id": report.operation_id,
+                "backup_id": report.backup_id,
+                "sha256": report.restored_sha256,
+                "schema_version": report.schema_version,
+            },
+        )
+
+    def _log_event(self) -> None:
+        payload = self._read_json_body()
+        if payload is None:
+            self._json(400, {"ok": False, "error": "Ungültige Ereignisgröße."})
+            return
+        logger = get_logger()
+        try:
+            details = payload.get("details")
+            if not isinstance(details, dict):
+                details = {}
+            record = logger.log(
+                str(payload.get("code") or "PRV-UI-900"),
+                str(payload.get("summary") or "UI-Ereignis"),
+                level=str(payload.get("level") or "INFO"),
+                component="browser",
+                action=str(payload.get("action") or "Keine Aktion nötig."),
+                details=details,
+            )
+            self._json(200, {"ok": True, "event_id": record["event_id"]})
+        except Exception as exc:
+            logger.log(
+                "PRV-ERR-001",
+                "Browser-Ereignis konnte nicht verarbeitet werden.",
+                level="ERROR",
+                component="server",
+                action="Kurzbericht prüfen und Anfrage erneut versuchen.",
+                details={"error": type(exc).__name__},
+            )
+            self._json(400, {"ok": False, "error": "Ereignis konnte nicht gespeichert werden."})
 
     def log_message(self, fmt: str, *args) -> None:
         print("[PROVOWARE] " + (fmt % args))
@@ -276,13 +389,13 @@ def _check_recovery_state(logger: EventLogger) -> bool:
     if not incomplete:
         logger.log(
             "PRV-REC-100",
-            "Recovery-Journal enthält keine unvollständige Datenänderung.",
+            "Recovery-Journal enthält keine unvollständige Datenoperation.",
             component="recovery",
         )
         return True
     logger.log(
         "PRV-REC-001",
-        "Unvollständige Datenänderung aus einer vorherigen Sitzung erkannt.",
+        "Unvollständige Datenoperation aus einer vorherigen Sitzung erkannt.",
         level="CRITICAL",
         component="recovery",
         action="Keine neue Änderung starten. Recovery-Evidence prüfen.",

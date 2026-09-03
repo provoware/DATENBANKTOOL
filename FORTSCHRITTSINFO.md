@@ -2,9 +2,9 @@
 
 ## Aktueller Stand
 
-**Version:** `0.4.0-alpha.1`  
-**Status:** 🟡 `BACKUPKERN / AUFBAU`  
-**Fortschritt:** `[■■■■■■□□□□] 60 %`
+**Version:** `0.5.0-alpha.1`  
+**Status:** 🟡 `RESTOREKERN / AUFBAU`  
+**Fortschritt:** `[■■■■■■■□□□] 70 %`
 
 | Bereich | Status | Kurzdetail |
 |---|---|---|
@@ -13,34 +13,40 @@
 | Dokumentation | 🟢 | Kernunterlagen angelegt |
 | CI / Tests | 🟢 | Pflicht-Gates aktiv |
 | Logging | 🟢 | JSONL + TXT-Basis vorhanden |
-| Persistenz | 🟢 | SQLite-Schema v1 + Migrationen + Integritätsprüfung |
+| Persistenz | 🟢 | SQLite-Schema v1 + exklusives Restore-Zugriffsfenster |
 | Transaktionsvertrag | 🟢 | PRE/POST, Commit/Rollback, Operation-ID und Evidence aktiv |
 | Recovery-Journal | 🟢 | JSONL-Zustandsjournal + Start-Gate aktiv |
 | Backup Engine | 🟢 | WAL-Snapshot + Manifest v1 + unabhängige Verifikation |
-| Restore | 🟡 | P0-011B Staging-Restore noch gesperrt |
+| Restore Engine | 🟢 | Staging-Gate + Rollback-Snapshot + atomarer Swap + POSTCHECK |
 | Fachmodule | 🟡 | bauen später auf gemeinsamem Datenkern auf |
 | reale UI-Abnahme | 🔴 | noch nicht durchgeführt |
 
 ## Neu in diesem Stand
 
-- SQLite-Sicherung nutzt die SQLite-Backup-API statt einfacher Dateikopie.
-- WAL-Quellen werden konsistent in einen eigenständigen Snapshot überführt.
-- Jedes Backup erhält eine eindeutige `bkp-...`-ID.
-- Manifest v1 speichert SHA-256, Dateigröße, Schema-Version, UTC-Zeit und Integritätsstatus.
-- `quick_check` und `foreign_key_check` werden auf dem Snapshot ausgeführt.
-- Ein zweites Verifikations-Gate misst Hash, Größe, Schema und Integrität erneut.
-- Noch nicht veröffentlichte Sicherungen heißen `.incomplete_*` und gelten niemals als gültig.
-- Erst ein verifiziertes Staging-Backup wird atomar als `backup_status_verified_*` veröffentlicht.
-- Manipulierte Snapshot- oder Manifestdateien werden von der gültigen Backup-Liste ausgeschlossen.
+- Backup wird unmittelbar vor jedem Restore erneut verifiziert.
+- Restore-Daten werden zuerst in eine separate Staging-Datei geschrieben.
+- Staging muss SHA-256, Schema-Version, `quick_check` und Fremdschlüsselprüfung bestehen.
+- Produktive Nutzdaten werden vor dem grünen Staging-Gate nicht ausgetauscht.
+- Vor dem Swap entsteht ein verifizierter Rollback-Snapshot des bisherigen Produktivstands.
+- Kritische Mutationen und Restore teilen sich einen zentralen Datenbank-Gate.
+- Während des Swap-Fensters blockiert ein exklusives Datenbankzugriffsfenster
+  neue prozessinterne Verbindungen.
+- Aktive SQLite-Seitendateien führen vor dem Swap zum Abbruch.
+- `SWAPPING` wird mit Restore-Hash, vorherigem Hash und Rollback-Pfad protokolliert.
+- Nach dem Swap ist ein vollständiger produktiver POSTCHECK Pflicht.
+- Fehler nach `SWAPPED` führen zum geprüften Rücktausch des vorherigen Produktivstands.
+- `COMMITTED` wird ausschließlich nach grünem POSTCHECK und finaler Evidence vergeben.
+- `POST /api/restore/execute` verlangt ein verifiziertes Backup und die exakte
+  Bestätigung `DATENBANK WIEDERHERSTELLEN`.
 
 ## Nächster sinnvoller Schritt
 
-**P0-011B – Staging-Restore mit Integritätsprüfung und atomarem Austausch.**
+**P0-012 – reale Browser-Endabnahme unter Kubuntu/KDE + Chrome.**
 
-Ziel: Ein verifiziertes Backup wird zunächst ausschließlich in eine Staging-Datenbank
-überführt. Erst nach erneutem Hash-, Schema-, `quick_check`- und Fremdschlüssel-Gate
-darf ein atomarer Austausch der produktiven Datenbank vorbereitet werden.
+Ziel: den Daten-, Recovery-, Backup- und Restorekern im realen Zielsystem prüfen.
+Dazu gehören Start, Statusendpunkte, Fehlerdarstellung und kritische Bedienpfade.
 
 ## Release-Regel
 
-`STABLE` erst nach grünem Persistenz-, Recovery-, Backup/Restore-, UI-, A11y- und Regression-Gate.
+`STABLE` erst nach grünem Persistenz-, Recovery-, Backup/Restore-, UI-, A11y-
+und Regression-Gate.

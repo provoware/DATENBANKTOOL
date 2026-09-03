@@ -1,4 +1,4 @@
-"""Backup-Verträge für konsistente und verifizierte SQLite-Sicherungen."""
+"""Backup- und Restore-Verträge für verifizierte SQLite-Sicherungen."""
 
 from src.backup.engine import (
     BACKUP_MANIFEST_VERSION,
@@ -8,6 +8,7 @@ from src.backup.engine import (
     BackupVerificationError,
     BackupVerificationReport,
 )
+from src.backup.restore import RestoreBusyError, RestoreError, RestoreManager, RestoreReport
 
 __all__ = [
     "BACKUP_MANIFEST_VERSION",
@@ -16,4 +17,8 @@ __all__ = [
     "BackupManifest",
     "BackupVerificationError",
     "BackupVerificationReport",
+    "RestoreBusyError",
+    "RestoreError",
+    "RestoreManager",
+    "RestoreReport",
 ]

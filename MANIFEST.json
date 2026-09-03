@@ -2,8 +2,8 @@
   "schema_version": 1,
   "project": {
     "name": "PROVOWARE DATENBANKTOOL",
-    "version": "0.4.0-alpha.1",
-    "status": "backupkern",
+    "version": "0.5.0-alpha.1",
+    "status": "restorekern",
     "language": "de",
     "offline_first": true
   },
@@ -30,7 +30,8 @@
     "busy_timeout_ms": 5000,
     "migration_policy": "forward-only",
     "migration_checksum": "sha256",
-    "integrity_checks": ["quick_check", "foreign_key_check"]
+    "integrity_checks": ["quick_check", "foreign_key_check"],
+    "exclusive_restore_access_gate": true
   },
   "recovery": {
     "contract_version": 1,
@@ -82,8 +83,34 @@
     "verification_checks": ["sha256", "size_bytes", "schema_version", "quick_check", "foreign_key_check"],
     "atomic_publish_after_verification": true,
     "incomplete_backup_is_valid": false,
-    "restore_enabled": false,
-    "restore_next_gate": "P0-011B"
+    "restore_enabled": true
+  },
+  "restore": {
+    "contract_version": 1,
+    "flow": [
+      "BACKUP_VERIFY",
+      "RESTORE_STAGING",
+      "STAGING_VERIFY",
+      "ROLLBACK_SNAPSHOT",
+      "SWAP_PREPARED",
+      "SWAPPING",
+      "SWAPPED",
+      "POSTCHECK",
+      "COMMITTED_OR_ROLLED_BACK",
+      "EVIDENCE"
+    ],
+    "staging_directory": "runtime/recovery/restore_staging/",
+    "rollback_directory": "runtime/recovery/restore_rollback/",
+    "verification_checks": ["sha256", "schema_version", "quick_check", "foreign_key_check"],
+    "backup_reverified_before_restore": true,
+    "product_untouched_before_swap": true,
+    "exclusive_database_access_during_swap": true,
+    "atomic_swap": "os.replace",
+    "postcheck_required_before_commit": true,
+    "rollback_on_postcheck_failure": true,
+    "crash_boundary_state": "SWAPPING",
+    "startup_gate_blocks_incomplete_restore": true,
+    "explicit_confirmation_required": "DATENBANK WIEDERHERSTELLEN"
   },
   "file_limits": {
     "python": {

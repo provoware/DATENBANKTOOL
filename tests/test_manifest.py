@@ -13,6 +13,7 @@ def test_manifest_has_required_standards() -> None:
     assert manifest["persistence"]["engine"] == "sqlite3"
     assert manifest["persistence"]["schema_version"] == 1
     assert manifest["persistence"]["foreign_keys"] is True
+    assert manifest["persistence"]["exclusive_restore_access_gate"] is True
     assert manifest["recovery"]["contract_version"] == 1
     assert manifest["recovery"]["single_writer_gate"] is True
     assert manifest["recovery"]["startup_incomplete_operation_gate"] is True
@@ -23,6 +24,14 @@ def test_manifest_has_required_standards() -> None:
     assert manifest["backup"]["supports_wal_source"] is True
     assert manifest["backup"]["atomic_publish_after_verification"] is True
     assert manifest["backup"]["incomplete_backup_is_valid"] is False
-    assert manifest["backup"]["restore_enabled"] is False
+    assert manifest["backup"]["restore_enabled"] is True
     assert "sha256" in manifest["backup"]["verification_checks"]
+    assert manifest["restore"]["contract_version"] == 1
+    assert manifest["restore"]["backup_reverified_before_restore"] is True
+    assert manifest["restore"]["product_untouched_before_swap"] is True
+    assert manifest["restore"]["exclusive_database_access_during_swap"] is True
+    assert manifest["restore"]["postcheck_required_before_commit"] is True
+    assert manifest["restore"]["rollback_on_postcheck_failure"] is True
+    assert manifest["restore"]["crash_boundary_state"] == "SWAPPING"
+    assert manifest["restore"]["startup_gate_blocks_incomplete_restore"] is True
     assert "tests" in manifest["quality"]["release_blocking"]

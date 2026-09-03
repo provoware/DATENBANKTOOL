@@ -1,16 +1,16 @@
 # PROVOWARE DATENBANKTOOL
 
-![Status](https://img.shields.io/badge/Status-BACKUPKERN%20%2F%20AUFBAU-ffd43b?style=flat-square)
+![Status](https://img.shields.io/badge/Status-RESTOREKERN%20%2F%20AUFBAU-ffd43b?style=flat-square)
 ![CI](https://img.shields.io/badge/CI-Pflicht-29d3c2?style=flat-square)
 ![Sprache](https://img.shields.io/badge/Toolsprache-Deutsch-8b5cf6?style=flat-square)
 
 ## 🟡 Projektstatus
 
-`[■■■■■■□□□□] 60 % · BACKUPKERN / AUFBAU`
+`[■■■■■■■□□□] 70 % · RESTOREKERN / AUFBAU`
 
 Die Clean Foundation, der SQLite-Datenkern und der zentrale Mutations-/Recovery-Vertrag stehen.
-Mit `0.4.0-alpha.1` ist zusätzlich P0-011A aktiv: konsistente SQLite-Snapshots,
-Backup-Manifest v1, SHA-256 und ein unabhängiges Verifikations-Gate.
+Mit `0.5.0-alpha.1` ist P0-011 vollständig: verifizierte WAL-taugliche Backups plus
+Staging-Restore, Rollback-Snapshot, atomarer Austausch, POSTCHECK und Recovery-Evidence.
 
 Der Stand vor dem Clean Rebuild bleibt auf
 `backup/pre-clean-rebuild-20260903` gesichert.
@@ -62,6 +62,7 @@ Enthalten sind:
 - hierarchische Einträge über `parent_id`
 - Tags und App-Einstellungen
 - generischer `EntryStore`
+- exklusives Datenbankzugriffsfenster für den kritischen Restore-Swap
 
 Details: `docs/PERSISTENCE.md`.
 
@@ -107,13 +108,45 @@ Enthalten sind:
 
 Details: `docs/BACKUP_VERTRAG.md`.
 
+## Restore-Vertrag · P0-011B
+
+Ein Restore darf die produktive Datenbank erst nach einem vollständig grünen
+Staging-Gate austauschen.
+
+Ablauf:
+
+`BACKUP VERIFY → RESTORE STAGING → STAGING VERIFY → ROLLBACK SNAPSHOT → SWAP PREPARED`
+
+`SWAPPING → SWAPPED → POSTCHECK → COMMITTED oder ROLLED_BACK → EVIDENCE`
+
+Enthalten sind:
+
+- unmittelbare erneute Backup-Verifikation
+- separate Staging-Datenbank
+- SHA-256-, Schema-, `quick_check`- und Fremdschlüssel-Gate
+- gemeinsamer Gate für kritische Mutationen und Restore
+- exklusives Prozesszugriffsfenster während des Swap-Bereichs
+- verifizierter Rollback-Snapshot des bisherigen Produktivstands
+- Abbruch bei aktiven SQLite-Seitendateien statt Vorabmutation
+- atomarer Austausch per `os.replace()` erst nach grünem Staging-Gate
+- vollständiger POSTCHECK der produktiven Datei
+- automatischer Rücktausch bei kontrolliertem Fehler nach `SWAPPED`
+- rekonstruierbarer Crash-Zustand `SWAPPING` mit beiden Hashes und Rollback-Pfad
+- Start-Gate blockiert unvollständige Restore-Vorgänge
+- Restore-API akzeptiert nur aktuell verifizierte Backup-Namen
+- Restore-API verlangt die exakte Bestätigung `DATENBANK WIEDERHERSTELLEN`
+
+Status: `GET /api/restore/status`  
+Ausführung: `POST /api/restore/execute`
+
+Details: `docs/RESTORE_VERTRAG.md`.
+
 ## Sicherheitsgrenze
 
-Restore bleibt deaktiviert. Der nächste P0-Schritt ist **P0-011B Staging-Restore**.
-Ein Backup darf die produktive Datenbank erst ersetzen, wenn Staging, Hash-, Schema-,
-Integritäts- und Recovery-Gates vollständig grün sind.
+P0-011 Backup/Restore ist technisch implementiert und regressiv abgesichert.
+Der nächste P0-Schritt ist **P0-012 reale Browser-Endabnahme unter Kubuntu/KDE + Chrome**.
 
-Direktlöschen, Massenänderungen und überschreibender Import bleiben ebenfalls gesperrt,
+Direktlöschen, Massenänderungen und überschreibender Import bleiben weiterhin gesperrt,
 bis ihre jeweiligen Schutzverträge vollständig implementiert und regressiv geprüft sind.
 
 ## Ampeln
@@ -138,6 +171,7 @@ bis ihre jeweiligen Schutzverträge vollständig implementiert und regressiv gep
 | `docs/PERSISTENCE.md` | Datenbank-, Schema- und Migrationsvertrag |
 | `docs/TRANSAKTIONSVERTRAG.md` | Mutations-, Rollback- und Recovery-Vertrag |
 | `docs/BACKUP_VERTRAG.md` | Snapshot-, Manifest- und Backup-Verifikationsvertrag |
+| `docs/RESTORE_VERTRAG.md` | Staging-, Swap-, Rollback- und Restore-Recovery-Vertrag |
 | `MANIFEST.json` | maschinenlesbare Projektstandards |
 
 ## Datenschutz

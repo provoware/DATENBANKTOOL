@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import hashlib
 import sqlite3
-import threading
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -13,6 +12,7 @@ from typing import Any, Generic, TypeVar
 
 from src.persistence.database import Database
 from src.recovery.evidence import EvidenceJournal, RecoveryEvidence
+from src.recovery.gate import DatabaseOperationGate
 
 T = TypeVar("T")
 Precheck = Callable[[sqlite3.Connection], None]
@@ -86,15 +86,10 @@ def _validate_label(name: str, value: str, maximum: int) -> str:
 class MutationCoordinator:
     """Single mutation gate plus transactional PRE/POST contract."""
 
-    _registry_guard = threading.Lock()
-    _database_locks: dict[str, threading.Lock] = {}
-
     def __init__(self, database: Database, runtime_dir: Path) -> None:
         self.database = database
         self.journal = EvidenceJournal(runtime_dir)
-        key = str(database.path.resolve())
-        with self._registry_guard:
-            self._lock = self._database_locks.setdefault(key, threading.Lock())
+        self.gate = DatabaseOperationGate(database.path)
 
     def execute(
         self,
@@ -151,7 +146,7 @@ class MutationCoordinator:
                     evidence_path=evidence_path,
                 )
 
-        if not self._lock.acquire(blocking=False):
+        if not self.gate.acquire():
             transition(MutationState.REJECTED, {"reason": "mutation_gate_busy"})
             evidence_path = self._finish(
                 operation_id=operation_id,
@@ -243,7 +238,7 @@ class MutationCoordinator:
         finally:
             if connection is not None:
                 connection.close()
-            self._lock.release()
+            self.gate.release()
 
     def _finish(
         self,
