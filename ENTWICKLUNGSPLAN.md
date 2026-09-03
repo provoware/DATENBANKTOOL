@@ -18,7 +18,9 @@ Ziel: robuste Datenhaltung ohne Datenverlust.
 2. ✅ versionierte Migrationen und Drift-Erkennung
 3. ✅ zentraler Transaktions- und Validierungsvertrag
 4. ✅ Recovery-Journal + Operation-ID + Start-Gate
-5. 🔄 Backup / Restore mit Integritätsprüfung
+5. 🟡 Backup / Restore mit Integritätsprüfung
+   - ✅ P0-011A: Backup Engine + Backup Manifest v1
+   - 🔄 P0-011B: Staging-Restore + atomarer Austausch
 6. ⬜ Import / Export mit Schema-Vertrag
 
 ## Phase C · Hauptdatenbank – ⚪
