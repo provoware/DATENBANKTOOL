@@ -9,6 +9,7 @@ from src.persistence import Database, EntryStore
 from src.recovery import (
     EvidenceJournal,
     MutationBusyError,
+    MutationContractError,
     MutationCoordinator,
     MutationDuplicateError,
     MutationState,
@@ -168,6 +169,40 @@ def test_incomplete_journal_operation_is_detected(tmp_path):
 
     incomplete = journal.incomplete_operations()
     assert incomplete["op-crash-test"]["state"] == "COMMITTING"
+
+
+def test_evidence_failure_after_commit_remains_ambiguous(tmp_path, monkeypatch):
+    database = _database(tmp_path)
+    coordinator = MutationCoordinator(database, tmp_path / "runtime")
+
+    def mutation(connection: sqlite3.Connection) -> None:
+        connection.execute(
+            "INSERT INTO app_settings(key, value_json, updated_at) VALUES (?, ?, ?)",
+            ("commit-boundary", "1", "2026-09-03T00:00:00+00:00"),
+        )
+
+    def fail_final_evidence(*args, **kwargs):
+        del args, kwargs
+        raise OSError("Evidence absichtlich nicht schreibbar")
+
+    monkeypatch.setattr(coordinator.journal, "write_final", fail_final_evidence)
+
+    with pytest.raises(MutationContractError):
+        coordinator.execute(
+            operation_kind="settings.create",
+            target="setting:commit-boundary",
+            mutation=mutation,
+        )
+
+    with database.connect() as connection:
+        count = connection.execute(
+            "SELECT COUNT(*) FROM app_settings WHERE key = 'commit-boundary'"
+        ).fetchone()[0]
+    assert count == 1
+
+    incomplete = coordinator.journal.incomplete_operations()
+    assert len(incomplete) == 1
+    assert next(iter(incomplete.values()))["state"] == "COMMITTING"
 
 
 def test_entry_store_uses_contract_and_operation_key(tmp_path):
