@@ -3,15 +3,19 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import sqlite3
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
 
 from src.logging_core import EventLogger
+from src.persistence import Database, MigrationError
 
 ROOT = Path(__file__).resolve().parents[1]
 WEB = ROOT / "src" / "web"
 LOGGER: EventLogger | None = None
+DATABASE: Database | None = None
+APP_VERSION = "0.2.0-alpha.1"
 
 
 def get_logger() -> EventLogger:
@@ -19,6 +23,15 @@ def get_logger() -> EventLogger:
     if LOGGER is None:
         LOGGER = EventLogger(ROOT)
     return LOGGER
+
+
+def get_database() -> Database:
+    global DATABASE
+    if DATABASE is None:
+        configured = os.environ.get("PROVOWARE_DB_PATH")
+        path = Path(configured) if configured else ROOT / "data" / "user" / "provoware.sqlite3"
+        DATABASE = Database(path)
+    return DATABASE
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -35,20 +48,52 @@ class Handler(SimpleHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_GET(self) -> None:
-        if urlparse(self.path).path == "/api/health":
+        path = urlparse(self.path).path
+        if path == "/api/health":
             logger = get_logger()
+            storage = get_database().schema_status()
             self._json(
                 200,
                 {
-                    "ok": True,
-                    "status": "basis",
-                    "version": "0.1.0-foundation",
-                    "ampel": "gelb",
-                    "message": "Clean Foundation läuft. Fachmodule sind noch im Aufbau.",
+                    "ok": storage.ready,
+                    "status": "datenkern",
+                    "version": APP_VERSION,
+                    "ampel": "gelb" if storage.ready else "rot",
+                    "message": (
+                        "Datenkern ist bereit. Recovery-Vertrag ist noch im Aufbau."
+                        if storage.ready
+                        else "Datenkern ist nicht bereit."
+                    ),
                     "session_id": logger.session_id,
+                    "storage": {
+                        "ready": storage.ready,
+                        "schema_version": storage.current_version,
+                        "target_version": storage.target_version,
+                    },
                 },
             )
             return
+
+        if path == "/api/storage/status":
+            storage = get_database().schema_status()
+            integrity = get_database().integrity_check() if storage.ready else None
+            self._json(
+                200 if storage.ready else 503,
+                {
+                    "ok": storage.ready and bool(integrity and integrity.ok),
+                    "schema_version": storage.current_version,
+                    "target_version": storage.target_version,
+                    "journal_mode": storage.journal_mode,
+                    "integrity": {
+                        "ok": integrity.ok,
+                        "foreign_key_violations": integrity.foreign_key_violations,
+                    }
+                    if integrity
+                    else None,
+                },
+            )
+            return
+
         super().do_GET()
 
     def do_POST(self) -> None:
@@ -92,6 +137,33 @@ class Handler(SimpleHTTPRequestHandler):
         print("[PROVOWARE] " + (fmt % args))
 
 
+def _initialize_storage(logger: EventLogger) -> bool:
+    database = get_database()
+    try:
+        report = database.initialize()
+    except (MigrationError, sqlite3.Error, OSError) as exc:
+        logger.log(
+            "PRV-DATA-001",
+            "Datenbank konnte nicht sicher vorbereitet werden.",
+            level="CRITICAL",
+            component="persistence",
+            action="Kurzbericht prüfen. Datenbank nicht manuell überschreiben.",
+            details={"error": type(exc).__name__},
+        )
+        return False
+
+    logger.log(
+        "PRV-DATA-100",
+        "Datenbank und Schema sind bereit.",
+        component="persistence",
+        details={
+            "schema_version": report.to_version,
+            "migrations": list(report.applied_versions),
+        },
+    )
+    return True
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="PROVOWARE DATENBANKTOOL Clean Foundation")
     parser.add_argument("--host", default="127.0.0.1")
@@ -101,6 +173,13 @@ def main() -> int:
     os.chdir(ROOT)
     logger = get_logger()
     logger.log("PRV-START-001", "Lokaler Server startet.")
+
+    if not _initialize_storage(logger):
+        report = logger.write_short_report("absturz")
+        print("Datenbankstart fehlgeschlagen. Das Tool wurde sicher angehalten.")
+        print(f"Kurzbericht: {report}")
+        return 2
+
     server = ThreadingHTTPServer((args.host, args.port), Handler)
     print(f"PROVOWARE DATENBANKTOOL: http://{args.host}:{args.port}")
     try:
