@@ -1,0 +1,27 @@
+name: Export Project ZIP
+
+on:
+  push:
+    branches:
+      - export/cf010-zip-20260903
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Exakten release-abgenommenen Main-Stand auschecken
+        uses: actions/checkout@v4
+        with:
+          ref: 4a92bc73213aaca7a2863bf671b279548dfeda24
+
+      - name: Projektbaum als ZIP-Artefakt hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: provoware_datenbanktool_v0.5.1-alpha.1_status_restorekern_cf010_releaseabgenommen
+          path: .
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
