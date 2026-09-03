@@ -1,7 +1,7 @@
 # TODO · CLEAN FOUNDATION
 
-**Status:** 🟡 RESTOREKERN / AUFBAU  
-**Fortschritt:** `[■■■■■■■□□□] 70 %`
+**Status:** 🟡 BROWSER-ABNAHME VORBEREITET  
+**Fortschritt:** `[■■■■■■■■□□] 75 %`
 
 ## P0 · Muss vor erster produktiver Nutzung
 
@@ -22,6 +22,7 @@
   - [x] deutschen UI-Sprachkatalog ausgelagert und versioniert.
   - [x] UI-Abstände, Radien, Schatten und Farben über Design-Tokens vereinheitlicht.
   - [x] Regressionen gegen Versions-, Registry- und Sprachdrift ergänzt.
+- [x] **CF-010** Produktmetadaten, Sprache und Registry driftfrei vereinheitlichen.
 - [x] **P0-009** Persistenzschicht mit echtem Schema und Migration implementieren.
 - [x] **P0-010** Recovery-/Transaktionsvertrag für alle Datenänderungen implementieren.
   - [x] Operation-ID pro Datenänderung.
@@ -36,6 +37,11 @@
   - [x] **P0-011A** Backup Engine + Backup Manifest v1.
   - [x] **P0-011B** Staging-Restore + atomarer Austausch + POSTCHECK.
 - [ ] **P0-012** reale Browser-Endabnahme unter Kubuntu/KDE + Chrome durchführen.
+  - [x] **P0-012A** reproduzierbaren Browser-Smoke, Viewport-Gate und Abnahmematrix anlegen.
+  - [ ] **P0-012B** automatischen Smoke auf dem realen Kubuntu-/Chrome-System ausführen.
+  - [ ] **P0-012C** sichtbare KDE-/Chrome-Matrix bei 100/125/150/200 % Zoom abnehmen.
+  - [ ] **P0-012D** reproduzierbare Befunde minimal patchen und reale Regression wiederholen.
+  - [ ] **P0-012E** finalen P0-012-Head durch CI + Release Gate abnehmen.
 
 ## P1 · Produktbasis
 
