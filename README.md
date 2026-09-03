@@ -8,7 +8,7 @@
 
 `[■■■■■■■□□□] 70 % · RESTOREKERN / AUFBAU`
 
-Version `0.5.0-alpha.1` besitzt einen abgesicherten SQLite-Datenkern,
+Version `0.5.1-alpha.1` besitzt einen abgesicherten SQLite-Datenkern,
 einen zentralen Mutations-/Recovery-Vertrag sowie verifizierte Backups und Restore.
 Die reale Browser-Endabnahme unter Kubuntu/KDE + Chrome ist der nächste P0-Schritt.
 
@@ -45,16 +45,21 @@ Nach dem Austausch ist ein produktiver POSTCHECK Pflicht vor `COMMITTED`.
 
 ## Wartbarkeitsgrundlage
 
-Damit spätere Entwicklung gezielter und codesparsamer bleibt, gibt es nun zentrale
+Damit spätere Entwicklung gezielter und codesparsamer bleibt, gibt es zentrale
 Quellen und Indizes:
 
-- `VERSION.json` – Produkt-, Schema- und Vertragsversionen
+- `VERSION.json` – einzige fachliche Quelle für Produkt-, Schema- und Vertragsversionen
 - `src/config/registry.json` – stabile Module, API-Endpunkte und Fehlercodes
+- `GET /api/project/meta` – liefert Produktmetadaten aus `VERSION.json` an die Oberfläche
 - `TOOL_SCHEMA.json` – maschinenlesbare Struktur des Tools
 - `ORDNER_UND_DATEIINDEX.md` – dieselbe Struktur in einfacher Sprache
 - `src/web/i18n/de.json` – versionierter deutscher UI-Sprachkatalog
 - `src/web/styles.css` – zentrale Design-Tokens für Abstände, Radien, Schatten und Farben
 - `docs/ENTWICKLUNGSDISZIPLIN.md` – Voranalyse- und Minimal-Patch-Vertrag
+
+**Für Laien:** Die Versionsnummer wird nur noch an einer Stelle gepflegt. Die Oberfläche
+fragt diese Information beim lokalen Server ab. Deutsche sichtbare Texte liegen getrennt
+im Sprachkatalog. Dadurch können Versionsnummern und Texte nicht so leicht auseinanderlaufen.
 
 ## Schnellstart
 
