@@ -2,6 +2,31 @@
 
 Alle wichtigen Projektänderungen werden hier in deutscher Sprache dokumentiert.
 
+## [0.5.2-alpha.1] – 2026-09-03
+
+### Hinzugefügt
+
+- 🟢 `Browser Smoke` als eigener GitHub-Actions-Workflow mit Playwright.
+- 🟢 automatische Browser-Prüfung für 1366×768, 1600×900 und 1920×1080.
+- 🟢 Prüfung von Runtime-Metadaten, Health-Status, Fortschritt, Footer und horizontalem Overflow.
+- 🟢 Tastatur-Regressionspfade für Kurzhilfe und Skip-Link.
+- 🟢 Browser-Evidence als Workflow-Artefakt bei jedem Lauf.
+- 🟢 `tools/run_browser_acceptance.sh` für den automatischen Smoke mit echtem Google Chrome.
+- 🟢 `docs/BROWSER_ABNAHME.md` als reale Kubuntu/KDE-/Chrome-Abnahmematrix.
+- 🟢 Browser-Acceptance-Vertrag v1 in `VERSION.json`, `MANIFEST.json`, Registry und Tool-Schema.
+
+### Geändert
+
+- 🟣 Projektstatus auf `BROWSER-ABNAHME VORBEREITET` und Fortschritt auf 75 % gesetzt.
+- 🟣 `#main` ist explizit fokussierbar, damit der Skip-Link reproduzierbar zum Hauptinhalt führt.
+- 🟣 Formatter-Zielliste wurde aus `package.json` in `tools/run-prettier.mjs` ausgelagert.
+- 🟣 P0-012 wurde in automatische Vorbereitung und reale Zielsystem-Abnahme aufgeteilt.
+
+### Sicherheitsgrenze
+
+- 🟡 Ein grüner CI-Chromium-Lauf ersetzt keine reale Kubuntu/KDE-/Google-Chrome-Abnahme.
+- 🟡 P0-012 bleibt offen, bis reales Chrome, KDE-Fensterverhalten und Zoom 100/125/150/200 % geprüft sind.
+
 ## [0.5.1-alpha.1] – 2026-09-03
 
 ### Hinzugefügt

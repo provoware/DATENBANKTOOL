@@ -1,12 +1,15 @@
 {
   "name": "provoware-datenbanktool-foundation",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.5.2-alpha.1",
   "scripts": {
-    "format": "prettier --write \"src/web/**/*.{html,js,css,json}\" \"src/config/**/*.json\" MANIFEST.json VERSION.json TOOL_SCHEMA.json",
-    "format:check": "prettier --check \"src/web/**/*.{html,js,css,json}\" \"src/config/**/*.json\" MANIFEST.json VERSION.json TOOL_SCHEMA.json"
+    "format": "node tools/run-prettier.mjs --write",
+    "format:check": "node tools/run-prettier.mjs --check",
+    "browser:smoke": "playwright test",
+    "browser:smoke:chrome": "PW_CHANNEL=chrome playwright test"
   },
   "devDependencies": {
+    "@playwright/test": "1.62.1",
     "prettier": "3.3.3"
   }
 }

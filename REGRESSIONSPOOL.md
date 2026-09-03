@@ -66,8 +66,12 @@ Wiederkehrende Prüfungen, die bei relevanten Änderungen erneut laufen müssen.
 - [ ] **REG-UI-003** Text bleibt bei 200 % Zoom nutzbar.
 - [ ] **REG-UI-004** Rot/Gelb/Grün werden zusätzlich durch Text/Symbol erklärt.
 - [ ] **REG-UI-005** Tooltips ersetzen keine zwingend sichtbaren Kerninformationen.
+- [x] **REG-UI-006** automatischer Browser-Smoke prüft Metadaten, Status, 3 Desktop-Viewports,
+  horizontalen Overflow, JS-Fehler, Kurzhilfe und Skip-Link.
+- [ ] **REG-UI-007** reale Kubuntu/KDE-/Google-Chrome-Abnahmematrix ist vollständig grün.
 
 ## Release-Gate
 
 Ein Release darf nur als `STABLE` markiert werden, wenn alle P0-Regressionen
 und alle im Manifest als `release_blocking` markierten Prüfungen grün sind.
+Der automatische Chromium-Smoke ersetzt REG-UI-007 ausdrücklich nicht.

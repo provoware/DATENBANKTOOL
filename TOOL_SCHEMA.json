@@ -34,6 +34,11 @@
       "id": "diagnostics",
       "path": "src/logging_core.py",
       "responsibility": "Logging und Kurzberichte"
+    },
+    {
+      "id": "browser_quality",
+      "path": "tests/browser/",
+      "responsibility": "automatischer Browser-Smoke und UI-Regressionsnachweis"
     }
   ],
   "data_classes": {
@@ -45,6 +50,7 @@
     "MANIFEST.json",
     "src/config/registry.json",
     "src/web/i18n/de.json",
+    "docs/BROWSER_ABNAHME.md",
     "REGRESSIONSPOOL.md",
     "AGENTS.md"
   ]

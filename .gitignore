@@ -8,6 +8,8 @@ venv/
 
 # Node
 node_modules/
+playwright-report/
+test-results/
 
 # Nutzer- und Laufzeitdaten
 data/user/
