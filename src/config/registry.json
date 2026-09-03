@@ -2,22 +2,78 @@
   "registry_version": 1,
   "product_version_source": "VERSION.json",
   "modules": [
-    {"id": "persistence", "path": "src/persistence/", "owner": "data-core"},
-    {"id": "recovery", "path": "src/recovery/", "owner": "safety-core"},
-    {"id": "backup", "path": "src/backup/", "owner": "safety-core"},
-    {"id": "api", "path": "src/server.py", "owner": "application-edge"},
-    {"id": "ui", "path": "src/web/", "owner": "presentation"},
-    {"id": "logging", "path": "src/logging_core.py", "owner": "diagnostics"}
+    {
+      "id": "persistence",
+      "path": "src/persistence/",
+      "owner": "data-core"
+    },
+    {
+      "id": "recovery",
+      "path": "src/recovery/",
+      "owner": "safety-core"
+    },
+    {
+      "id": "backup",
+      "path": "src/backup/",
+      "owner": "safety-core"
+    },
+    {
+      "id": "api",
+      "path": "src/server.py",
+      "owner": "application-edge"
+    },
+    {
+      "id": "ui",
+      "path": "src/web/",
+      "owner": "presentation"
+    },
+    {
+      "id": "logging",
+      "path": "src/logging_core.py",
+      "owner": "diagnostics"
+    }
   ],
   "api": [
-    {"id": "health", "method": "GET", "path": "/api/health"},
-    {"id": "storage.status", "method": "GET", "path": "/api/storage/status"},
-    {"id": "recovery.status", "method": "GET", "path": "/api/recovery/status"},
-    {"id": "backup.status", "method": "GET", "path": "/api/backup/status"},
-    {"id": "backup.create", "method": "POST", "path": "/api/backup/create"},
-    {"id": "restore.status", "method": "GET", "path": "/api/restore/status"},
-    {"id": "restore.execute", "method": "POST", "path": "/api/restore/execute"},
-    {"id": "logging.event", "method": "POST", "path": "/api/log-event"}
+    {
+      "id": "health",
+      "method": "GET",
+      "path": "/api/health"
+    },
+    {
+      "id": "storage.status",
+      "method": "GET",
+      "path": "/api/storage/status"
+    },
+    {
+      "id": "recovery.status",
+      "method": "GET",
+      "path": "/api/recovery/status"
+    },
+    {
+      "id": "backup.status",
+      "method": "GET",
+      "path": "/api/backup/status"
+    },
+    {
+      "id": "backup.create",
+      "method": "POST",
+      "path": "/api/backup/create"
+    },
+    {
+      "id": "restore.status",
+      "method": "GET",
+      "path": "/api/restore/status"
+    },
+    {
+      "id": "restore.execute",
+      "method": "POST",
+      "path": "/api/restore/execute"
+    },
+    {
+      "id": "logging.event",
+      "method": "POST",
+      "path": "/api/log-event"
+    }
   ],
   "stable_error_codes": [
     "PRV-DATA-001",
