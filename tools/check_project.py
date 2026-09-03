@@ -37,9 +37,7 @@ BASE_REQUIRED_FILES = [
     "ORDNER_UND_DATEIINDEX.md",
     "docs/ENTWICKLUNGSDISZIPLIN.md",
 ]
-REQUIRED_FILES = tuple(
-    dict.fromkeys([*BASE_REQUIRED_FILES, *TOOL_SCHEMA["critical_files"]])
-)
+REQUIRED_FILES = tuple(dict.fromkeys([*BASE_REQUIRED_FILES, *TOOL_SCHEMA["critical_files"]]))
 
 
 def excluded(path: Path) -> bool:
