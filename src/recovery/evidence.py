@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import tempfile
+from contextlib import suppress
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -136,7 +137,5 @@ class EvidenceJournal:
                 os.fsync(handle.fileno())
             os.replace(temporary_name, destination)
         finally:
-            try:
+            with suppress(FileNotFoundError):
                 os.unlink(temporary_name)
-            except FileNotFoundError:
-                pass
