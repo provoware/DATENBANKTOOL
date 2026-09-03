@@ -1,7 +1,7 @@
 # TODO · CLEAN FOUNDATION
 
-**Status:** 🟡 BACKUPKERN / AUFBAU  
-**Fortschritt:** `[■■■■■■□□□□] 60 %`
+**Status:** 🟡 RESTOREKERN / AUFBAU  
+**Fortschritt:** `[■■■■■■■□□□] 70 %`
 
 ## P0 · Muss vor erster produktiver Nutzung
 
@@ -24,7 +24,7 @@
   - [x] atomare finale Evidence-Datei mit Status im Dateinamen.
   - [x] sensible Evidence-Details werden geschwärzt.
   - [x] Start-Gate erkennt unvollständige vorherige Operationen.
-- [ ] **P0-011** Backup-/Restore-Funktion mit Integritätsprüfung implementieren.
+- [x] **P0-011** Backup-/Restore-Funktion mit Integritätsprüfung implementieren.
   - [x] **P0-011A** Backup Engine + Backup Manifest v1.
     - [x] konsistenter SQLite-Snapshot auch bei WAL-Betrieb.
     - [x] eindeutige Backup-ID.
@@ -35,13 +35,18 @@
     - [x] `.incomplete_*` wird niemals als gültiges Backup geführt.
     - [x] unabhängiges Backup-Verifikations-Gate.
     - [x] Regressionen für WAL, Manipulation, Staging und Abbruch.
-  - [ ] **P0-011B** Staging-Restore implementieren.
-    - [ ] Backup vor Restore erneut verifizieren.
-    - [ ] Restore ausschließlich in Staging-Ziel durchführen.
-    - [ ] SHA-256, Schema, quick_check und foreign_key_check erneut prüfen.
-    - [ ] produktive Datenbank erst nach grünem Staging-Gate atomar austauschen.
-    - [ ] Fehler vor Austausch dürfen produktive Datenbank nicht verändern.
-    - [ ] Restore-Evidence und Recovery-Vertrag anbinden.
+  - [x] **P0-011B** Staging-Restore implementieren.
+    - [x] Backup vor Restore erneut verifizieren.
+    - [x] Restore ausschließlich in Staging-Ziel durchführen.
+    - [x] SHA-256, Schema, quick_check und foreign_key_check erneut prüfen.
+    - [x] exklusives Datenbankzugriffsfenster vor dem Swap.
+    - [x] Rollback-Snapshot des vorherigen Produktivstands vor dem Austausch.
+    - [x] produktive Datenbank erst nach grünem Staging-Gate atomar austauschen.
+    - [x] Fehler vor Austausch verändern keine produktiven Nutzdaten.
+    - [x] POSTCHECK nach Swap ist Pflicht vor COMMITTED.
+    - [x] fehlgeschlagener POSTCHECK rollt auf den vorherigen Produktivstand zurück.
+    - [x] Crash im Zustand SWAPPING bleibt als unvollständiger Vorgang startblockierend sichtbar.
+    - [x] Restore-Evidence und Recovery-Vertrag angebunden.
 - [ ] **P0-012** reale Browser-Endabnahme unter Kubuntu/KDE + Chrome durchführen.
 
 ## P1 · Produktbasis
