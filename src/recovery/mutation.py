@@ -189,7 +189,7 @@ class MutationCoordinator:
             transition(MutationState.COMMITTING)
             connection.commit()
             committed = True
-            transition(MutationState.COMMITTED)
+            committed_transitions = transitions + [MutationState.COMMITTED.value]
             evidence_path = self._finish(
                 operation_id=operation_id,
                 kind=kind,
@@ -197,9 +197,10 @@ class MutationCoordinator:
                 state=MutationState.COMMITTED,
                 started_at=started_at,
                 key_hash=key_hash,
-                transitions=transitions,
+                transitions=committed_transitions,
                 details=base_details,
             )
+            transition(MutationState.COMMITTED)
             return MutationResult(
                 operation_id=operation_id,
                 state=MutationState.COMMITTED,
@@ -210,8 +211,8 @@ class MutationCoordinator:
             if committed:
                 raise MutationContractError(
                     "Die Datenänderung wurde gespeichert, aber die Recovery-Evidence "
-                    "ist unvollständig. Vorgang nicht erneut ausführen; "
-                    "Recovery-Prüfung verwenden.",
+                    "ist unvollständig oder das Abschlussjournal konnte nicht geschrieben "
+                    "werden. Vorgang nicht erneut ausführen; Recovery-Prüfung verwenden.",
                     operation_id=operation_id,
                 ) from exc
             if connection is not None:
