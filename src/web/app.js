@@ -6,10 +6,7 @@ const progressBar = document.querySelector("#progressBar");
 const progressBlocks = document.querySelector("#progressBlocks");
 const footer = document.querySelector("#footerText");
 
-const statusClasses = {
-  rot: "status-error",
-  "grün": "status-success",
-};
+const statusClasses = { rot: "status-error", "grün": "status-success" };
 
 let messages = {};
 let projectMeta = {};
@@ -31,10 +28,7 @@ async function loadStaticConfig() {
     element.textContent = text(element.dataset.i18n, element.textContent);
   }
   for (const element of document.querySelectorAll("[data-i18n-aria]")) {
-    element.setAttribute(
-      "aria-label",
-      text(element.dataset.i18nAria, element.getAttribute("aria-label") || ""),
-    );
+    element.setAttribute("aria-label", text(element.dataset.i18nAria, element.getAttribute("aria-label") || ""));
   }
   document.title = text("page.title", document.title);
   helpButton.title = text("help.tip", "");
@@ -59,14 +53,11 @@ function renderProjectMeta() {
 function applyHealthStatus(data) {
   const traffic = String(data.ampel || "gelb").toLowerCase();
   const className = statusClasses[traffic] ?? "status-warning";
-  const statusKey =
-    data.status_message_key || projectMeta.product?.status_message_key;
+  const statusKey = data.status_message_key || projectMeta.product?.status_message_key;
   const label = text(statusKey, data.status || "status");
   status.innerHTML = `<span aria-hidden="true">●</span> ${String(label).toUpperCase()} · ${traffic.toUpperCase()}`;
   status.className = `status-pill ${className}`;
-  status.title = String(
-    data.message || text("status.default_tip", "Status des lokalen Tools."),
-  );
+  status.title = String(data.message || text("status.default_tip", "Status des lokalen Tools."));
 }
 
 async function loadHealth() {
@@ -77,20 +68,14 @@ async function loadHealth() {
   } catch {
     status.innerHTML = `<span aria-hidden="true">●</span> ${text("status.unreachable", "SERVER NICHT ERREICHBAR")}`;
     status.className = "status-pill status-error";
-    status.title = text(
-      "status.unreachable_tip",
-      "Der lokale Server antwortet nicht.",
-    );
+    status.title = text("status.unreachable_tip", "Der lokale Server antwortet nicht.");
   }
 }
 
 function toggleHelp() {
   const opening = helpPanel.hidden;
   helpPanel.hidden = !opening;
-  helpButton.textContent = text(
-    opening ? "help.close" : "help.open",
-    helpButton.textContent,
-  );
+  helpButton.textContent = text(opening ? "help.close" : "help.open", helpButton.textContent);
   if (opening) helpPanel.focus?.();
 }
 
