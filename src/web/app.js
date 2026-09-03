@@ -24,7 +24,8 @@ async function loadHealth() {
   } catch {
     status.innerHTML = '<span aria-hidden="true">●</span> SERVER NICHT ERREICHBAR';
     status.className = "status-pill status-error";
-    status.title = "Der lokale Server antwortet nicht. Starter und Kurzbericht prüfen.";
+    status.title =
+      "Der lokale Server antwortet nicht. Starter und Kurzbericht prüfen.";
   }
 }
 
@@ -40,7 +41,10 @@ function toggleHelp() {
 helpButton.addEventListener("click", toggleHelp);
 
 for (const element of document.querySelectorAll("[data-tip]")) {
-  element.setAttribute("aria-label", `${element.textContent.trim()}. ${element.dataset.tip}`);
+  element.setAttribute(
+    "aria-label",
+    `${element.textContent.trim()}. ${element.dataset.tip}`,
+  );
 }
 
 void loadHealth();
