@@ -69,6 +69,12 @@ class Handler(SimpleHTTPRequestHandler):
             incomplete = get_recovery_journal().incomplete_operations()
             verified_backups = get_backup_manager().list_verified_backups()
             healthy = storage.ready and not incomplete
+            message = (
+                "Daten-, Transaktions- und Backupkern sind bereit. "
+                "Restore ist noch gesperrt."
+                if healthy
+                else "Datenkern oder Recovery-Zustand benötigt Prüfung."
+            )
             self._json(
                 200 if healthy else 503,
                 {
@@ -76,11 +82,7 @@ class Handler(SimpleHTTPRequestHandler):
                     "status": "backupkern",
                     "version": APP_VERSION,
                     "ampel": "gelb" if healthy else "rot",
-                    "message": (
-                        "Daten-, Transaktions- und Backupkern sind bereit. Restore ist noch gesperrt."
-                        if healthy
-                        else "Datenkern oder Recovery-Zustand benötigt Prüfung."
-                    ),
+                    "message": message,
                     "session_id": logger.session_id,
                     "storage": {
                         "ready": storage.ready,
@@ -150,7 +152,10 @@ class Handler(SimpleHTTPRequestHandler):
                     "verified_backups": len(backups),
                     "backups": [backup.name for backup in backups[:20]],
                     "restore_enabled": False,
-                    "message": "Backup-Verifikation ist aktiv. Restore bleibt bis P0-011B gesperrt.",
+                    "message": (
+                        "Backup-Verifikation ist aktiv. "
+                        "Restore bleibt bis P0-011B gesperrt."
+                    ),
                 },
             )
             return
