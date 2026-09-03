@@ -103,9 +103,7 @@ def test_migration_checksum_drift_is_rejected(tmp_path):
     database.initialize()
 
     with database.connect() as connection:
-        connection.execute(
-            "UPDATE schema_migrations SET checksum = 'wrong' WHERE version = 1"
-        )
+        connection.execute("UPDATE schema_migrations SET checksum = 'wrong' WHERE version = 1")
 
     with pytest.raises(MigrationError):
         database.initialize()
