@@ -2,10 +2,12 @@
 
 ## Was ist das PROVOWARE DATENBANKTOOL?
 
-Das Tool ist eine lokale Grundlage zum Speichern, Ordnen, Finden und sicheren Wiederherstellen von Informationen.
+Das Tool ist eine lokale Grundlage zum Speichern, Ordnen, Finden und sicheren
+Wiederherstellen von Informationen.
 Es arbeitet **offline-first**: Nutzerdaten bleiben grundsätzlich auf dem eigenen Rechner.
 
-Der aktuelle Stand ist noch eine Entwicklungsfassung. Der Datenkern, sichere Änderungen, Backups und Restore sind technisch abgesichert. Die reale Browser-Endabnahme steht noch aus.
+Der aktuelle Stand ist noch eine Entwicklungsfassung. Der Datenkern, sichere Änderungen,
+Backups und Restore sind technisch abgesichert. Die reale Browser-Endabnahme steht noch aus.
 
 ## Wo liegen meine Daten?
 
@@ -18,9 +20,12 @@ Diese Ordner mit echten Laufzeitdaten gehören **nicht** in das Git-Repository.
 
 ## Was bedeuten Backup und Restore?
 
-**Backup** bedeutet Sicherung. Das Tool erstellt dafür einen geprüften Datenbank-Snapshot und kontrolliert Hash, Größe, Schema und Datenbankintegrität.
+**Backup** bedeutet Sicherung. Das Tool erstellt dafür einen geprüften Datenbank-Snapshot
+und kontrolliert Hash, Größe, Schema und Datenbankintegrität.
 
-**Restore** bedeutet Wiederherstellung. Eine Sicherung ersetzt niemals sofort die aktive Datenbank. Sie wird zuerst separat geprüft. Erst wenn alle Prüfungen grün sind, darf der atomare Austausch erfolgen.
+**Restore** bedeutet Wiederherstellung. Eine Sicherung ersetzt niemals sofort die aktive
+Datenbank. Sie wird zuerst separat geprüft. Erst wenn alle Prüfungen grün sind, darf der
+atomare Austausch erfolgen.
 
 ## Was passiert bei einem Fehler?
 
@@ -53,13 +58,15 @@ Nur Erklärung oder Hinweis – kein Fehler.
 1. Terminal-/Konsolenfenster offen lassen.
 2. Kurzbericht im Ordner `logs/` ansehen.
 3. Auf **Fehlercode**, **Kurzursache**, **Operation-ID** und **Tipp** achten.
-4. Dieselbe kritische Änderung nicht mehrfach anklicken, wenn Recovery einen unvollständigen Vorgang meldet.
+4. Dieselbe kritische Änderung nicht mehrfach anklicken, wenn Recovery einen
+   unvollständigen Vorgang meldet.
 5. Bei wiederholtem Fehler zusätzlich die passende `.jsonl`-Datei zur Analyse verwenden.
 
 ## Fachbegriffe in einfacher Sprache
 
 - **API** – Verbindung zwischen Oberfläche und Programmlogik.
-- **Atomarer Austausch** – die alte Datei wird in einem einzigen Dateisystem-Schritt durch die neue ersetzt.
+- **Atomarer Austausch** – die alte Datei wird in einem einzigen Dateisystem-Schritt
+  durch die neue ersetzt.
 - **Hash / SHA-256** – digitaler Fingerabdruck einer Datei.
 - **JSONL** – technische Protokolldatei; ein Ereignis pro Zeile.
 - **Recovery** – kontrollierte Wiederaufnahme oder Rekonstruktion nach Fehler oder Absturz.
