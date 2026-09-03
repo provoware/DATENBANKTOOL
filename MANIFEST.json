@@ -8,7 +8,15 @@
     "offline_first": true
   },
   "architecture": {
-    "layers": ["ui", "api", "application", "persistence", "recovery", "backup", "logging"],
+    "layers": [
+      "ui",
+      "api",
+      "application",
+      "persistence",
+      "recovery",
+      "backup",
+      "logging"
+    ],
     "separation": {
       "base_tool": "src/",
       "default_config": "src/config/",
@@ -34,7 +42,13 @@
   },
   "recovery": {
     "contract_version": 1,
-    "flow": ["PRECHECK", "MUTATION", "POSTCHECK", "COMMIT_OR_ROLLBACK", "EVIDENCE"],
+    "flow": [
+      "PRECHECK",
+      "MUTATION",
+      "POSTCHECK",
+      "COMMIT_OR_ROLLBACK",
+      "EVIDENCE"
+    ],
     "states": [
       "RECEIVED",
       "PRECHECK",
@@ -92,12 +106,42 @@
     "restore_next_gate": "P0-011B"
   },
   "file_limits": {
-    "python": { "preferred_lines": 300, "max_lines": 450, "preferred_line_length": 100, "max_line_length": 120 },
-    "javascript": { "preferred_lines": 320, "max_lines": 450, "preferred_line_length": 110, "max_line_length": 140 },
-    "css": { "preferred_lines": 400, "max_lines": 650, "preferred_line_length": 100, "max_line_length": 140 },
-    "html": { "preferred_lines": 450, "max_lines": 650, "preferred_line_length": 120, "max_line_length": 160 },
-    "markdown": { "preferred_lines": 350, "max_lines": 600, "preferred_line_length": 100, "max_line_length": 140 },
-    "json": { "preferred_lines": 400, "max_lines": 800, "preferred_line_length": 120, "max_line_length": 180 }
+    "python": {
+      "preferred_lines": 300,
+      "max_lines": 450,
+      "preferred_line_length": 100,
+      "max_line_length": 120
+    },
+    "javascript": {
+      "preferred_lines": 320,
+      "max_lines": 450,
+      "preferred_line_length": 110,
+      "max_line_length": 140
+    },
+    "css": {
+      "preferred_lines": 400,
+      "max_lines": 650,
+      "preferred_line_length": 100,
+      "max_line_length": 140
+    },
+    "html": {
+      "preferred_lines": 450,
+      "max_lines": 650,
+      "preferred_line_length": 120,
+      "max_line_length": 160
+    },
+    "markdown": {
+      "preferred_lines": 350,
+      "max_lines": 600,
+      "preferred_line_length": 100,
+      "max_line_length": 140
+    },
+    "json": {
+      "preferred_lines": 400,
+      "max_lines": 800,
+      "preferred_line_length": 120,
+      "max_line_length": 180
+    }
   },
   "logging": {
     "schema_version": 1,
@@ -109,7 +153,16 @@
     "max_short_report_lines": 120,
     "max_detail_chars": 2000,
     "max_detail_total_chars": 8000,
-    "redact_keys": ["password", "passwort", "token", "secret", "api_key", "authorization", "cookie", "credential"]
+    "redact_keys": [
+      "password",
+      "passwort",
+      "token",
+      "secret",
+      "api_key",
+      "authorization",
+      "cookie",
+      "credential"
+    ]
   },
   "quality": {
     "python_formatter": "ruff format",
@@ -117,7 +170,14 @@
     "web_formatter": "prettier",
     "test_runner": "pytest",
     "project_checker": "python tools/check_project.py",
-    "release_blocking": ["syntax", "format", "tests", "file_limits", "manifest", "regressions_p0"]
+    "release_blocking": [
+      "syntax",
+      "format",
+      "tests",
+      "file_limits",
+      "manifest",
+      "regressions_p0"
+    ]
   },
   "ui": {
     "language": "de",
