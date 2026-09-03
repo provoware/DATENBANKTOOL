@@ -13,4 +13,8 @@ def test_manifest_has_required_standards() -> None:
     assert manifest["persistence"]["engine"] == "sqlite3"
     assert manifest["persistence"]["schema_version"] == 1
     assert manifest["persistence"]["foreign_keys"] is True
+    assert manifest["recovery"]["contract_version"] == 1
+    assert manifest["recovery"]["single_writer_gate"] is True
+    assert manifest["recovery"]["startup_incomplete_operation_gate"] is True
+    assert manifest["recovery"]["evidence_schema_version"] == 1
     assert "tests" in manifest["quality"]["release_blocking"]
