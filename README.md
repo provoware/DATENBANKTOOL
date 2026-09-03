@@ -29,7 +29,7 @@ Die neue Basis trennt konsequent:
 ## Schnellstart
 
 ```bash
-python3 src/server.py
+python3 -m src.server
 ```
 
 Danach im Browser öffnen:
