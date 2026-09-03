@@ -80,6 +80,14 @@
       "path": "/api/log-event"
     }
   ],
+  "quality_gates": [
+    {
+      "id": "browser.smoke",
+      "workflow": ".github/workflows/browser-smoke.yml",
+      "tests": "tests/browser/",
+      "purpose": "automatischer Browser-Smoke, kein Ersatz für reale KDE-/Chrome-Abnahme"
+    }
+  ],
   "stable_error_codes": [
     "PRV-DATA-001",
     "PRV-DATA-100",
@@ -101,6 +109,7 @@
   "documentation": {
     "tool_schema": "TOOL_SCHEMA.json",
     "file_index": "ORDNER_UND_DATEIINDEX.md",
-    "development_discipline": "docs/ENTWICKLUNGSDISZIPLIN.md"
+    "development_discipline": "docs/ENTWICKLUNGSDISZIPLIN.md",
+    "browser_acceptance": "docs/BROWSER_ABNAHME.md"
   }
 }
