@@ -26,8 +26,11 @@ jobs:
         run: python -m ruff check .
       - name: Ruff Format prüfen
         run: python -m ruff format --check .
-      - name: Prettier prüfen
-        run: npm run format:check
+      - name: Prettier-Diagnose Manifest
+        run: |
+          npx prettier --write MANIFEST.json
+          git diff -- MANIFEST.json
+          exit 1
       - name: Tests
         run: pytest -q
       - name: Projektstandards prüfen
