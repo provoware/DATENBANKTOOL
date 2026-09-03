@@ -5,11 +5,11 @@ import os
 import shutil
 import sqlite3
 import uuid
+from collections.abc import Callable
 from contextlib import suppress
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Callable
 
 from src.backup.engine import BACKUP_DATABASE_FILENAME, BackupManager
 from src.persistence.database import Database
