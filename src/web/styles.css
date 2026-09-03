@@ -12,7 +12,13 @@
   --green: #50e38a;
   --red: #ff667a;
   --blue: #74b7ff;
-  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family:
+    Inter,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
 }
 
 * {
@@ -22,10 +28,8 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background:
-    radial-gradient(circle at 15% 10%, rgba(53, 225, 220, 0.1), transparent 32rem),
-    radial-gradient(circle at 85% 0%, rgba(169, 140, 255, 0.1), transparent 28rem),
-    var(--bg);
+  background: radial-gradient(circle at 15% 10%, rgba(53, 225, 220, 0.1), transparent 32rem),
+    radial-gradient(circle at 85% 0%, rgba(169, 140, 255, 0.1), transparent 28rem), var(--bg);
   color: var(--text);
 }
 
@@ -38,7 +42,9 @@ a,
 button:focus-visible,
 a:focus-visible,
 [tabindex="0"]:focus-visible {
-  box-shadow: 0 0 0 3px #071016, 0 0 0 5px var(--cyan);
+  box-shadow:
+    0 0 0 3px #071016,
+    0 0 0 5px var(--cyan);
 }
 
 .skip-link {
@@ -158,7 +164,9 @@ h1 {
   min-height: 190px;
   padding: 1rem;
   border-radius: 0.9rem;
-  transition: transform 150ms ease, border-color 150ms ease;
+  transition:
+    transform 150ms ease,
+    border-color 150ms ease;
 }
 
 .card:hover {
@@ -175,12 +183,24 @@ h1 {
   margin-bottom: 0.7rem;
 }
 
-.accent-cyan { border-top: 3px solid var(--cyan); }
-.accent-purple { border-top: 3px solid var(--purple); }
-.accent-yellow { border-top: 3px solid var(--yellow); }
-.accent-green { border-top: 3px solid var(--green); }
-.accent-blue { border-top: 3px solid var(--blue); }
-.accent-red { border-top: 3px solid var(--red); }
+.accent-cyan {
+  border-top: 3px solid var(--cyan);
+}
+.accent-purple {
+  border-top: 3px solid var(--purple);
+}
+.accent-yellow {
+  border-top: 3px solid var(--yellow);
+}
+.accent-green {
+  border-top: 3px solid var(--green);
+}
+.accent-blue {
+  border-top: 3px solid var(--blue);
+}
+.accent-red {
+  border-top: 3px solid var(--red);
+}
 
 .status-pill,
 .traffic {
