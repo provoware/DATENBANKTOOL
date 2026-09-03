@@ -54,12 +54,19 @@ function renderProjectMeta() {
 function applyHealthStatus(data) {
   const traffic = String(data.ampel || "gelb").toLowerCase();
   const className =
-    traffic === "rot" ? "status-error" : traffic === "grün" ? "status-success" : "status-warning";
-  const statusKey = data.status_message_key || projectMeta.product?.status_message_key;
+    traffic === "rot"
+      ? "status-error"
+      : traffic === "grün"
+        ? "status-success"
+        : "status-warning";
+  const statusKey =
+    data.status_message_key || projectMeta.product?.status_message_key;
   const label = text(statusKey, data.status || "status");
   status.innerHTML = `<span aria-hidden="true">●</span> ${String(label).toUpperCase()} · ${traffic.toUpperCase()}`;
   status.className = `status-pill ${className}`;
-  status.title = String(data.message || text("status.default_tip", "Status des lokalen Tools."));
+  status.title = String(
+    data.message || text("status.default_tip", "Status des lokalen Tools."),
+  );
 }
 
 async function loadHealth() {
@@ -70,14 +77,20 @@ async function loadHealth() {
   } catch {
     status.innerHTML = `<span aria-hidden="true">●</span> ${text("status.unreachable", "SERVER NICHT ERREICHBAR")}`;
     status.className = "status-pill status-error";
-    status.title = text("status.unreachable_tip", "Der lokale Server antwortet nicht.");
+    status.title = text(
+      "status.unreachable_tip",
+      "Der lokale Server antwortet nicht.",
+    );
   }
 }
 
 function toggleHelp() {
   const opening = helpPanel.hidden;
   helpPanel.hidden = !opening;
-  helpButton.textContent = text(opening ? "help.close" : "help.open", helpButton.textContent);
+  helpButton.textContent = text(
+    opening ? "help.close" : "help.open",
+    helpButton.textContent,
+  );
   if (opening) helpPanel.focus?.();
 }
 
