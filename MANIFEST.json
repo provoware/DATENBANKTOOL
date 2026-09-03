@@ -2,7 +2,7 @@
   "schema_version": 1,
   "project": {
     "name": "PROVOWARE DATENBANKTOOL",
-    "version": "0.5.0-alpha.1",
+    "version": "0.5.1-alpha.1",
     "version_source": "VERSION.json",
     "status": "restorekern",
     "language": "de",
@@ -16,7 +16,7 @@
     "development_discipline": "docs/ENTWICKLUNGSDISZIPLIN.md",
     "version_registry": "VERSION.json",
     "locale_catalog": "src/web/i18n/de.json",
-    "ui_meta_mirror": "src/web/project-meta.json",
+    "runtime_project_meta": "/api/project/meta",
     "separation": {
       "base_tool": "src/",
       "default_config": "src/config/",
