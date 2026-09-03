@@ -13,11 +13,7 @@
         <p class="eyebrow">PROVOWARE · TRANSAKTIONSKERN</p>
         <h1>DATENBANKTOOL</h1>
       </div>
-      <div
-        class="status-pill status-warning"
-        id="liveStatus"
-        aria-live="polite"
-      >
+      <div class="status-pill status-warning" id="liveStatus" aria-live="polite">
         <span aria-hidden="true">●</span> TRANSAKTIONSKERN / AUFBAU
       </div>
     </header>
@@ -28,24 +24,13 @@
           <p class="kicker">Aktueller Fortschritt</p>
           <h2>Datenänderungen jetzt mit zentralem Sicherheitsvertrag</h2>
           <p>
-            PRECHECK, Mutation, POSTCHECK, Commit/Rollback und Recovery-Evidence
-            laufen über einen gemeinsamen geprüften Vertrag.
+            PRECHECK, Mutation, POSTCHECK, Commit/Rollback und Recovery-Evidence laufen über einen gemeinsamen geprüften
+            Vertrag.
           </p>
         </div>
-        <div
-          class="progress-card"
-          title="50 Prozent der Entwicklungsroadmap sind abgeschlossen."
-        >
-          <div class="progress-label">
-            <span>Gesamt</span><strong>50 %</strong>
-          </div>
-          <div
-            class="progress"
-            role="progressbar"
-            aria-valuemin="0"
-            aria-valuemax="100"
-            aria-valuenow="50"
-          >
+        <div class="progress-card" title="50 Prozent der Entwicklungsroadmap sind abgeschlossen.">
+          <div class="progress-label"><span>Gesamt</span><strong>50 %</strong></div>
+          <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
             <span style="width: 50%"></span>
           </div>
           <code>[■■■■■□□□□□]</code>
@@ -62,51 +47,33 @@
         <article class="card accent-purple" tabindex="0">
           <div class="icon" aria-hidden="true">🧪</div>
           <h3>Qualität</h3>
-          <p>
-            CI, Tests, Formatter und Dateigrenzen sind als Pflicht-Gates
-            angelegt.
-          </p>
+          <p>CI, Tests, Formatter und Dateigrenzen sind als Pflicht-Gates angelegt.</p>
           <span class="traffic traffic-green">✓ GRÜN</span>
         </article>
         <article class="card accent-yellow" tabindex="0">
           <div class="icon" aria-hidden="true">💾</div>
           <h3>Persistenz</h3>
-          <p>
-            SQLite-Schema v1, Migrationen und Fremdschlüssel sind implementiert.
-          </p>
+          <p>SQLite-Schema v1, Migrationen und Fremdschlüssel sind implementiert.</p>
           <span class="traffic traffic-green">✓ GRÜN</span>
         </article>
         <article class="card accent-green" tabindex="0">
           <div class="icon" aria-hidden="true">🔒</div>
           <h3>Mutationsschutz</h3>
-          <p>
-            Operation-ID, PRE-/POST-Prüfung, Rollback, Doppelklickschutz und
-            Evidence sind aktiv.
-          </p>
+          <p>Operation-ID, PRE-/POST-Prüfung, Rollback, Doppelklickschutz und Evidence sind aktiv.</p>
           <span class="traffic traffic-green">✓ GRÜN</span>
         </article>
         <article class="card accent-blue" tabindex="0">
           <div class="icon" aria-hidden="true">?</div>
           <h3>Laienhilfe</h3>
-          <p>
-            Kurze Erklärungen, Ampeln und konkrete Handlungstipps statt
-            Rohfehler.
-          </p>
-          <button
-            class="help-button"
-            data-tip="Öffnet eine kurze Erklärung der Projektampeln."
-            id="helpButton"
-          >
+          <p>Kurze Erklärungen, Ampeln und konkrete Handlungstipps statt Rohfehler.</p>
+          <button class="help-button" data-tip="Öffnet eine kurze Erklärung der Projektampeln." id="helpButton">
             Hilfe anzeigen
           </button>
         </article>
         <article class="card accent-red" tabindex="0">
           <div class="icon" aria-hidden="true">🛡</div>
           <h3>Recovery</h3>
-          <p>
-            Journal und Start-Gate sind aktiv. Backup/Restore mit
-            Integritätsprüfung folgt in P0-011.
-          </p>
+          <p>Journal und Start-Gate sind aktiv. Backup/Restore mit Integritätsprüfung folgt in P0-011.</p>
           <span class="traffic traffic-yellow">! RESTORE OFFEN</span>
         </article>
       </section>
@@ -114,20 +81,17 @@
       <section class="panel help-panel" id="helpPanel" hidden>
         <h2>Kurzhilfe</h2>
         <p>
-          <strong>GRÜN</strong> bedeutet geprüft. <strong>GELB</strong> bedeutet
-          in Arbeit. <strong>ROT</strong> blockiert einen Release.
+          <strong>GRÜN</strong> bedeutet geprüft. <strong>GELB</strong> bedeutet in Arbeit.
+          <strong>ROT</strong> blockiert einen Release.
         </p>
         <p>
-          Tipp: Meldet Recovery eine unvollständige Operation, dieselbe Änderung
-          nicht erneut starten. Zuerst den Recovery-Status und den deutschen
-          Kurzbericht prüfen.
+          Tipp: Meldet Recovery eine unvollständige Operation, dieselbe Änderung nicht erneut starten. Zuerst den
+          Recovery-Status und den deutschen Kurzbericht prüfen.
         </p>
       </section>
     </main>
 
-    <footer>
-      PROVOWARE DATENBANKTOOL · 0.3.0-alpha.1 · lokaler Transaktionskern
-    </footer>
+    <footer>PROVOWARE DATENBANKTOOL · 0.3.0-alpha.1 · lokaler Transaktionskern</footer>
     <script type="module" src="app.js"></script>
   </body>
 </html>
