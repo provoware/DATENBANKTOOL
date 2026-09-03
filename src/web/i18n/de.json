@@ -23,6 +23,7 @@
     "card.recovery.title": "Recovery",
     "card.recovery.body": "Journal, Start-Gate, Backup und Staging-Restore mit atomarem Austausch sind aktiv.",
     "status.restorekern": "RESTOREKERN / AUFBAU",
+    "status.browserabnahme_vorbereitet": "BROWSER-ABNAHME VORBEREITET",
     "status.green": "✓ GRÜN",
     "help.open": "Hilfe anzeigen",
     "help.close": "Hilfe schließen",
