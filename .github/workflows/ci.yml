@@ -27,7 +27,12 @@ jobs:
       - name: Ruff Format prüfen
         run: python -m ruff format --check .
       - name: Prettier prüfen
-        run: npm run format:check
+        run: |
+          if ! npm run format:check; then
+            npx prettier --write "src/web/**/*.{html,js,css}" "src/config/**/*.json" MANIFEST.json
+            git diff -- src/web/app.js src/web/index.html MANIFEST.json
+            exit 1
+          fi
       - name: Tests
         run: pytest -q
       - name: Projektstandards prüfen
