@@ -7,7 +7,7 @@ import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from enum import StrEnum
+from enum import Enum
 from pathlib import Path
 from typing import Any, Generic, TypeVar
 
@@ -19,7 +19,7 @@ Precheck = Callable[[sqlite3.Connection], None]
 Mutation = Callable[[sqlite3.Connection], T]
 
 
-class MutationState(StrEnum):
+class MutationState(str, Enum):
     RECEIVED = "RECEIVED"
     PRECHECK = "PRECHECK"
     MUTATION = "MUTATION"
