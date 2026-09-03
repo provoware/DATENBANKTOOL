@@ -2,20 +2,27 @@
 
 ## Was ist dieses Projekt?
 
-Das DATENBANKTOOL soll Informationen übersichtlich speichern, wiederfinden und sicher verwalten. Die aktuelle Version ist **noch eine technische Basis**.
+Das DATENBANKTOOL soll Informationen übersichtlich speichern,
+wiederfinden und sicher verwalten.
+Die aktuelle Version ist **noch eine technische Basis**.
 
 ## Ampeln
 
 ### 🟢 GRÜN
+
 Alles in diesem Bereich wurde erfolgreich geprüft.
 
 ### 🟡 GELB
-Das Tool kann weiterentwickelt werden, aber dieser Bereich ist noch nicht vollständig fertig.
+
+Das Tool kann weiterentwickelt werden,
+aber dieser Bereich ist noch nicht vollständig fertig.
 
 ### 🔴 ROT
+
 Hier fehlt eine notwendige Prüfung oder es wurde ein Fehler erkannt.
 
 ### 🟣 INFO
+
 Nur Erklärung oder Tipp – kein Fehler.
 
 ## Wenn etwas nicht funktioniert
@@ -27,7 +34,9 @@ Nur Erklärung oder Tipp – kein Fehler.
 
 ## Tooltips
 
-Ein Tooltip ist eine kleine Erklärung, die beim Überfahren eines Elements erscheint. Wichtige Funktionen müssen trotzdem auch ohne Tooltip verständlich bleiben.
+Ein Tooltip ist eine kleine Erklärung,
+die beim Überfahren eines Elements erscheint.
+Wichtige Funktionen müssen trotzdem auch ohne Tooltip verständlich bleiben.
 
 ## Fachbegriffe
 
@@ -39,4 +48,5 @@ Ein Tooltip ist eine kleine Erklärung, die beim Überfahren eines Elements ersc
 
 ## Tipp
 
-Vor größeren Änderungen Daten exportieren bzw. Backup erstellen, sobald diese Funktionen produktiv verfügbar sind.
+Vor größeren Änderungen Daten exportieren bzw. Backup erstellen,
+sobald diese Funktionen produktiv verfügbar sind.

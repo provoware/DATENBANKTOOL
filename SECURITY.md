@@ -14,7 +14,9 @@
 
 ## Fehlerberichte
 
-Vor dem Teilen prüfen, ob Logs sensible Inhalte enthalten. Die Logging-Basis schwärzt bekannte sensible Schlüsselnamen automatisch; dies ersetzt keine bewusste Datenminimierung.
+Vor dem Teilen prüfen, ob Logs sensible Inhalte enthalten.
+Die Logging-Basis schwärzt bekannte sensible Schlüsselnamen automatisch.
+Dies ersetzt keine bewusste Datenminimierung.
 
 ## Lokaler Betrieb
 

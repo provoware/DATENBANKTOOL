@@ -12,12 +12,15 @@ Farbe wird immer mit Text oder Symbol kombiniert.
 
 ## Kontrast
 
-Große dunkle Flächen, helle Schrift und zurückhaltende transparente Akzente. Neonfarben werden nicht als großflächiger Hintergrund verwendet.
+Große dunkle Flächen, helle Schrift und zurückhaltende transparente Akzente.
+Neonfarben werden nicht als großflächiger Hintergrund verwendet.
 
 ## Tooltips
 
-Tooltips erklären Zusatzwissen. Kernbedeutung, Status und Pflichtaktionen bleiben sichtbar.
+Tooltips erklären Zusatzwissen.
+Kernbedeutung, Status und Pflichtaktionen bleiben sichtbar.
 
 ## Bedienziele
 
-Buttons und interaktive Elemente sollen ausreichend groß, fokussierbar und per Tastatur erreichbar sein.
+Buttons und interaktive Elemente sollen ausreichend groß,
+fokussierbar und per Tastatur erreichbar sein.

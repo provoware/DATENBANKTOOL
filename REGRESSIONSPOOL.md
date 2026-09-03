@@ -7,7 +7,7 @@ Wiederkehrende Prüfungen, die bei relevanten Änderungen erneut laufen müssen.
 - [ ] **REG-START-001** Tool startet ohne Traceback.
 - [ ] **REG-START-002** `/api/health` liefert HTTP 200 und `ok=true`.
 - [ ] **REG-START-003** Portkollision erzeugt verständliche Fehlermeldung.
-- [ ] **REG-START-004** fehlender Schreibzugriff blockiert keine stille Datenbeschädigung.
+- [ ] **REG-START-004** Fehlender Schreibzugriff verursacht keine stille Datenbeschädigung.
 
 ## Daten
 
@@ -33,4 +33,5 @@ Wiederkehrende Prüfungen, die bei relevanten Änderungen erneut laufen müssen.
 
 ## Release-Gate
 
-Ein Release darf nur als `STABLE` markiert werden, wenn alle P0-Regressionen und alle im Manifest als `release_blocking` markierten Prüfungen grün sind.
+Ein Release darf nur als `STABLE` markiert werden, wenn alle P0-Regressionen
+und alle im Manifest als `release_blocking` markierten Prüfungen grün sind.

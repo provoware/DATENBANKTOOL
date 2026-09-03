@@ -16,7 +16,9 @@
 
 ## 3. Datei- und Zeilengrenzen
 
-Die maschinenlesbaren Grenzwerte in `MANIFEST.json` sind verbindlich. Neue Dateien dürfen harte Maximalwerte nicht überschreiten. Wird eine Datei zu groß, wird sie modularisiert statt der Grenzwert angehoben.
+Die maschinenlesbaren Grenzwerte in `MANIFEST.json` sind verbindlich.
+Neue Dateien dürfen harte Maximalwerte nicht überschreiten.
+Wird eine Datei zu groß, wird sie modularisiert statt der Grenzwert angehoben.
 
 ## 4. Logging
 
@@ -24,7 +26,8 @@ Die maschinenlesbaren Grenzwerte in `MANIFEST.json` sind verbindlich. Neue Datei
 - Nutzerformat: kurze deutsche TXT-Zusammenfassung.
 - Jeder Fehler erhält stabilen Code, Schweregrad, Kurzursache und Handlungstipp.
 - Sensible Daten niemals absichtlich loggen.
-- `password`, `token`, `secret`, `cookie`, `authorization`, `api_key` werden automatisch geschwärzt.
+- `password`, `token`, `secret`, `cookie`, `authorization`, `api_key`
+  werden automatisch geschwärzt.
 
 ## 5. UI
 
@@ -33,7 +36,8 @@ Die maschinenlesbaren Grenzwerte in `MANIFEST.json` sind verbindlich. Neue Datei
 - Tooltips ergänzen, aber keine Pflichtinformation nur im Tooltip verstecken.
 - Farbe niemals als einziges Bedeutungssignal verwenden.
 - sichtbarer Tastaturfokus ist Pflicht.
-- Mindestkontrast WCAG-orientiert; dunkle Basis, helle Schrift, semantische Akzentfarben.
+- Mindestkontrast WCAG-orientiert.
+- dunkle Basis, helle Schrift, semantische Akzentfarben.
 
 ## 6. Status
 
@@ -44,8 +48,10 @@ Die maschinenlesbaren Grenzwerte in `MANIFEST.json` sind verbindlich. Neue Datei
 
 ## 7. Platzhalter
 
-Unfertige Produktstellen müssen eindeutig als `PLACEHOLDER[PH-XXX]` markiert und in `TODO.md` geführt werden.
+Unfertige Produktstellen müssen eindeutig als `PLACEHOLDER[PH-XXX]`
+markiert und in `TODO.md` geführt werden.
 
 ## 8. Release
 
-Kein `STABLE`, solange release-blockierende Tests offen sind. Ein grüner Unit-Test ersetzt keine reale UI-/Plattform-Endabnahme.
+Kein `STABLE`, solange release-blockierende Tests offen sind.
+Ein grüner Unit-Test ersetzt keine reale UI-/Plattform-Endabnahme.
