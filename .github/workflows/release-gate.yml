@@ -16,14 +16,21 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
       - name: Prüfwerkzeuge installieren
         run: python -m pip install --upgrade pytest ruff
+      - name: Web-Formatter installieren
+        run: npm install --ignore-scripts
       - name: Manifest und Dateigrenzen
         run: python tools/check_project.py
       - name: Python prüfen
         run: |
           python -m ruff check .
           python -m ruff format --check .
+      - name: Web-Format prüfen
+        run: npm run format:check
       - name: Regression-Basistests
         run: pytest -q
       - name: Zusammenfassung
