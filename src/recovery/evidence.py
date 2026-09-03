@@ -75,12 +75,15 @@ class EvidenceJournal:
         destination = self.evidence_dir / filename
         data = asdict(evidence)
         data["details"] = sanitize_details(evidence.details)
-        payload = json.dumps(
-            data,
-            ensure_ascii=False,
-            indent=2,
-            sort_keys=True,
-        ) + "\n"
+        payload = (
+            json.dumps(
+                data,
+                ensure_ascii=False,
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n"
+        )
         self._atomic_write(destination, payload)
         return destination
 
