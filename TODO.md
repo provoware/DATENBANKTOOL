@@ -62,15 +62,17 @@
 
 ## Aktuelles unabhängiges Pflichtpaket · 2026-10-23
 
-- [ ] **DB-SEC-001** API-Status ohne HTML-Interpretation darstellen.
+- [x] **DB-SEC-001** API-Status ohne HTML-Interpretation darstellen.
   - [x] DOM-Textausgabe statt `innerHTML` implementiert.
   - [x] Negativtest mit HTML-Einschleusung im Browser ergänzt.
-  - [ ] CI und Browser-Smoke auf dem finalen PR-HEAD grün bestätigen.
+  - [x] CI und Browser-Smoke auf Code-HEAD `b7de81bc8` grün (41+20 Tests).
+  - [ ] Abschließenden Dokumentations-HEAD erneut prüfen.
 - [ ] **DB-UX-001** Automatische kleine Viewports absichern.
   - [x] 800×600 und 400×300 als Näherung für hohe Vergrößerung hinzugefügt.
-  - [ ] Automatische Browser-Gates auf finalem PR-HEAD grün bestätigen.
+  - [x] Automatische Browser-Gates auf Code-HEAD `b7de81bc8` grün.
+  - [ ] Abschließenden Dokumentations-HEAD erneut prüfen.
   - [ ] Echte Vergrößerung und Kubuntu-Sichtprüfung erst gebündelt vor Release.
-- [ ] **DB-REL-001** Nachweisbasierte Release-Pflichtmatrix fortführen:
+- [x] **DB-REL-001** Nachweisbasierte Release-Pflichtmatrix angelegt:
   `docs/RELEASE_PFLICHTMATRIX.md`. Kein Gesamt-PASS ohne belegte Gates.
 
 **Ablaufregel:** Fehlende persönliche Endabnahme blockiert nicht die unabhängige
