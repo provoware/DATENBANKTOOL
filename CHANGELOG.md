@@ -2,6 +2,17 @@
 
 Alle wichtigen Projektänderungen werden hier in deutscher Sprache dokumentiert.
 
+## [Unreleased] – 2026-10-23
+
+- Sicherheitskorrektur: Gesundheitsstatus und Verbindungsfehler werden mit
+  DOM-Textknoten statt `innerHTML` dargestellt.
+- Browser-Negativtest für HTML-Einschleusung in Serverstatus ergänzt.
+- Browserprüfungen um 800×600 und 400×300 (Zoom-Näherung) erweitert.
+- Nachweisbasierte Release-Pflichtmatrix angelegt und TODO-Gates aktualisiert.
+- Die echte visuelle Kubuntu-/Chrome-Endabnahme bleibt eine einzige,
+  gebündelte Abschlussprüfung unmittelbar vor der Veröffentlichung.
+- **Prüfstatus:** CI/Browser/Release Gate auf diesem neuen HEAD zunächst offen.
+
 ## [0.5.2-alpha.1] – 2026-09-03
 
 ### Hinzugefügt
