@@ -54,3 +54,25 @@ test("Skip-Link führt per Tastatur zum Hauptinhalt", async ({ page }) => {
   await page.keyboard.press("Enter");
   await expect(page.locator("#main")).toBeFocused();
 });
+
+test("Unbekannter Serverstatus wird als Text statt als HTML angezeigt", async ({ page }) => {
+  const malicious = '<img src=x onerror="window.__statusInjected=true">';
+  await page.route("**/api/health", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ampel: "rot",
+        status_message_key: "unknown.status",
+        status: malicious,
+        message: "Teststatus",
+      }),
+    });
+  });
+
+  await page.goto("/");
+  await expect(page.locator("#liveStatus")).toContainText(malicious.toUpperCase());
+  await expect(page.locator("#liveStatus img")).toHaveCount(0);
+  expect(await page.evaluate(() => window.__statusInjected)).toBeUndefined();
+  await expect(page.locator("#liveStatus")).toHaveClass(/status-error/);
+});
