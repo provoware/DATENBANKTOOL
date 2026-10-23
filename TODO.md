@@ -60,6 +60,23 @@
 - [ ] **P2-004** Performance-Gate mit großem Testdatenbestand hinzufügen.
 - [ ] **P2-005** Windows-Pfadtest und Launcher ergänzen.
 
+## Aktuelles unabhängiges Pflichtpaket · 2026-10-23
+
+- [ ] **DB-SEC-001** API-Status ohne HTML-Interpretation darstellen.
+  - [x] DOM-Textausgabe statt `innerHTML` implementiert.
+  - [x] Negativtest mit HTML-Einschleusung im Browser ergänzt.
+  - [ ] CI und Browser-Smoke auf dem finalen PR-HEAD grün bestätigen.
+- [ ] **DB-UX-001** Automatische kleine Viewports absichern.
+  - [x] 800×600 und 400×300 als Näherung für hohe Vergrößerung hinzugefügt.
+  - [ ] Automatische Browser-Gates auf finalem PR-HEAD grün bestätigen.
+  - [ ] Echte Vergrößerung und Kubuntu-Sichtprüfung erst gebündelt vor Release.
+- [ ] **DB-REL-001** Nachweisbasierte Release-Pflichtmatrix fortführen:
+  `docs/RELEASE_PFLICHTMATRIX.md`. Kein Gesamt-PASS ohne belegte Gates.
+
+**Ablaufregel:** Fehlende persönliche Endabnahme blockiert nicht die unabhängige
+Implementierung der P1-/P2-Pflichten. Eine einzige gebündelte Endabnahme
+erfolgt erst nach vollständigem technischem Vorrelease-Kandidaten.
+
 ## Regel
 
 Neue TODOs erhalten eine stabile ID und werden nicht gelöscht.
