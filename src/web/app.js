@@ -50,12 +50,19 @@ function renderProjectMeta() {
   footer.textContent = `PROVOWARE DATENBANKTOOL · ${product.version || "–"} · ${text("footer.suffix", "lokaler Datenkern")}`;
 }
 
+function renderStatusLabel(label) {
+  const icon = document.createElement("span");
+  icon.setAttribute("aria-hidden", "true");
+  icon.textContent = "●";
+  status.replaceChildren(icon, document.createTextNode(` ${label}`));
+}
+
 function applyHealthStatus(data) {
   const traffic = String(data.ampel || "gelb").toLowerCase();
   const className = statusClasses[traffic] ?? "status-warning";
   const statusKey = data.status_message_key || projectMeta.product?.status_message_key;
   const label = text(statusKey, data.status || "status");
-  status.innerHTML = `<span aria-hidden="true">●</span> ${String(label).toUpperCase()} · ${traffic.toUpperCase()}`;
+  renderStatusLabel(`${String(label).toUpperCase()} · ${traffic.toUpperCase()}`);
   status.className = `status-pill ${className}`;
   status.title = String(data.message || text("status.default_tip", "Status des lokalen Tools."));
 }
@@ -66,7 +73,7 @@ async function loadHealth() {
     const data = await response.json();
     applyHealthStatus(data);
   } catch {
-    status.innerHTML = `<span aria-hidden="true">●</span> ${text("status.unreachable", "SERVER NICHT ERREICHBAR")}`;
+    renderStatusLabel(text("status.unreachable", "SERVER NICHT ERREICHBAR"));
     status.className = "status-pill status-error";
     status.title = text("status.unreachable_tip", "Der lokale Server antwortet nicht.");
   }
