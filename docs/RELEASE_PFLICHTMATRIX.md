@@ -10,22 +10,22 @@ Legende: `VORHANDEN` = Quellcode oder Test vorhanden, nicht automatisch releasef
 
 | Pflichtbereich | Soll | Ist / nachprüfbarer Beleg | Status |
 |---|---|---|---|
-| Fachfunktionen und Grenzfälle | Einträge anlegen, finden, bearbeiten; Fehlerfälle | `src/persistence/store.py`, `tests/test_persistence.py`; GUI nur Grundgerüst | OFFEN |
-| Schnittstellen / Integration | Einheitliche, abgesicherte API | `src/server.py`, `tests/test_server_cli.py`; GUI-Funktionen fehlen | OFFEN |
-| Datensicherheit / Wiederherstellung | Sicherung, Integrität, Rücktausch | `tests/test_backup.py`, `tests/test_restore.py`; neuer HEAD erneut zu prüfen | VORHANDEN |
-| Fehlerbehandlung / Sicherheit | Verständliche Fehler, keine HTML-Ausführung aus API-Text | `src/web/app.js`, neuer Test in `tests/browser/dashboard.spec.js` | HEAD-GATE OFFEN |
-| Design / UX / Lesbarkeit | Vollständig bedienbare Oberfläche | `src/web/styles.css`, `docs/BROWSER_ABNAHME.md`; Fach-UI fehlt | OFFEN |
-| Kleine Fenster / hohe Skalierung | Ab 800×600; bei hoher Vergrößerung bedienbar | `playwright.config.js`: 800×600 + 400×300 als Annäherung; echte Zoomprüfung offen | HEAD-GATE OFFEN |
-| Tastatur / Barrierefreiheit | Fokus, Kontrast, vollständige Tastaturbedienung | `tests/browser/dashboard.spec.js` (Hilfe, Skip-Link); Gesamtprüfung offen | OFFEN |
+| Fachfunktionen und Grenzfälle | CRUD, Suche, Grenzfälle | `store.py`, `test_persistence.py`; Fach-GUI fehlt | OFFEN |
+| Schnittstellen / Integration | Abgesicherte API | `src/server.py`; Fach-GUI fehlt | OFFEN |
+| Datensicherheit / Wiederherstellung | Sichern, prüfen, rücktauschen | `test_backup.py`, `test_restore.py` | VORHANDEN |
+| Fehlerbehandlung / Sicherheit | Keine HTML-Ausführung aus API-Text | `src/web/app.js`, Browser-Negativtest | HEAD-GATE OFFEN |
+| Design / UX / Lesbarkeit | Bedienbare Fachoberfläche | `src/web/styles.css`; Fach-GUI fehlt | OFFEN |
+| Kleine Fenster / hohe Skalierung | 800×600 und hohe Vergrößerung | `playwright.config.js`; echter Zoom offen | HEAD-GATE OFFEN |
+| Tastatur / Barrierefreiheit | Fokus, Kontrast, Tastatur | `dashboard.spec.js`; Gesamtgate offen | OFFEN |
 | Leistung | Große Datenbestände ohne unzumutbare Verzögerung | `TODO.md` P2-004 | OFFEN |
-| Wartbarkeit / Wiederverwendung | Klare Schichten, keine doppelten Verträge | `AGENTS.md`, `src/config/registry.json`, `tools/check_project.py` | VORHANDEN |
-| Paketierung / Installation | Reproduzierbarer Offline-Start, Zielplattformen | `README.md` enthält lokalen Python-Start; Paketprüfung offen | OFFEN |
-| Automatische Funktionstests | Reale Testausführung auf exaktem HEAD | `tests/test_*.py`, `.github/workflows/ci.yml` | HEAD-GATE OFFEN |
-| Browser / GUI | Chromium automatisiert, Kubuntu/Chrome final | `tests/browser/`, `.github/workflows/browser-smoke.yml` | HEAD-GATE OFFEN |
+| Wartbarkeit / Wiederverwendung | Klare Schichten, kein Doppelcode | `AGENTS.md`, `registry.json` | VORHANDEN |
+| Paketierung / Installation | Reproduzierbarer Offline-Start | `README.md`; Pakete offen | OFFEN |
+| Automatische Funktionstests | Prüfungen auf exaktem HEAD | `tests/test_*.py`, CI | HEAD-GATE OFFEN |
+| Browser / GUI | Browser automatisiert und final real | `tests/browser/`, Browser Smoke | HEAD-GATE OFFEN |
 | Regression | Sicherheits- und Altfalltests erfolgreich | `REGRESSIONSPOOL.md`, `tests/` | HEAD-GATE OFFEN |
-| CI / Qualitätsgates | Alle vorgeschriebenen Prüfungen grün | `.github/workflows/ci.yml`, `release-gate.yml`, `browser-smoke.yml` | HEAD-GATE OFFEN |
+| CI / Qualitätsgates | Alle Pflichtprüfungen grün | CI, Browser Smoke, Release Gate | HEAD-GATE OFFEN |
 | Dokumentation | Stand, Grenzen, offene Pflichten nachvollziehbar | `README.md`, `TODO.md`, diese Matrix | VORHANDEN |
-| Release-Vorbereitung | Eingefrorener Kandidat, danach einmalige Nutzer-Endabnahme | Noch kein vollständiger Release-Kandidat | BLOCKED |
+| Release-Vorbereitung | Eingefrorener Kandidat, Endabnahme | Noch kein Kandidat | BLOCKED |
 
 ## Aktuelles Pflichtarbeitspaket
 
