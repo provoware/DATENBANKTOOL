@@ -3,7 +3,8 @@
 Stand: 2026-10-23. Status ist **evidenzbezogen**, keine geschätzte Gesamtprozentzahl.
 Basis-HEAD: `main@0fa7749e9ee7591383b8004810b9d5da3cb9b5b1`.
 Entwicklungszweig: `agent/dbtool-safe-status-compact-20261023`.
-Der jeweils aktuelle Branch-HEAD und die CI-Ergebnisse sind in GitHub/PR maßgeblich.
+PR: https://github.com/provoware/DATENBANKTOOL/pull/23.
+Die jeweils letzten Prüfungen auf dem aktuellen Branch-HEAD sind in GitHub/PR maßgeblich.
 
 Legende: `VORHANDEN` = Quellcode oder Test vorhanden, nicht automatisch releasefertig;
 `OFFEN` = noch zu implementieren/prüfen; `BLOCKED` = externe Voraussetzung.
@@ -13,19 +14,29 @@ Legende: `VORHANDEN` = Quellcode oder Test vorhanden, nicht automatisch releasef
 | Fachfunktionen und Grenzfälle | CRUD, Suche, Grenzfälle | `store.py`, `test_persistence.py`; Fach-GUI fehlt | OFFEN |
 | Schnittstellen / Integration | Abgesicherte API | `src/server.py`; Fach-GUI fehlt | OFFEN |
 | Datensicherheit / Wiederherstellung | Sichern, prüfen, rücktauschen | `test_backup.py`, `test_restore.py` | VORHANDEN |
-| Fehlerbehandlung / Sicherheit | Keine HTML-Ausführung aus API-Text | `src/web/app.js`, Browser-Negativtest | HEAD-GATE OFFEN |
+| Fehlerbehandlung / Sicherheit | Keine HTML-Ausführung aus API-Text | `src/web/app.js`, Browser-Negativtest | PASS Browser |
 | Design / UX / Lesbarkeit | Bedienbare Fachoberfläche | `src/web/styles.css`; Fach-GUI fehlt | OFFEN |
-| Kleine Fenster / hohe Skalierung | 800×600 und hohe Vergrößerung | `playwright.config.js`; echter Zoom offen | HEAD-GATE OFFEN |
+| Kleine Fenster / hohe Skalierung | 800×600 und hohe Vergrößerung | 800×600 + Zoom-Näherung geprüft | TEILWEISE |
 | Tastatur / Barrierefreiheit | Fokus, Kontrast, Tastatur | `dashboard.spec.js`; Gesamtgate offen | OFFEN |
 | Leistung | Große Datenbestände ohne unzumutbare Verzögerung | `TODO.md` P2-004 | OFFEN |
 | Wartbarkeit / Wiederverwendung | Klare Schichten, kein Doppelcode | `AGENTS.md`, `registry.json` | VORHANDEN |
 | Paketierung / Installation | Reproduzierbarer Offline-Start | `README.md`; Pakete offen | OFFEN |
-| Automatische Funktionstests | Prüfungen auf exaktem HEAD | `tests/test_*.py`, CI | HEAD-GATE OFFEN |
-| Browser / GUI | Browser automatisiert und final real | `tests/browser/`, Browser Smoke | HEAD-GATE OFFEN |
-| Regression | Sicherheits- und Altfalltests erfolgreich | `REGRESSIONSPOOL.md`, `tests/` | HEAD-GATE OFFEN |
-| CI / Qualitätsgates | Alle Pflichtprüfungen grün | CI, Browser Smoke, Release Gate | HEAD-GATE OFFEN |
+| Automatische Funktionstests | Prüfungen auf exaktem HEAD | `tests/test_*.py`, CI | PASS CI |
+| Browser / GUI | Browser automatisiert und final real | 20 Playwright-Prüfungen; reale UI offen | TEILWEISE |
+| Regression | Sicherheits- und Altfalltests erfolgreich | 41 Python-Tests + 20 Browserprüfungen | PASS CI |
+| CI / Qualitätsgates | Alle Pflichtprüfungen grün | CI + Browser grün; Release Gate nur auf main | TEILWEISE |
 | Dokumentation | Stand, Grenzen, offene Pflichten nachvollziehbar | `README.md`, `TODO.md`, diese Matrix | VORHANDEN |
 | Release-Vorbereitung | Eingefrorener Kandidat, Endabnahme | Noch kein Kandidat | BLOCKED |
+
+## Prüfnachweise (verifizierter Code-HEAD)
+
+- `b7de81bc8a958da33ec03e5bcfbbeb01eb47c32c`:
+  [CI](https://github.com/provoware/DATENBANKTOOL/actions/runs/39990541834) PASS,
+  [Browser Smoke](https://github.com/provoware/DATENBANKTOOL/actions/runs/39990541764) PASS.
+- CI: Ruff, Prettier, 41 Python-Tests und Projektprüfung erfolgreich.
+- Browser: 20/20 Playwright-Prüfungen über fünf Viewports bestanden.
+- Dokumentations-Nachtrag nach diesem geprüften HEAD erfordert **erneute CI**.
+- Release Gate läuft nur auf `main` oder manuell, daher kein PR-Gate-PASS.
 
 ## Aktuelles Pflichtarbeitspaket
 
@@ -33,12 +44,12 @@ Legende: `VORHANDEN` = Quellcode oder Test vorhanden, nicht automatisch releasef
   eingeschleustem HTML aus dem simulierten Gesundheits-Endpunkt.
 - **DB-UX-001:** Automatische Layout-/Tastaturprüfungen auf 800×600 und verkleinertem
   CSS-Viewport (400×300) ausweiten. Letzteres ist **kein** echter 200-%-Zoomtest.
-- **Gates:** CI, Browser Smoke und Release Gate auf dem PR-HEAD abwarten und
-  Fehlprüfungen korrigieren. Kein PASS vor Abschluss.
+- **Gates:** CI und Browser Smoke nach Dokumentations-Nachtrag erneut prüfen.
+  Release Gate ist auf dem PR-Zweig nicht automatisch ausführbar.
 
 ## Offene Abhängigkeiten und nächster Schritt
 
-1. Pflichtprüfungen auf dem exakten Entwicklungs-HEAD erfolgreich abschließen.
+1. CI und Browser Smoke auf dem letzten Entwicklungs-HEAD erneut bestätigen.
 2. Danach unabhängige Fachfunktionen und Import/Export sicher entwickeln und testen;
    P1/P2 nicht wegen fehlender persönlicher Abnahme pausieren.
 3. Erst nach kompletter Vorrelease-Reife: **eine** gebündelte persönliche Endabnahme
