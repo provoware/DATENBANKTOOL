@@ -66,6 +66,7 @@ def test_logging_bounds_nested_and_cyclic_values() -> None:
         deep = {"child": deep}
     assert "[Tiefe begrenzt]" in str(sanitize_details(deep))
 
+
 def _session_segments(logger: EventLogger) -> list[Path]:
     archives = sorted(
         logger.log_dir.glob(f"maschinenlog_status_archiv_{logger.session_id}_*.jsonl")
@@ -133,9 +134,7 @@ def test_logging_rotation_is_thread_safe(tmp_path, monkeypatch) -> None:
     assert all(len(path.read_text(encoding="utf-8").splitlines()) <= 3 for path in segments)
     records = _session_records(logger)
     assert len(records) == 40
-    assert {record["code"] for record in records} == {
-        f"PRV-THREAD-{index}" for index in range(40)
-    }
+    assert {record["code"] for record in records} == {f"PRV-THREAD-{index}" for index in range(40)}
 
 
 def test_logging_oversized_single_event_is_rejected(tmp_path, monkeypatch) -> None:
