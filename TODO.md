@@ -85,7 +85,8 @@ erfolgt erst nach vollständigem technischem Vorrelease-Kandidaten.
   - [x] Listen, Tupel und Wörterbücher rekursiv behandeln.
   - [x] Zyklen und übermäßig tiefe Strukturen begrenzen.
   - [x] Zwei Regressionstests für echte JSONL-Ausgabe und Grenzfälle ergänzen.
-  - [ ] GitHub-CI und Browser-Smoke auf dem abschließenden HEAD erneut prüfen.
+  - [x] CI und Browser-Smoke auf Code-HEAD `e4d67cf` grün (43 Python-Tests, 20 Browserprüfungen).
+  - [ ] Abschlussprüfung nach Dokumentations-Nachtrag auf finalem HEAD bestätigen.
 - [ ] **DB-LOG-003** Rotationsgrenzen aus `MANIFEST.json` tatsächlich erzwingen.
 
 ## Regel
