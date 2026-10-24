@@ -58,6 +58,8 @@ Wiederkehrende Prüfungen, die bei relevanten Änderungen erneut laufen müssen.
 - [ ] **REG-LOG-002** sensible Schlüssel werden geschwärzt.
 - [ ] **REG-LOG-003** Kurzbericht enthält Ampel, Fehlercode und Handlungstipp.
 - [ ] **REG-LOG-004** Logrotation hält definierte Grenzen ein.
+  - [x] Sechs automatisierte Grenz-, Nebenläufigkeits- und Neustarttests vorhanden.
+  - [ ] CI auf abschließendem Entwicklungs-HEAD grün bestätigen.
 
 ## UI / Bedienung
 
