@@ -1,5 +1,5 @@
-from concurrent.futures import ThreadPoolExecutor
 import json
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import pytest
@@ -85,8 +85,8 @@ def test_logging_limits_match_manifest() -> None:
     manifest = json.loads(
         (Path(__file__).resolve().parents[1] / "MANIFEST.json").read_text(encoding="utf-8")
     )
-    assert logging_core.MAX_JSONL_LINES == manifest["logging"]["max_jsonl_lines_per_file"]
-    assert logging_core.MAX_JSONL_BYTES == manifest["logging"]["max_jsonl_bytes_per_file"]
+    assert manifest["logging"]["max_jsonl_lines_per_file"] == logging_core.MAX_JSONL_LINES
+    assert manifest["logging"]["max_jsonl_bytes_per_file"] == logging_core.MAX_JSONL_BYTES
 
 
 def test_logging_rotates_by_line_count_without_losing_events(tmp_path, monkeypatch) -> None:
