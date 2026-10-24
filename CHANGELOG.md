@@ -2,6 +2,25 @@
 
 Alle wichtigen Projektänderungen werden hier in deutscher Sprache dokumentiert.
 
+## [Unreleased] – 2026-10-23
+
+- 2026-10-24: DB-LOG-003: JSONL-Logrotation mit 2.500-Zeilen- und
+  2-MiB-Grenze, archivierten Segmenten und gesperrtem parallelem Schreiben.
+  Sechs neue Grenz- und Wiederanlaufprüfungen; CI und Browser auf `c6a8a4b` grün.
+
+- 2026-10-24: Sicherheitslücke in JSONL-Details geschlossen: sensible Schlüssel in
+  verschachtelten Listen werden jetzt vor dem Schreiben geschwärzt.
+- Schutz vor zyklischen und übermäßig tiefen Log-Strukturen ergänzt; zwei Negativtests.
+
+- Sicherheitskorrektur: Gesundheitsstatus und Verbindungsfehler werden mit
+  DOM-Textknoten statt `innerHTML` dargestellt.
+- Browser-Negativtest für HTML-Einschleusung in Serverstatus ergänzt.
+- Browserprüfungen um 800×600 und 400×300 (Zoom-Näherung) erweitert.
+- Nachweisbasierte Release-Pflichtmatrix angelegt und TODO-Gates aktualisiert.
+- Die echte visuelle Kubuntu-/Chrome-Endabnahme bleibt eine einzige,
+  gebündelte Abschlussprüfung unmittelbar vor der Veröffentlichung.
+- **Prüfstatus:** CI/Browser/Release Gate auf diesem neuen HEAD zunächst offen.
+
 ## [0.5.2-alpha.1] – 2026-09-03
 
 ### Hinzugefügt

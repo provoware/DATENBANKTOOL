@@ -60,6 +60,43 @@
 - [ ] **P2-004** Performance-Gate mit großem Testdatenbestand hinzufügen.
 - [ ] **P2-005** Windows-Pfadtest und Launcher ergänzen.
 
+## Aktuelles unabhängiges Pflichtpaket · 2026-10-23
+
+- [x] **DB-SEC-001** API-Status ohne HTML-Interpretation darstellen.
+  - [x] DOM-Textausgabe statt `innerHTML` implementiert.
+  - [x] Negativtest mit HTML-Einschleusung im Browser ergänzt.
+  - [x] CI und Browser-Smoke auf Code-HEAD `b7de81bc8` grün (41+20 Tests).
+  - [ ] Abschließenden Dokumentations-HEAD erneut prüfen.
+- [ ] **DB-UX-001** Automatische kleine Viewports absichern.
+  - [x] 800×600 und 400×300 als Näherung für hohe Vergrößerung hinzugefügt.
+  - [x] Automatische Browser-Gates auf Code-HEAD `b7de81bc8` grün.
+  - [ ] Abschließenden Dokumentations-HEAD erneut prüfen.
+  - [ ] Echte Vergrößerung und Kubuntu-Sichtprüfung erst gebündelt vor Release.
+- [x] **DB-REL-001** Nachweisbasierte Release-Pflichtmatrix angelegt:
+  `docs/RELEASE_PFLICHTMATRIX.md`. Kein Gesamt-PASS ohne belegte Gates.
+
+**Ablaufregel:** Fehlende persönliche Endabnahme blockiert nicht die unabhängige
+Implementierung der P1-/P2-Pflichten. Eine einzige gebündelte Endabnahme
+erfolgt erst nach vollständigem technischem Vorrelease-Kandidaten.
+
+## Weiteres unabhängiges Sicherheits-Pflichtpaket · 2026-10-24
+
+- [x] **DB-SEC-002** Sensible Schlüssel in verschachtelten Listen vor dem Loggen schwärzen.
+  - [x] Listen, Tupel und Wörterbücher rekursiv behandeln.
+  - [x] Zyklen und übermäßig tiefe Strukturen begrenzen.
+  - [x] Zwei Regressionstests für echte JSONL-Ausgabe und Grenzfälle ergänzen.
+  - [x] CI und Browser-Smoke auf Code-HEAD `e4d67cf` grün (43 Python-Tests, 20 Browserprüfungen).
+  - [ ] Abschlussprüfung nach Dokumentations-Nachtrag auf finalem HEAD bestätigen.
+- [x] **DB-LOG-003** Rotationsgrenzen aus `MANIFEST.json` tatsächlich erzwingen.
+  - [x] JSONL-Rotation nach Zeilen- und UTF-8-Byte-Grenze implementiert.
+  - [x] Archivsegmente bleiben erhalten; parallele Schreiber sind serialisiert.
+  - [x] Sechs Regressionstests für Grenzen, Neustart und Übergröße ergänzt.
+  - [x] CI und Browser-Smoke auf Code-HEAD `c6a8a4b` grün (49+20 Tests).
+  - [ ] Dokumentationsnachtrag erneut per GitHub-Gates prüfen.
+
+- [ ] **DB-SEC-003** Nächstes Paket: lokalen HTTP-Server gegen fremde
+  Netzverbindungen, Portkonflikte und fremde Schreibanfragen absichern.
+
 ## Regel
 
 Neue TODOs erhalten eine stabile ID und werden nicht gelöscht.

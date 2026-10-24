@@ -57,7 +57,9 @@ Wiederkehrende Prüfungen, die bei relevanten Änderungen erneut laufen müssen.
 - [ ] **REG-LOG-001** Maschinenlog ist gültiges JSONL.
 - [ ] **REG-LOG-002** sensible Schlüssel werden geschwärzt.
 - [ ] **REG-LOG-003** Kurzbericht enthält Ampel, Fehlercode und Handlungstipp.
-- [ ] **REG-LOG-004** Logrotation hält definierte Grenzen ein.
+- [x] **REG-LOG-004** Logrotation hält definierte Grenzen ein.
+  - [x] Sechs automatisierte Grenz-, Nebenläufigkeits- und Neustarttests vorhanden.
+  - [x] CI auf Code-HEAD `c6a8a4b` grün; Dokumentations-HEAD erneut prüfen.
 
 ## UI / Bedienung
 

@@ -19,7 +19,10 @@ Der Test startet den lokalen Server selbst und prüft:
 - `/api/health` wird in der Oberfläche verarbeitet.
 - Fortschrittswert und Footer stammen aus den Runtime-Metadaten.
 - alle sechs Basiskarten sind vorhanden.
-- 1366×768, 1600×900 und 1920×1080 erzeugen keinen horizontalen Seitenüberlauf.
+- 800×600, 1366×768, 1600×900 und 1920×1080 erzeugen keinen horizontalen Seitenüberlauf.
+- 400×300 simuliert nur den kleineren CSS-Viewport bei starker Vergrößerung;
+  dies ersetzt keine echte Zoomprüfung im Browser.
+- Unbekannter Serverstatus mit HTML-Zeichen bleibt reiner Text ohne Codeausführung.
 - JavaScript-Konsole und Page-Errors bleiben leer.
 - Kurzhilfe ist per Tastatur erreichbar und übernimmt beim Öffnen den Fokus.
 - Skip-Link führt zum Hauptinhalt.
@@ -28,7 +31,8 @@ Der Test startet den lokalen Server selbst und prüft:
 
 ## Teil B · reale KDE-/Chrome-Abnahmematrix
 
-Die folgenden Punkte werden in einem **sichtbaren normalen Chrome-Fenster** geprüft.
+Die folgenden Punkte werden **erst bei der gebündelten persönlichen Endabnahme
+unmittelbar vor der Veröffentlichung** in einem sichtbaren normalen Chrome-Fenster geprüft.
 Keine Headless-Ausführung darf hier als Ersatz gelten.
 
 | ID | Prüfung | Erwartung | Ergebnis |

@@ -22,6 +22,15 @@ export default defineConfig({
   },
   projects: [
     {
+      name: "compact-800x600",
+      use: { viewport: { width: 800, height: 600 } },
+    },
+    {
+      // Approximates the reduced CSS viewport at 800x600 and 200% browser zoom.
+      name: "compact-200-percent-equivalent",
+      use: { viewport: { width: 400, height: 300 } },
+    },
+    {
       name: "desktop-1366x768",
       use: { viewport: { width: 1366, height: 768 } },
     },
