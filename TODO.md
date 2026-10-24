@@ -79,6 +79,15 @@
 Implementierung der P1-/P2-Pflichten. Eine einzige gebündelte Endabnahme
 erfolgt erst nach vollständigem technischem Vorrelease-Kandidaten.
 
+## Weiteres unabhängiges Sicherheits-Pflichtpaket · 2026-10-24
+
+- [x] **DB-SEC-002** Sensible Schlüssel in verschachtelten Listen vor dem Loggen schwärzen.
+  - [x] Listen, Tupel und Wörterbücher rekursiv behandeln.
+  - [x] Zyklen und übermäßig tiefe Strukturen begrenzen.
+  - [x] Zwei Regressionstests für echte JSONL-Ausgabe und Grenzfälle ergänzen.
+  - [ ] GitHub-CI und Browser-Smoke auf dem abschließenden HEAD erneut prüfen.
+- [ ] **DB-LOG-003** Rotationsgrenzen aus `MANIFEST.json` tatsächlich erzwingen.
+
 ## Regel
 
 Neue TODOs erhalten eine stabile ID und werden nicht gelöscht.
