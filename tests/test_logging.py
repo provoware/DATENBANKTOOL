@@ -24,6 +24,7 @@ def test_short_report_is_layperson_friendly(tmp_path: Path) -> None:
     assert "Ampel: GELB" in report
     assert "Tipp:" in report
 
+
 def test_logging_redacts_sensitive_keys_in_nested_lists(tmp_path: Path) -> None:
     logger = EventLogger(tmp_path)
     logger.log(
