@@ -18,7 +18,7 @@ Legende: `VORHANDEN` = Quellcode oder Test vorhanden, nicht automatisch releasef
 | Design / UX / Lesbarkeit | Bedienbare Fachoberfläche | `src/web/styles.css`; Fach-GUI fehlt | OFFEN |
 | Kleine Fenster / hohe Skalierung | 800×600 und hohe Vergrößerung | 800×600 + Zoom-Näherung geprüft | TEILWEISE |
 | Tastatur / Barrierefreiheit | Fokus, Kontrast, Tastatur | `dashboard.spec.js`; Gesamtgate offen | OFFEN |
-| Logrotation | ≤2.500 Zeilen/2 MiB je Segment | `logging_core.py`, 6 Tests; CI offen | GATE OFFEN |
+| Logrotation | ≤2.500 Zeilen/2 MiB je Segment | 6 Tests, CI + Browser grün | PASS PFLICHTPAKET |
 | Leistung | Große Datenbestände ohne unzumutbare Verzögerung | `TODO.md` P2-004 | OFFEN |
 | Wartbarkeit / Wiederverwendung | Klare Schichten, kein Doppelcode | `AGENTS.md`, `registry.json` | VORHANDEN |
 | Paketierung / Installation | Reproduzierbarer Offline-Start | `README.md`; Pakete offen | OFFEN |
@@ -84,7 +84,13 @@ nachgewiesene Release-Abdeckung. Diese Matrix verwendet ausschließlich überpr�
   Ein Neustart mit gleicher Sitzungs-ID übernimmt den vorhandenen Zähler.
 - **Tests:** `tests/test_logging.py` prüft Manifestparität, Zeilen-/Byte-Grenze,
   gleichzeitige Schreiber, Übergröße und Neustart (sechs neue Regressionen).
-- **Belegstatus:** IMPLEMENTIERT, CI/Browser auf dem abschließenden HEAD noch
-  zu bestätigen. Kein PASS vor vollständigen GitHub-Gates.
+- **Belegstatus:** PASS für DB-LOG-003 auf Code-/Doku-HEAD
+  `c6a8a4bcdd2559f5eee80b4cb41f6ce4e21e790a`:
+  [CI](https://github.com/provoware/DATENBANKTOOL/actions/runs/40104407086)
+  (49 Python-Tests, Format, Projektprüfung) und
+  [Browser](https://github.com/provoware/DATENBANKTOOL/actions/runs/40104407095)
+  (20 Playwright-Tests) erfolgreich.
+- **Statusnachtrag:** Auf dem neuen Dokumentations-HEAD sind die Gates erneut
+  auszuführen; Gesamt-Vorrelease bleibt BLOCKED.
 - **Scope:** Logging und Regressionen; Persistenz-, Backup- und Restore-Verträge
   unverändert. Vorrelease und persönliche Endabnahme weiterhin offen.

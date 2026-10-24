@@ -87,12 +87,15 @@ erfolgt erst nach vollständigem technischem Vorrelease-Kandidaten.
   - [x] Zwei Regressionstests für echte JSONL-Ausgabe und Grenzfälle ergänzen.
   - [x] CI und Browser-Smoke auf Code-HEAD `e4d67cf` grün (43 Python-Tests, 20 Browserprüfungen).
   - [ ] Abschlussprüfung nach Dokumentations-Nachtrag auf finalem HEAD bestätigen.
-- [ ] **DB-LOG-003** Rotationsgrenzen aus `MANIFEST.json` tatsächlich erzwingen.
+- [x] **DB-LOG-003** Rotationsgrenzen aus `MANIFEST.json` tatsächlich erzwingen.
   - [x] JSONL-Rotation nach Zeilen- und UTF-8-Byte-Grenze implementiert.
   - [x] Archivsegmente bleiben erhalten; parallele Schreiber sind serialisiert.
   - [x] Sechs Regressionstests für Grenzen, Neustart und Übergröße ergänzt.
-  - [ ] CI und Browser-Smoke auf abschließendem Entwicklungs-HEAD bestätigen.
-  - [ ] Nach grünen Gates als abgeschlossen markieren.
+  - [x] CI und Browser-Smoke auf Code-HEAD `c6a8a4b` grün (49+20 Tests).
+  - [ ] Dokumentationsnachtrag erneut per GitHub-Gates prüfen.
+
+- [ ] **DB-SEC-003** Nächstes Paket: lokalen HTTP-Server gegen fremde
+  Netzverbindungen, Portkonflikte und fremde Schreibanfragen absichern.
 
 ## Regel
 

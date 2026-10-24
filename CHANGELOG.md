@@ -6,7 +6,7 @@ Alle wichtigen Projektänderungen werden hier in deutscher Sprache dokumentiert.
 
 - 2026-10-24: DB-LOG-003: JSONL-Logrotation mit 2.500-Zeilen- und
   2-MiB-Grenze, archivierten Segmenten und gesperrtem parallelem Schreiben.
-  Sechs neue Grenz- und Wiederanlaufprüfungen; GitHub-Gates noch ausstehend.
+  Sechs neue Grenz- und Wiederanlaufprüfungen; CI und Browser auf `c6a8a4b` grün.
 
 - 2026-10-24: Sicherheitslücke in JSONL-Details geschlossen: sensible Schlüssel in
   verschachtelten Listen werden jetzt vor dem Schreiben geschwärzt.
