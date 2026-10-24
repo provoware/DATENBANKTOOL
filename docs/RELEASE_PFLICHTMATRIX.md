@@ -55,7 +55,11 @@ Legende: `VORHANDEN` = Quellcode oder Test vorhanden, nicht automatisch releasef
   Zyklen und Tiefe werden begrenzt. `tests/test_logging.py` prüft beide Fälle.
 - **Isolierter Vorabtest:** Ausgangscode 2 PASS / 2 FAIL, Korrektur 4 PASS.
   Dieser Vorabtest ist **kein** vollständiger Repository-Gate-Nachweis.
-- **CI-Status:** Bis zum erfolgreichen Lauf auf dem finalen Branch-HEAD OFFEN.
+- **CI auf Code-HEAD `e4d67cfba35110235a34271802bcdbec29409127`:**
+  [CI](https://github.com/provoware/DATENBANKTOOL/actions/runs/40060246127) PASS
+  (Ruff, Prettier, 43 Python-Tests, Projektprüfung);
+  [Browser Smoke](https://github.com/provoware/DATENBANKTOOL/actions/runs/40060246094) PASS.
+- **Finaler Dokumentations-HEAD:** erneute CI und Browserprüfung nach diesem Nachtrag erforderlich.
 - **Restpflicht:** Logrotation laut Manifest, Fachfunktionen, vollständige Browser-/
   Skalierungsprüfung, Leistung, Paketierung und gebündelte Endabnahme.
 
