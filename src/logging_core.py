@@ -33,19 +33,37 @@ def _sensitive(key: str) -> bool:
     return any(part in normalized for part in SENSITIVE_PARTS)
 
 
-def sanitize_details(details: dict[str, Any], limit: int = 2000) -> dict[str, Any]:
-    result: dict[str, Any] = {}
-    for key, value in list(details.items())[:40]:
-        if _sensitive(str(key)):
-            result[str(key)] = "[GESCHWÄRZT]"
-            continue
-        if isinstance(value, dict):
-            result[str(key)] = sanitize_details(value, limit)
-            continue
-        text = str(value)
-        result[str(key)] = text if len(text) <= limit else text[: limit - 12] + " … [gekürzt]"
-    return result
+def _sanitize_value(value: Any, limit: int, depth: int, active: set[int]) -> Any:
+    if depth >= 8:
+        return "[Tiefe begrenzt]"
+    if isinstance(value, (dict, list, tuple)):
+        identity = id(value)
+        if identity in active:
+            return "[Zirkuläre Referenz]"
+        active.add(identity)
+        try:
+            if isinstance(value, dict):
+                result: dict[str, Any] = {}
+                for index, (key, item) in enumerate(value.items()):
+                    if index >= 40:
+                        break
+                    name = str(key)
+                    result[name] = (
+                        "[GESCHWÄRZT]"
+                        if _sensitive(name)
+                        else _sanitize_value(item, limit, depth + 1, active)
+                    )
+                return result
+            return [_sanitize_value(item, limit, depth + 1, active) for item in value[:40]]
+        finally:
+            active.remove(identity)
+    text = str(value)
+    return text if len(text) <= limit else text[: max(0, limit - 12)] + " … [gekürzt]"
 
+
+def sanitize_details(details: dict[str, Any], limit: int = 2000) -> dict[str, Any]:
+    """Redact nested sensitive keys, including keys in lists, before writing JSONL."""
+    return _sanitize_value(details, limit, 0, set())
 
 @dataclass
 class EventLogger:
