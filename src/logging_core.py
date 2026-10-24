@@ -65,6 +65,7 @@ def sanitize_details(details: dict[str, Any], limit: int = 2000) -> dict[str, An
     """Redact nested sensitive keys, including keys in lists, before writing JSONL."""
     return _sanitize_value(details, limit, 0, set())
 
+
 @dataclass
 class EventLogger:
     root: Path
