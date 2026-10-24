@@ -4,6 +4,10 @@ Alle wichtigen Projektänderungen werden hier in deutscher Sprache dokumentiert.
 
 ## [Unreleased] – 2026-10-23
 
+- 2026-10-24: Sicherheitslücke in JSONL-Details geschlossen: sensible Schlüssel in
+  verschachtelten Listen werden jetzt vor dem Schreiben geschwärzt.
+- Schutz vor zyklischen und übermäßig tiefen Log-Strukturen ergänzt; zwei Negativtests.
+
 - Sicherheitskorrektur: Gesundheitsstatus und Verbindungsfehler werden mit
   DOM-Textknoten statt `innerHTML` dargestellt.
 - Browser-Negativtest für HTML-Einschleusung in Serverstatus ergänzt.
