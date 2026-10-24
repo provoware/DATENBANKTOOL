@@ -47,6 +47,18 @@ Legende: `VORHANDEN` = Quellcode oder Test vorhanden, nicht automatisch releasef
 - **Gates:** CI und Browser Smoke nach Dokumentations-Nachtrag erneut prüfen.
   Release Gate ist auf dem PR-Zweig nicht automatisch ausführbar.
 
+## Sicherheitsnachtrag DB-SEC-002 · 2026-10-24
+
+- **Befund reproduziert:** Die bisherige Schwärzung wandelte Listen in Text um.
+  Dadurch konnten verschachtelte `Authorization`- und `cookie`-Werte im JSONL stehen.
+- **Änderung:** `src/logging_core.py` schwärzt Schlüssel auch innerhalb von Listen;
+  Zyklen und Tiefe werden begrenzt. `tests/test_logging.py` prüft beide Fälle.
+- **Isolierter Vorabtest:** Ausgangscode 2 PASS / 2 FAIL, Korrektur 4 PASS.
+  Dieser Vorabtest ist **kein** vollständiger Repository-Gate-Nachweis.
+- **CI-Status:** Bis zum erfolgreichen Lauf auf dem finalen Branch-HEAD OFFEN.
+- **Restpflicht:** Logrotation laut Manifest, Fachfunktionen, vollständige Browser-/
+  Skalierungsprüfung, Leistung, Paketierung und gebündelte Endabnahme.
+
 ## Offene Abhängigkeiten und nächster Schritt
 
 1. CI und Browser Smoke auf dem letzten Entwicklungs-HEAD erneut bestätigen.
