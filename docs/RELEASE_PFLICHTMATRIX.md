@@ -18,7 +18,7 @@ Legende: `VORHANDEN` = Quellcode oder Test vorhanden, nicht automatisch releasef
 | Design / UX / Lesbarkeit | Bedienbare Fachoberfläche | `src/web/styles.css`; Fach-GUI fehlt | OFFEN |
 | Kleine Fenster / hohe Skalierung | 800×600 und hohe Vergrößerung | 800×600 + Zoom-Näherung geprüft | TEILWEISE |
 | Tastatur / Barrierefreiheit | Fokus, Kontrast, Tastatur | `dashboard.spec.js`; Gesamtgate offen | OFFEN |
-| Logrotation | 2.500 Zeilen oder 2 MiB je JSONL-Datei, kein Verlust | `src/logging_core.py`, 6 neue Regressionen; CI noch offen | IMPLEMENTIERT / GATE OFFEN |
+| Logrotation | ≤2.500 Zeilen/2 MiB je Segment | `logging_core.py`, 6 Tests; CI offen | GATE OFFEN |
 | Leistung | Große Datenbestände ohne unzumutbare Verzögerung | `TODO.md` P2-004 | OFFEN |
 | Wartbarkeit / Wiederverwendung | Klare Schichten, kein Doppelcode | `AGENTS.md`, `registry.json` | VORHANDEN |
 | Paketierung / Installation | Reproduzierbarer Offline-Start | `README.md`; Pakete offen | OFFEN |
